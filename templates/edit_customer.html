@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    body {
+        background: linear-gradient(135deg, #1f2a3a, #2c3e50);
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* OUTER BOX */
+    .form-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 40px 30px;
+        width: 500px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        text-align: center;
+        color: white;
+    }
+
+    .form-card h2 {
+        margin-bottom: 25px;
+        font-size: 24px;
+    }
+
+    /* INNER BOX */
+    .form-card form {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 14px;
+        width: 95%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .form-card input,
+    .form-card textarea {
+        width: 100%;
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        background: #f5f7fa;
+        color: #333;
+        font-size: 15px;
+        transition: 0.3s;
+    }
+
+    .form-card textarea {
+        height: 100px;
+        resize: none;
+    }
+
+    .form-card input:focus,
+    .form-card textarea:focus {
+        border-color: #00c6ff;
+        background: #fff;
+        box-shadow: 0 0 8px rgba(0,198,255,0.4);
+    }
+
+    .form-card button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 15px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(45deg, #00c6ff, #0072ff);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .form-card button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0,198,255,0.5);
+    }
+
+</style>
+
+<div class="container">
+    <div class="form-card">
+        <h2>Edit Customer</h2>
+
+        <form method="POST" class="ajax-form" data-after-success="reload">
+            {% csrf_token %}
+
+            <input type="text" name="name" value="{{ customer.name }}" required>
+            <input type="text" name="phone" value="{{ customer.phone }}" required>
+            <textarea name="address">{{ customer.address }}</textarea>
+
+            <button type="submit">Update Customer</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Pay Salary - {{ emp.name }}</h2>
+
+<!-- Salary Summary -->
+<div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:15px;">
+    <p><strong>Total Earned:</strong> ₹{{ total_earned }}</p>
+    <p><strong>Total Paid:</strong> ₹{{ total_paid }}</p>
+    <p style="color:red;"><strong>Remaining:</strong> ₹{{ remaining }}</p>
+</div>
+
+<!-- Error -->
+{% if error %}
+    <p style="color:red;">{{ error }}</p>
+{% endif %}
+
+<form method="POST" class="form ajax-form" data-after-success="reload">
+    {% csrf_token %}
+
+    <label>Enter Amount</label>
+    <input 
+        type="number" 
+        name="amount" 
+        placeholder="Enter amount" 
+        step="0.01"
+        max="{{ remaining }}"
+        required
+    >
+
+    <!-- Quick buttons -->
+    <div style="margin-top:10px;">
+        <button type="button" onclick="setFull()">Pay Full Remaining</button>
+    </div>
+
+    <br>
+
+    <button type="submit">Pay Salary</button>
+</form>
+
+<script>
+function setFull() {
+    document.querySelector('input[name="amount"]').value = "{{ remaining }}";
+}
+</script>
+
+{% endblock %}

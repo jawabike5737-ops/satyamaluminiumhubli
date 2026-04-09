@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap');
+
+    :root {
+        --bg:           #f0ede8;
+        --surface:      #ffffff;
+        --surface-2:    #faf9f7;
+        --border:       #e8e3dc;
+        --border-soft:  #efe9e1;
+        --ink:          #1c1917;
+        --ink-2:        #44403c;
+        --ink-3:        #78716c;
+        --ink-4:        #a8a29e;
+
+        --accent-blue:  #2563eb;
+        --accent-green: #16a34a;
+        --accent-amber: #d97706;
+        --accent-violet:#7c3aed;
+        --accent-teal:  #0d9488;
+        --accent-rose:  #e11d48;
+
+        --shadow-card:  0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+        --shadow-hover: 0 4px 8px rgba(0,0,0,0.07), 0 12px 32px rgba(0,0,0,0.09);
+
+        --r-sm: 10px;
+        --r-md: 14px;
+        --r-lg: 18px;
+        --r-xl: 22px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        background: var(--bg);
+        font-family: 'Outfit', system-ui, sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+    }
+
+    /* subtle grain on bg */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* ── LAYOUT ── */
+    .dash {
+        position: relative;
+        z-index: 1;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2.5rem 1.75rem 4rem;
+    }
+
+    /* ── HEADER ── */
+    .dash-header {
+        margin-bottom: 2.25rem;
+        animation: slideDown 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .dash-header-eyebrow {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        margin-bottom: 0.35rem;
+    }
+
+    .dash-header h2 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+    }
+
+    .dash-header .emp-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 0.6rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 4px 12px 4px 6px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--ink-2);
+    }
+
+    .emp-badge-dot {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #d97706, #b45309);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0;
+        flex-shrink: 0;
+    }
+
+    /* ── METRICS GRID ── */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 680px) {
+        .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .metric-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 1.1rem 1.25rem 1.05rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+        transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+        animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .metric-card:nth-child(1) { animation-delay: 0.06s; }
+    .metric-card:nth-child(2) { animation-delay: 0.10s; }
+    .metric-card:nth-child(3) { animation-delay: 0.14s; }
+    .metric-card:nth-child(4) { animation-delay: 0.18s; }
+    .metric-card:nth-child(5) { animation-delay: 0.22s; }
+    .metric-card:nth-child(6) { animation-delay: 0.26s; }
+
+    .metric-card:hover {
+        transform: translateY(-3px) scale(1.01);
+        box-shadow: var(--shadow-hover);
+    }
+
+    /* coloured left edge + soft wash */
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        border-radius: var(--r-lg) 0 0 var(--r-lg);
+    }
+
+    .metric-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0.04;
+        border-radius: var(--r-lg);
+        pointer-events: none;
+    }
+
+    .mc-blue::before   { background: var(--accent-blue); }
+    .mc-amber::before  { background: var(--accent-amber); }
+    .mc-violet::before { background: var(--accent-violet); }
+    .mc-green::before  { background: var(--accent-green); }
+    .mc-teal::before   { background: var(--accent-teal); }
+    .mc-rose::before   { background: var(--accent-rose); }
+
+    .mc-blue::after   { background: var(--accent-blue); }
+    .mc-amber::after  { background: var(--accent-amber); }
+    .mc-violet::after { background: var(--accent-violet); }
+    .mc-green::after  { background: var(--accent-green); }
+    .mc-teal::after   { background: var(--accent-teal); }
+    .mc-rose::after   { background: var(--accent-rose); }
+
+    .metric-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--ink-4);
+        margin-bottom: 0.45rem;
+        padding-left: 10px;
+    }
+
+    .metric-value {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.025em;
+        line-height: 1;
+        padding-left: 10px;
+    }
+
+    .metric-value .currency {
+        font-size: 1rem;
+        font-weight: 500;
+        opacity: 0.55;
+        margin-right: 1px;
+    }
+
+    /* ── ACTION BAR ── */
+    .action-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 2rem;
+        animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0.5rem 1.05rem;
+        border-radius: 100px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1.5px solid transparent;
+        letter-spacing: 0.01em;
+        transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.15s;
+        background: currentColor;
+    }
+
+    .btn:hover::before { opacity: 0.06; }
+    .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-pay    { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+    .btn-history{ background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .btn-reset  { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .btn-pdf    { background: #faf5ff; color: #6d28d9; border-color: #e9d5ff; }
+    .btn-excel  { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+
+    .btn-icon {
+        width: 16px; height: 16px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-style: normal;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    /* ── TABLE CARD ── */
+    .table-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-xl);
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+        animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.36s both;
+    }
+
+    .table-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 1.1rem 1.5rem;
+        border-bottom: 1px solid var(--border-soft);
+        background: var(--surface-2);
+    }
+
+    .table-head h3 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+    }
+
+    .count-pill {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-3);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        padding: 2px 9px;
+        border-radius: 100px;
+        letter-spacing: 0.03em;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        padding: 0.65rem 1.5rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--ink-4);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--border-soft);
+        text-align: left;
+    }
+
+    tbody td {
+        padding: 0.95rem 1.5rem;
+        font-size: 0.875rem;
+        color: var(--ink-2);
+        border-bottom: 1px solid var(--border-soft);
+        font-weight: 400;
+        transition: background 0.14s;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr:hover td { background: var(--surface-2); }
+
+    .td-date {
+        font-weight: 500;
+        color: var(--ink);
+    }
+
+    .td-day {
+        color: var(--ink-3);
+        font-size: 0.82rem;
+    }
+
+    .td-amount {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--accent-green);
+        letter-spacing: -0.01em;
+    }
+
+    .td-amount span {
+        font-size: 0.7rem;
+        font-weight: 500;
+        opacity: 0.65;
+        font-family: 'Outfit', sans-serif;
+        margin-right: 1px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 0;
+        color: var(--ink-4);
+        font-size: 0.85rem;
+        font-weight: 400;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes cardIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .num {
+        font-family: 'Times New Roman', Times, serif;
+    }
+</style>
+
+<div class="dash">
+
+    <!-- Header -->
+    <div class="dash-header">
+        <div class="dash-header-eyebrow">Financial Overview</div>
+        <h2>Salary Dashboard</h2>
+        <div class="emp-badge">
+            <div class="emp-badge-dot">{{ emp.name|slice:":2"|upper }}</div>
+            {{ emp.name }}
+        </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-grid">
+        <div class="metric-card mc-blue">
+            <div class="metric-label">Full Day Total</div>
+            <div class="metric-value"><span class="currency">₹</span>{{ full_total }}</div>
+        </div>
+        <div class="metric-card mc-amber">
+            <div class="metric-label">Half Day Total</div>
+            <div class="metric-value"><span class="currency">₹</span>{{ half_total }}</div>
+        </div>
+        <div class="metric-card mc-violet">
+            <div class="metric-label">Overtime Total</div>
+            <div class="metric-value"><span class="currency">₹</span>{{ overtime_total }}</div>
+        </div>
+        <div class="metric-card mc-green">
+            <div class="metric-label">Total Earned</div>
+            <div class="metric-value"><span class="currency">₹</span>{{ total_earned }}</div>
+        </div>
+        <div class="metric-card mc-teal">
+            <div class="metric-label">Total Paid</div>
+            <div class="metric-value"><span class="currency">₹</span>{{ total_paid }}</div>
+        </div>
+        <div class="metric-card mc-rose">
+            <div class="metric-label">Remaining</div>
+            <div class="metric-value"><span class="currency">₹</span>{{ remaining }}</div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-bar">
+        <a href="{% url 'pay_salary' emp.id %}" class="btn btn-pay">
+            <i class="btn-icon">↑</i> Pay Salary
+        </a>
+        <a href="{% url 'payment_history' emp.id %}" class="btn btn-history">
+            <i class="btn-icon">≡</i> History
+        </a>
+        <a href="{% url 'reset_salary' emp.id %}" class="btn btn-reset">
+            <i class="btn-icon">↺</i> Reset
+        </a>
+        <a href="{% url 'salary_pdf' emp.id %}" class="btn btn-pdf">
+            <i class="btn-icon">↓</i> Export PDF
+        </a>
+        <a href="{% url 'export_excel' emp.id %}" class="btn btn-excel">
+            <i class="btn-icon">↓</i> Export Excel
+        </a>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div class="table-head">
+            <h3>Payment History</h3>
+            <span class="count-pill">{{ payments|length }} records</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Amount Paid</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td class="td-date">{{ p.date|date:"d M Y" }}</td>
+                    <td class="td-day">{{ p.date|date:"l" }}</td>
+                    <td class="td-amount"><span>₹</span>{{ p.amount_paid }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="empty-state">No payment records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<script>
+(function(){
+    function wrapNumbers(root){
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var texts = [];
+        var re = /(\d{1,3}(?:[,\s]\d{3})*(?:\.\d+)?|\d+([\.]\d+)?)/g;
+        while(walker.nextNode()) texts.push(walker.currentNode);
+        texts.forEach(function(node){
+            if(!node.nodeValue || !re.test(node.nodeValue)) return;
+            var parent = node.parentNode;
+            if(!parent) return;
+            var tag = parent.nodeName;
+            if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return;
+            if(parent.closest && parent.closest('script,style,noscript')) return;
+            var s = node.nodeValue;
+            var frag = document.createDocumentFragment();
+            var last = 0;
+            s.replace(re, function(match){
+                var idx = s.indexOf(match, last);
+                if(idx > last) frag.appendChild(document.createTextNode(s.slice(last, idx)));
+                var span = document.createElement('span');
+                span.className = 'num';
+                span.textContent = match;
+                frag.appendChild(span);
+                last = idx + match.length;
+                return match;
+            });
+            if(last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+            parent.replaceChild(frag, node);
+        });
+    }
+    function run(){
+        var root = document.querySelector('.dash') || document.body;
+        wrapNumbers(root);
+    }
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
+</script>
+
+{% endblock %}

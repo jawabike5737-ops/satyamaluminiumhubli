@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f0ede8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(210,195,175,0.5) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(180,200,215,0.4) 0%, transparent 50%);
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 24px;
+    width: 420px;
+    max-width: 100%;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.04),
+      0 4px 16px rgba(0,0,0,0.06),
+      0 20px 48px rgba(0,0,0,0.08);
+    overflow: hidden;
+    animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 32px 36px 24px;
+    border-bottom: 1px solid #f0ede8;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2c5282, #3182ce);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(49,130,206,0.28);
+  }
+
+  .icon-wrap svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .header-text h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a202c;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+
+  .header-text p {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #718096;
+    font-weight: 400;
+  }
+
+  .form-body {
+    padding: 28px 36px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .field {
+    position: relative;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .field:nth-child(1) { animation-delay: 0.08s; }
+  .field:nth-child(2) { animation-delay: 0.14s; }
+  .field:nth-child(3) { animation-delay: 0.20s; }
+  .field:nth-child(4) { animation-delay: 0.26s; }
+  .field:nth-child(5) { animation-delay: 0.32s; }
+  .field:nth-child(6) { animation-delay: 0.38s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 6px;
+  }
+
+  .field .optional-tag {
+    font-size: 10px;
+    font-weight: 400;
+    color: #a0aec0;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 6px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-wrap .input-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
+
+  .input-wrap .input-icon svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fafafa;
+    color: #1a202c;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  .input-wrap input::placeholder {
+    color: #c0cad6;
+  }
+
+  .input-wrap input:focus {
+    border-color: #3182ce;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(49,130,206,0.1);
+  }
+
+  .input-wrap input:focus + .input-icon,
+  .input-wrap:focus-within .input-icon {
+    color: #3182ce;
+  }
+
+  .divider {
+    height: 1px;
+    background: #f0ede8;
+    margin: 4px 0 16px;
+  }
+
+  .form-footer {
+    animation: fadeUp 0.5s 0.44s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2c5282, #3182ce);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(49,130,206,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .submit-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(49,130,206,0.38);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(49,130,206,0.2);
+  }
+</style>
+
+<div class="card">
+  <div class="card-header">
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+    </div>
+    <div class="header-text">
+      <h2>Add Employee</h2>
+      <p>Fill in the details to register a new team member</p>
+    </div>
+  </div>
+
+  <form method="POST" class="form-body ajax-form" data-reset-on-success="true">
+
+    <div class="field">
+      <label>Employee Name</label>
+      <div class="input-wrap">
+        <input type="text" name="name" placeholder="e.g. Rahul Sharma" required>
+        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Phone</label>
+      <div class="input-wrap">
+        <input type="text" name="phone" placeholder="e.g. +91 98765 43210" required>
+        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 3.08 5.18 2 2 0 0 1 5.07 3h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L9.09 10.1a16 16 0 0 0 6.2 6.2l1.16-1.16a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Role</label>
+      <div class="input-wrap">
+        <input type="text" name="role" placeholder="e.g. Site Supervisor" required>
+        <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>Daily Salary</label>
+      <div class="input-wrap">
+        <input type="number" step="0.01" name="salary" placeholder="0.00" required>
+        <span class="input-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Half Day Salary</label>
+      <div class="input-wrap">
+        <input type="number" step="0.01" name="half_salary" placeholder="0.00" required>
+        <span class="input-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Overtime Salary <span class="optional-tag">optional</span></label>
+      <div class="input-wrap">
+        <input type="number" step="0.01" name="overtime_salary" placeholder="0.00">
+        <span class="input-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="submit" class="submit-btn">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Add Employee
+      </button>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

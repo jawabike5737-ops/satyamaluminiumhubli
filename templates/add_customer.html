@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    body {
+        background: linear-gradient(135deg, #1f2a3a, #2c3e50);
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* 🔥 BIGGER OUTER BOX */
+    .form-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 40px 30px;
+        width: 500px;   /* increased */
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        text-align: center;
+        color: white;
+    }
+
+    .form-card h2 {
+        margin-bottom: 25px;
+        font-size: 24px;
+    }
+
+    /* ERROR */
+    .error {
+        background: rgba(255, 0, 0, 0.15);
+        color: #ff4d4d;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    /* 🔥 BIGGER INNER BOX */
+    .form-card form {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 14px;
+        width: 95%;      /* increased */
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .form-card input,
+    .form-card textarea {
+        width: 100%;
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        background: #f5f7fa;
+        color: #333;
+        font-size: 15px;
+        transition: 0.3s;
+    }
+
+    .form-card textarea {
+        height: 100px;
+        resize: none;
+    }
+
+    .form-card input::placeholder,
+    .form-card textarea::placeholder {
+        color: #888;
+    }
+
+    .form-card input:focus,
+    .form-card textarea:focus {
+        border-color: #00c6ff;
+        background: #fff;
+        box-shadow: 0 0 8px rgba(0,198,255,0.4);
+    }
+
+    .form-card button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 15px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(45deg, #00c6ff, #0072ff);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .form-card button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0,198,255,0.5);
+    }
+
+</style>
+
+<div class="container">
+    <div class="form-card">
+        <h2>Add Customer</h2>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" class="ajax-form" data-reset-on-success="true">
+            {% csrf_token %}
+
+            <input type="text" name="name" placeholder="Customer Name" required>
+            <input type="text" name="phone" placeholder="Phone Number" required>
+            <textarea name="address" placeholder="Address"></textarea>
+
+            <button type="submit">Add Customer</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

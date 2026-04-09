@@ -1,0 +1,805 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satyam Aluminium</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+    /* ══════════════════════════════════════
+       RESET & ROOT
+    ══════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --sidebar-w: 260px;
+        --topbar-h: 64px;
+
+        /* Light Palette */
+        --bg:           #f5f3ef;
+        --surface:      #ffffff;
+        --surface-2:    #faf9f7;
+        --surface-3:    #f0ede8;
+        --border:       rgba(0,0,0,0.07);
+        --border-md:    rgba(0,0,0,0.12);
+
+        /* Brand - warm copper/bronze */
+        --brand:        #b5722a;
+        --brand-light:  #f5ebe0;
+        --brand-mid:    rgba(181,114,42,0.15);
+        --brand-line:   rgba(181,114,42,0.3);
+        --brand-glow:   rgba(181,114,42,0.12);
+
+        /* Text */
+        --text-1:       #1a1610;
+        --text-2:       #5a5048;
+        --text-3:       #9a8f82;
+        --text-inv:     #ffffff;
+
+        /* Semantic */
+        --success:      #2d7a4f;
+        --success-bg:   #edf7f1;
+        --danger:       #c13a3a;
+        --danger-bg:    #fdf0f0;
+
+        /* Typography */
+        --font-display: 'Playfair Display', serif;
+        --font-body:    'DM Sans', sans-serif;
+        --font-mono:    'DM Mono', monospace;
+
+        /* Shadows */
+        --shadow-xs:    0 1px 3px rgba(0,0,0,0.06);
+        --shadow-sm:    0 2px 8px rgba(0,0,0,0.07), 0 0 1px rgba(0,0,0,0.04);
+        --shadow-md:    0 4px 16px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.05);
+        --shadow-lg:    0 8px 32px rgba(0,0,0,0.10), 0 0 1px rgba(0,0,0,0.06);
+    }
+
+    html, body {
+        height: 100%;
+        font-family: var(--font-body);
+        background: var(--bg);
+        color: var(--text-1);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ══════════════════════════════════════
+       PAGE ENTRY ANIMATION
+    ══════════════════════════════════════ */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes slideRight {
+        from { opacity: 0; transform: translateX(-24px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.96); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes shimmerLine {
+        0%   { transform: translateY(-100%); opacity: 0; }
+        30%  { opacity: 1; }
+        70%  { opacity: 1; }
+        100% { transform: translateY(100%); opacity: 0; }
+    }
+    @keyframes breathe {
+        0%, 100% { opacity: 0.5; transform: scaleX(0.9); }
+        50%       { opacity: 1;   transform: scaleX(1); }
+    }
+    @keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(45,122,79,0.4); }
+        50%       { box-shadow: 0 0 0 5px rgba(45,122,79,0); }
+    }
+
+    /* ══════════════════════════════════════
+       LAYOUT SHELL
+    ══════════════════════════════════════ */
+    .layout {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* ══════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════ */
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: var(--sidebar-w);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        animation: slideRight 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    /* Decorative texture overlay */
+    .sidebar::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 20% 20%, rgba(181,114,42,0.04) 0%, transparent 60%),
+            radial-gradient(circle at 80% 80%, rgba(181,114,42,0.03) 0%, transparent 60%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Animated shimmer line */
+    .sidebar-shimmer {
+        position: absolute;
+        right: 0; top: 0; bottom: 0;
+        width: 1px;
+        overflow: hidden;
+        z-index: 1;
+    }
+    .sidebar-shimmer::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        width: 1px;
+        height: 40%;
+        background: linear-gradient(180deg, transparent, var(--brand), transparent);
+        animation: shimmerLine 4s ease-in-out infinite;
+        animation-delay: 1s;
+    }
+
+    /* ── Logo ── */
+    .logo {
+        padding: 28px 24px 24px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+        z-index: 2;
+        animation: fadeUp 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .logo-mark {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 0;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--brand);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(181,114,42,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .logo-icon::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+
+    .logo-icon svg {
+        width: 20px;
+        height: 20px;
+        stroke: white;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        position: relative;
+        z-index: 1;
+    }
+
+    .logo-text-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .logo-top {
+        font-family: var(--font-display);
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: var(--text-1);
+        line-height: 1.1;
+    }
+
+    .logo-sub {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--brand);
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+
+    /* Decorative line */
+    .logo-rule {
+        display: block;
+        height: 1px;
+        background: linear-gradient(90deg, var(--brand) 0%, transparent 100%);
+        margin-top: 20px;
+        animation: breathe 3s ease-in-out infinite;
+        transform-origin: left;
+    }
+
+    /* ── Nav ── */
+    .sidebar nav {
+        flex: 1;
+        padding: 20px 14px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 2;
+        overflow-y: auto;
+    }
+
+    .nav-section-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: var(--text-3);
+        padding: 8px 12px 10px;
+        display: block;
+    }
+
+    .sidebar nav a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+        color: var(--text-2);
+        text-decoration: none;
+        position: relative;
+        transition: color 0.2s, background 0.2s, transform 0.15s;
+        margin-bottom: 2px;
+    }
+
+    .sidebar nav a:hover {
+        color: var(--text-1);
+        background: var(--surface-3);
+        transform: translateX(2px);
+    }
+
+    .sidebar nav a.active {
+        color: var(--brand);
+        background: var(--brand-light);
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.1px;
+    }
+
+    .sidebar nav a.active::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 18%; bottom: 18%;
+        width: 3px;
+        background: var(--brand);
+        border-radius: 0 3px 3px 0;
+        box-shadow: 0 0 8px rgba(181,114,42,0.4);
+    }
+
+    /* Hover badge effect on right */
+    .sidebar nav a .nav-badge {
+        display: none;
+        margin-left: auto;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--brand);
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .sidebar nav a:hover .nav-badge,
+    .sidebar nav a.active .nav-badge {
+        display: block;
+        opacity: 1;
+    }
+
+    .nav-icon {
+        width: 16px; height: 16px;
+        flex-shrink: 0;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: transform 0.2s;
+    }
+
+    .sidebar nav a:hover .nav-icon {
+        transform: scale(1.1);
+    }
+
+    /* Nav stagger animation */
+    .sidebar nav a:nth-child(1) { animation: fadeUp 0.5s 0.15s both; }
+    .sidebar nav a:nth-child(2) { animation: fadeUp 0.5s 0.20s both; }
+    .sidebar nav a:nth-child(3) { animation: fadeUp 0.5s 0.25s both; }
+    .sidebar nav a:nth-child(4) { animation: fadeUp 0.5s 0.30s both; }
+    .sidebar nav a:nth-child(5) { animation: fadeUp 0.5s 0.35s both; }
+    .sidebar nav a:nth-child(6) { animation: fadeUp 0.5s 0.40s both; }
+    .sidebar nav a:nth-child(7) { animation: fadeUp 0.5s 0.45s both; }
+
+    /* ── Bottom ── */
+    .bottom-links {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+        position: relative;
+        z-index: 2;
+        animation: fadeIn 0.6s 0.5s both;
+    }
+
+    .bottom-links form { width: 100%; }
+
+    .logout-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        background: transparent;
+        border: 1px solid rgba(193,58,58,0.2);
+        border-radius: 10px;
+        font-family: var(--font-body);
+        font-size: 13.5px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+        color: rgba(193,58,58,0.65);
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+    }
+
+    .logout-btn:hover {
+        background: var(--danger-bg);
+        border-color: rgba(193,58,58,0.4);
+        color: var(--danger);
+        transform: translateX(2px);
+    }
+
+    .logout-btn svg {
+        width: 15px; height: 15px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════
+       MAIN AREA
+    ══════════════════════════════════════ */
+    .main {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        animation: fadeUp 0.6s 0.15s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        background: rgba(255,255,255,0.85);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    /* Topbar bottom accent line */
+    .topbar::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--brand) 0%, rgba(181,114,42,0.1) 40%, transparent 100%);
+        opacity: 0.5;
+    }
+
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .topbar-breadcrumb {
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-3);
+    }
+
+    .topbar-sep {
+        width: 4px; height: 4px;
+        border-radius: 50%;
+        background: var(--text-3);
+        opacity: 0.4;
+    }
+
+    .topbar-title {
+        font-family: var(--font-display);
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        color: var(--text-1);
+    }
+
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    /* Status indicator */
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: var(--success-bg);
+        border: 1px solid rgba(45,122,79,0.2);
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--success);
+        letter-spacing: 0.3px;
+    }
+
+    .status-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        animation: pulseDot 2s ease-in-out infinite;
+        flex-shrink: 0;
+    }
+
+    .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 14px 6px 7px;
+        background: var(--surface);
+        border: 1px solid var(--border-md);
+        border-radius: 99px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-2);
+        letter-spacing: 0.2px;
+        cursor: default;
+        box-shadow: var(--shadow-xs);
+        transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .user-pill:hover {
+        box-shadow: var(--shadow-sm);
+        border-color: var(--brand-line);
+    }
+
+    .user-avatar {
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-display);
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(181,114,42,0.35);
+    }
+
+    /* ── Content ── */
+    .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        /* Prevent sticky topbar from visually overlapping content */
+        padding: 20px;
+        padding-top: calc(var(--topbar-h) + 20px);
+    }
+
+    /* ══════════════════════════════════════
+       SCROLLBAR
+    ══════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+    /* ══════════════════════════════════════
+       SWEETALERT OVERRIDES
+    ══════════════════════════════════════ */
+    .swal2-popup {
+        background: var(--surface) !important;
+        color: var(--text-1) !important;
+        font-family: var(--font-body) !important;
+        border-radius: 16px !important;
+        box-shadow: var(--shadow-lg) !important;
+        border: 1px solid var(--border) !important;
+    }
+    .swal-toast {
+        background: var(--surface) !important;
+        border: 1px solid var(--border-md) !important;
+        color: var(--text-1) !important;
+        font-family: var(--font-body) !important;
+        font-size: 13.5px !important;
+        box-shadow: var(--shadow-md) !important;
+        border-radius: 12px !important;
+    }
+
+    /* ══════════════════════════════════════
+       UTILITY: CARD
+    ══════════════════════════════════════ */
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+        :root { --sidebar-w: 0px; }
+        .sidebar {
+            transform: translateX(-260px);
+            width: 260px;
+            transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+        .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+        .main { margin-left: 0; }
+        .topbar { padding: 0 18px; }
+    }
+    </style>
+</head>
+
+<body>
+<div class="layout">
+
+    <!-- ═══════ SIDEBAR ═══════ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-shimmer"></div>
+
+        <div class="logo">
+            <div class="logo-mark">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/><path d="M12 2v20M3 7l9 5 9-5"/></svg>
+                </div>
+                <div class="logo-text-group">
+                    <span class="logo-top">Satyam</span>
+                    <span class="logo-sub">Aluminium Works</span>
+                </div>
+            </div>
+            <span class="logo-rule"></span>
+        </div>
+
+        <nav>
+            <span class="nav-section-label">Navigation</span>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z"/><path d="M6 15V9h4v6"/></svg>
+                Dashboard
+            </a>
+
+            <a href="/employees/" class="{% if '/employees' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+                Employees
+            </a>
+
+            <a href="/services/" class="{% if '/services' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+                Services
+            </a>
+
+            <a href="/create-quotation/" class="{% if '/quotation' in request.path or '/create-quotation' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16"><path d="M10 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5l-3-3z"/><path d="M10 2v3h3M5 7h6M5 10h4"/></svg>
+                Quotation
+            </a>
+
+            <a href="/customers/" class="{% if '/customers' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/><circle cx="12" cy="5" r="2"/><path d="M11 13c0-2 1.3-3.7 3-4.3"/></svg>
+                Customers
+            </a>
+
+            <a href="/orders/" class="{% if '/orders' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 3h12l-1.5 8H3.5L2 3z"/><circle cx="6" cy="14" r="1"/><circle cx="11" cy="14" r="1"/><path d="M2 3H1"/></svg>
+                Orders
+            </a>
+        </nav>
+
+        <div class="bottom-links">
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <svg viewBox="0 0 16 16"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3"/><path d="M7 11l3-3-3-3M10 8H2"/></svg>
+                    Sign Out
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- ═══════ MAIN ═══════ -->
+    <main class="main">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <span class="topbar-breadcrumb">Satyam</span>
+                <div class="topbar-sep"></div>
+                <span class="topbar-title" id="topbar-page-title">Dashboard</span>
+            </div>
+
+            <div class="topbar-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    System Online
+                </div>
+                <div class="user-pill">
+                    <div class="user-avatar" id="userAvatar">
+                        {{ request.user.username|slice:":2"|upper }}
+                    </div>
+                    {{ request.user.username }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <section class="content">
+            {% block content %}{% endblock %}
+        </section>
+
+    </main>
+</div>
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script>
+(function(){
+    const path = window.location.pathname;
+    const links = document.querySelectorAll('.sidebar nav a');
+    const titleEl = document.getElementById('topbar-page-title');
+    links.forEach(a => {
+        const href = a.getAttribute('href');
+        const isActive = href === '/' ? path === '/' : path.startsWith(href);
+        if (isActive) {
+            a.classList.add('active');
+            if (titleEl) titleEl.textContent = a.textContent.trim();
+        } else {
+            a.classList.remove('active');
+        }
+    });
+})();
+
+function getCookie(name) {
+    let v = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) v = decodeURIComponent(c.slice(name.length + 1));
+        });
+    }
+    return v;
+}
+
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3200,
+    timerProgressBar: true,
+    customClass: { popup: 'swal-toast' },
+});
+function showToast(type, title) {
+    Toast.fire({ icon: type === 'success' ? 'success' : 'error', title });
+}
+
+function showConfirm(title = 'Are you sure?', text = 'This action cannot be undone') {
+    return Swal.fire({
+        title, text, icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c13a3a',
+        cancelButtonColor: '#888',
+        confirmButtonText: 'Yes, proceed',
+        background: '#ffffff',
+        color: '#1a1610',
+    });
+}
+
+document.addEventListener('submit', async function(e) {
+    const form = e.target;
+    if (!form.classList.contains('ajax-form')) return;
+    e.preventDefault();
+    const btn = form.querySelector('button[type=submit], input[type=submit]');
+    const origText = btn?.innerText ?? btn?.value;
+    if (btn) { btn.disabled = true; btn.innerText = 'Processing…'; }
+    const url = form.action || window.location.href;
+    const method = (form.method || 'POST').toUpperCase();
+    const headers = { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') };
+    let body = form.enctype === 'multipart/form-data' ? new FormData(form) : new URLSearchParams(new FormData(form));
+    let fetchUrl = url;
+    // If sending URL-encoded form data, ensure correct Content-Type so Django parses request.POST
+    if (body instanceof URLSearchParams) {
+        headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+    }
+    let opts = { method, headers };
+    if (method === 'GET') {
+        const qs = body.toString();
+        if (qs) fetchUrl += (url.includes('?') ? '&' : '?') + qs;
+    } else {
+        opts.body = body;
+    }
+    try {
+        const res = await fetch(fetchUrl, opts);
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) { method === 'GET' ? (window.location = fetchUrl) : window.location.reload(); return; }
+        const data = await res.json();
+        if (data.status === 'success') {
+            showToast('success', data.message || 'Success');
+            if (data.replace_id && data.html) { const el = document.getElementById(data.replace_id); if (el) el.innerHTML = data.html; }
+            if (form.dataset.resetOnSuccess === 'true') form.reset();
+            if (form.dataset.afterSuccess === 'reload') setTimeout(() => location.reload(), 600);
+        } else {
+            showToast('error', data.message || 'An error occurred');
+        }
+    } catch { showToast('error', 'Network or server error'); }
+    finally { if (btn) { btn.disabled = false; btn.innerText = origText; } }
+});
+
+document.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-delete-url]');
+    if (!el) return;
+    e.preventDefault();
+    showConfirm('Delete item?', 'This action cannot be undone').then(async result => {
+        if (!result.isConfirmed) return;
+        try {
+            const res = await fetch(el.dataset.deleteUrl, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') } });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast('success', data.message || 'Deleted');
+                if (el.dataset.removeOnSuccess) { const rem = document.querySelector(el.dataset.removeOnSuccess); if (rem) rem.remove(); }
+                else setTimeout(() => location.reload(), 500);
+            } else { showToast('error', data.message || 'Delete failed'); }
+        } catch { showToast('error', 'Network or server error'); }
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    /* Full page center */
+    .delete-container {
+        height: 90vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Glass card */
+    .delete-card {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 40px;
+        width: 400px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        color: white;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    /* Title */
+    .delete-card h2 {
+        font-size: 28px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    /* Message */
+    .delete-card p {
+        font-size: 16px;
+        margin-bottom: 30px;
+        color: #e0e0e0;
+    }
+
+    .delete-card b {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    /* Buttons container */
+    .btn-group {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    /* Delete button */
+    .delete-btn {
+        background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .delete-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 20px rgba(255, 75, 43, 0.5);
+    }
+
+    /* Cancel button */
+    .cancel-btn {
+        background: rgba(255,255,255,0.2);
+        padding: 12px 20px;
+        border-radius: 10px;
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .cancel-btn:hover {
+        background: rgba(255,255,255,0.35);
+        transform: scale(1.05);
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="delete-container">
+    <div class="delete-card">
+        <h2>⚠️ Confirm Delete</h2>
+
+        <p>Are you sure you want to delete <br><b>{{ obj.name }}</b>?</p>
+
+        <form method="POST" class="ajax-form" data-after-success="reload">
+            {% csrf_token %}
+            <div class="btn-group">
+                <button type="submit" class="delete-btn">Yes, Delete</button>
+                <a href="{% url 'services' %}" class="cancel-btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
