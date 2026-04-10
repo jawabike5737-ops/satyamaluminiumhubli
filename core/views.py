@@ -1365,7 +1365,7 @@ def generate_reminder_pdf(request, order_id):
 
     s_company = ParagraphStyle(
         "Company", fontName=TNR_BOLD, fontSize=26, alignment=TA_CENTER,
-        textColor=_NAVY, leading=32, spaceAfter=2,
+        textColor=_WHITE2, leading=32, spaceAfter=2,
     )
     s_tagline2 = ParagraphStyle(
         "Tagline2", fontName=TNR_ITALIC, fontSize=10, alignment=TA_CENTER,
