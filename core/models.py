@@ -17,7 +17,7 @@ class Customer(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity = models.IntegerField()
+    quantity = models.DecimalField()
 
     def __str__(self):
         return self.name
@@ -93,7 +93,7 @@ class QuotationItem(models.Model):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
 
     description = models.CharField(max_length=255)
-    quantity = models.IntegerField()
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=50)
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
