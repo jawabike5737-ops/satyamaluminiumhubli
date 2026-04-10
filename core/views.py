@@ -719,7 +719,7 @@ def create_quotation(request):
             subtotal += total
             QuotationItem.objects.create(
                 quotation=quotation, description=desc,
-                quantity=int(qty), unit=unit, price=price, total=total
+                quantity=(qty), unit=unit, price=price, total=total
             )
 
         quotation.subtotal = subtotal
@@ -836,7 +836,7 @@ def edit_quotation(request, id):
             subtotal += total
             QuotationItem.objects.create(
                 quotation=q, description=desc,
-                quantity=int(qty_dec), unit=unit, price=price_dec, total=total
+                quantity=(qty_dec), unit=unit, price=price_dec, total=total
             )
 
         q.subtotal = subtotal
