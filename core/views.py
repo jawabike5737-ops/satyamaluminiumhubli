@@ -552,7 +552,7 @@ def get_measurements_json(request, cust_id):
             'custom_item_name': mi.custom_item_name,
             'description': mi.description,
             # FIX: was round(qty_val, 3) — now use Decimal quantize for exact rounding
-            'quantity': str(qty_val.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)),
+            'quantity': str(qty_val),
             'unit': mi.unit,
             'raw_quantity': str(raw_qty.normalize()),
             'price_per_unit': str(Decimal(str(mi.price_per_unit or '0'))),
