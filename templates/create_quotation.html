@@ -820,7 +820,7 @@ tbody tr:nth-child(n+4) { animation-delay: 0.20s; }
                                 <td>
                                     <textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)">{{ item.description }}</textarea>
                                 </td>
-                                <td><input name="quantity" value="{{ item.quantity }}" oninput="calculate()" placeholder="1"></td>
+                                <td><input type="number" name="quantity" step="0.001" min="0" value="{{ item.quantity }}" oninput="calculate()" placeholder="1"></td>
                                 <td>
                                     <select name="unit">
                                         <option {% if item.unit == 'Nos' %}selected{% endif %}>Nos</option>
@@ -834,7 +834,7 @@ tbody tr:nth-child(n+4) { animation-delay: 0.20s; }
                                         <option {% if item.unit == 'RFT' %}selected{% endif %}>RFT</option>
                                     </select>
                                 </td>
-                                <td><input name="price" value="{{ item.price }}" oninput="calculate()" placeholder="0.00"></td>
+                                <td><input type="number" name="price" step="0.01" min="0" value="{{ item.price }}" oninput="calculate()" placeholder="0.00"></td>
                                 <td class="rowTotal row-total-cell">₹ {{ item.total }}</td>
                                 <td style="text-align:center;">
                                     <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
@@ -850,7 +850,7 @@ tbody tr:nth-child(n+4) { animation-delay: 0.20s; }
                                         placeholder="Item description"
                                         oninput="autoResize(this)"></textarea>
                                 </td>
-                                <td><input name="quantity" value="1" oninput="calculate()" placeholder="1"></td>
+                                <td><input type="number" name="quantity" step="0.001" min="0" value="1" oninput="calculate()" placeholder="1"></td>
                                 <td>
                                     <select name="unit">
                                         <option>Nos</option><option>Sq Ft</option><option>Feet</option>
@@ -858,7 +858,7 @@ tbody tr:nth-child(n+4) { animation-delay: 0.20s; }
                                         <option>Sets</option><option>RFT</option>
                                     </select>
                                 </td>
-                                <td><input name="price" value="0" oninput="calculate()" placeholder="0.00"></td>
+                                <td><input type="number" name="price" step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00"></td>
                                 <td class="rowTotal row-total-cell">₹ 0.00</td>
                                 <td style="text-align:center;">
                                     <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
@@ -1220,9 +1220,9 @@ function addRow(){
         <td>
             <textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)"></textarea>
         </td>
-        <td><input name="quantity" value="1" oninput="calculate()" placeholder="1"></td>
+        <td><input type="number" name="quantity" step="0.001" min="0" value="1" oninput="calculate()" placeholder="1"></td>
         <td><select name="unit">${unitOptions('')}</select></td>
-        <td><input name="price" value="0" oninput="calculate()" placeholder="0.00"></td>
+        <td><input type="number" name="price" step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00"></td>
         <td class="rowTotal row-total-cell">₹ 0.00</td>
         <td style="text-align:center;">
             <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
@@ -1245,12 +1245,17 @@ function removeRow(btn){
 function calculate(){
     let subtotal = 0;
     document.querySelectorAll('#tableBody tr').forEach(r => {
-        const q = parseFloat(r.querySelector('[name="quantity"]')?.value) || 0;
-        const p = parseFloat(r.querySelector('[name="price"]')?.value) || 0;
+        const q_raw = (r.querySelector('[name="quantity"]')?.value || '').toString().trim().replace(',', '.');
+        const p_raw = (r.querySelector('[name="price"]')?.value || '').toString().trim().replace(',', '.');
+        const q_parsed = parseFloat(q_raw);
+        const p_parsed = parseFloat(p_raw);
+        const q = isNaN(q_parsed) ? 0 : q_parsed;
+        const p = isNaN(p_parsed) ? 0 : p_parsed;
         const t = q * p;
         const cell = r.querySelector('.rowTotal');
         if(cell) cell.innerText = '₹ ' + t.toFixed(2);
         subtotal += t;
+        try{ console.debug('calc row:', q_raw, '->', q, p_raw, '->', p); }catch(e){}
     });
 
     const withGst = document.querySelector('input[name="gst_type"]:checked')?.value === 'with_gst';
@@ -1286,9 +1291,9 @@ function insertRowFromMeasurement(desc, qty, unit, price){
         <td>
             <textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)">${desc}</textarea>
         </td>
-        <td><input name="quantity" value="${qty}" oninput="calculate()" placeholder="1"></td>
+        <td><input type="number" name="quantity" step="0.001" min="0" value="${qty}" oninput="calculate()" placeholder="1"></td>
         <td><select name="unit">${unitOptions(unit)}</select></td>
-        <td><input name="price" value="${price||0}" oninput="calculate()" placeholder="0.00"></td>
+        <td><input type="number" name="price" step="0.01" min="0" value="${price||0}" oninput="calculate()" placeholder="0.00"></td>
         <td class="rowTotal row-total-cell">₹ 0.00</td>
         <td style="text-align:center;">
             <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
