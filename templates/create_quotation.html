@@ -1264,8 +1264,10 @@ function calculate(){
     document.getElementById('cgstRow').style.display = withGst ? '' : 'none';
     document.getElementById('sgstRow').style.display = withGst ? '' : 'none';
 
-    // discount
-    let discount = parseFloat(document.getElementById('discount')?.value) || 0;
+    // discount (robust parsing)
+    const discount_raw = (document.getElementById('discount')?.value || '').toString().trim().replace(',', '.');
+    const discount_parsed = parseFloat(discount_raw);
+    let discount = isNaN(discount_parsed) ? 0 : discount_parsed;
     if(discount < 0) discount = 0;
     document.getElementById('discountDisplay').innerText = discount.toFixed(2);
     document.getElementById('discountRow').style.display = '';
