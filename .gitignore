@@ -1,0 +1,6 @@
+# local DB (do not commit)
+db.sqlite3
+
+# logs
+/logs/
+logs/
