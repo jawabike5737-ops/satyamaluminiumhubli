@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
-python manage.py makemigrations core
-python manage.py migrate --fake-initial
-python manage.py migrate
-
+# Do NOT run makemigrations on the server. Create migrations locally.
+python manage.py migrate --noinput
 python manage.py collectstatic --noinput
