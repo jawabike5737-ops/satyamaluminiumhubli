@@ -8,11 +8,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ========================
 # SECURITY
 # ========================
-SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY:
-    raise ImproperlyConfigured("SECRET_KEY is required. Set SECRET_KEY environment variable.")
+# Default to DEBUG=True for local development; production should set DEBUG='False'
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# SECRET_KEY: prefer env var, fallback to a safe dev key locally
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 # ALLOWED_HOSTS from env (comma separated). Default fallback as requested:
 allowed = os.environ.get('ALLOWED_HOSTS', '.onrender.com')
@@ -68,19 +68,26 @@ TEMPLATES = [
 WSGI_APPLICATION = "satyam_project.wsgi.application"
 
 # ========================
-# DATABASE (Supabase / Postgres only)
+# DATABASE (Supabase / Postgres recommended for production)
+# For local development, fall back to SQLite when DATABASE_URL is not set
 # ========================
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    raise ImproperlyConfigured("DATABASE_URL is required for Supabase connection.")
 
-DATABASES = {
-    'default': dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True
-    )
-}
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # ========================
 # PASSWORD VALIDATION
