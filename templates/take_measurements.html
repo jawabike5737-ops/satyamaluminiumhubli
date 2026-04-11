@@ -761,8 +761,8 @@ function addSub(btnOrCard){
         `;
         tbody.appendChild(tr);
         const h = tr.querySelector('.h'), w = tr.querySelector('.w'), q = tr.querySelector('.q');
-        tr.querySelector('.incr').addEventListener('click', ()=>{ q.value = Math.max(1, parseInt(q.value||0)+1); onRowChange(tr); });
-        tr.querySelector('.decr').addEventListener('click', ()=>{ q.value = Math.max(1, parseInt(q.value||0)-1); onRowChange(tr); });
+        tr.querySelector('.incr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) + 1); onRowChange(tr); });
+        tr.querySelector('.decr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(tr); });
         [h,w,q].forEach(el=> el.addEventListener('input', ()=> onRowChange(tr)));
     } else if(type==='length'){
         tr.innerHTML = `
@@ -772,8 +772,8 @@ function addSub(btnOrCard){
         `;
         tbody.appendChild(tr);
         const l = tr.querySelector('.length'), q = tr.querySelector('.q');
-        tr.querySelector('.incr').addEventListener('click', ()=>{ q.value = Math.max(1, parseInt(q.value||0)+1); onRowChange(tr); });
-        tr.querySelector('.decr').addEventListener('click', ()=>{ q.value = Math.max(1, parseInt(q.value||0)-1); onRowChange(tr); });
+        tr.querySelector('.incr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) + 1); onRowChange(tr); });
+        tr.querySelector('.decr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(tr); });
         [l,q].forEach(el=> el && el.addEventListener('input', ()=> onRowChange(tr)));
     } else {
         tr.innerHTML = `
@@ -782,8 +782,8 @@ function addSub(btnOrCard){
         `;
         tbody.appendChild(tr);
         const q = tr.querySelector('.q');
-        tr.querySelector('.incr').addEventListener('click', ()=>{ q.value = Math.max(1, parseInt(q.value||0)+1); onRowChange(tr); });
-        tr.querySelector('.decr').addEventListener('click', ()=>{ q.value = Math.max(1, parseInt(q.value||0)-1); onRowChange(tr); });
+        tr.querySelector('.incr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) + 1); onRowChange(tr); });
+        tr.querySelector('.decr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(tr); });
         q.addEventListener('input', ()=> onRowChange(tr));
     }
     computeTotals();
@@ -794,8 +794,8 @@ function confirmRemoveRow(btn){ if(!confirm('Remove this dimension row?')) retur
 function dupSub(btn){ 
     const tr = btn.closest('tr'); const card = btn.closest('.item-card'); const tbody = card.querySelector('.subbody'); const clone = tr.cloneNode(true); tbody.insertBefore(clone, tr.nextSibling); 
     clone.querySelectorAll('input').forEach(i=> i.addEventListener('input', ()=> onRowChange(clone)));
-    clone.querySelectorAll('.incr').forEach(b=> b.addEventListener('click', ()=> { const q=clone.querySelector('.q'); q.value=parseInt(q.value||0)+1; onRowChange(clone); }));
-    clone.querySelectorAll('.decr').forEach(b=> b.addEventListener('click', ()=> { const q=clone.querySelector('.q'); q.value=Math.max(1, parseInt(q.value||0)-1); onRowChange(clone); }));
+    clone.querySelectorAll('.incr').forEach(b=> b.addEventListener('click', ()=> { const q=clone.querySelector('.q'); const cur = parseFloat(q.value||0); q.value = (isNaN(cur)?0:cur) + 1; onRowChange(clone); }));
+    clone.querySelectorAll('.decr').forEach(b=> b.addEventListener('click', ()=> { const q=clone.querySelector('.q'); const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(clone); }));
     computeTotals(); 
 }
 
@@ -804,7 +804,7 @@ function duplicateRow(btn){ const card = btn.closest('.item-card'); const last =
 function onRowChange(tr){
     const card = tr.closest('.item-card');
     const type = card.querySelector('.itype').value;
-    const qEl = tr.querySelector('.q'); let q = qEl ? Math.max(1, parseInt(qEl.value||0)) : 1; if(qEl) qEl.value=q;
+    const qEl = tr.querySelector('.q'); let q = 1; if(qEl){ const qp = parseFloat(qEl.value||0); q = Math.max(1, isNaN(qp)?1:qp); qEl.value = q; }
 
     if(type==='size'){
         const h = parseFloat(tr.querySelector('.h').value)||0; const w = parseFloat(tr.querySelector('.w').value)||0;
@@ -814,7 +814,7 @@ function onRowChange(tr){
                 if(r===tr) continue;
                 const hh = r.querySelector('.h') ? parseFloat(r.querySelector('.h').value||0) : null;
                 const ww = r.querySelector('.w') ? parseFloat(r.querySelector('.w').value||0) : null;
-                if(hh!==null && ww!==null && hh.toFixed(3)+ 'x' + ww.toFixed(3) === key){ const qf = r.querySelector('.q'); qf.value = Math.max(1, parseInt(qf.value||0) + q); tr.remove(); updateArea(r); computeTotals(); return; }
+                if(hh!==null && ww!==null && hh.toFixed(3)+ 'x' + ww.toFixed(3) === key){ const qf = r.querySelector('.q'); const qfp = parseFloat(qf.value||0); qf.value = Math.max(1, (isNaN(qfp)?0:qfp) + q); tr.remove(); updateArea(r); computeTotals(); return; }
             }
         }
         updateArea(tr);
@@ -825,7 +825,7 @@ function onRowChange(tr){
     computeTotals();
 }
 
-function updateArea(tr){ const h = parseFloat(tr.querySelector('.h').value||0); const w = parseFloat(tr.querySelector('.w').value||0); const q = parseInt(tr.querySelector('.q').value||0)||1; if(h<=0||w<=0){ tr.querySelector('.area').innerText = '0'; return; } tr.querySelector('.area').innerText = (h*w*q).toFixed(3); }
+function updateArea(tr){ const h = parseFloat(tr.querySelector('.h').value||0); const w = parseFloat(tr.querySelector('.w').value||0); const qv = parseFloat(tr.querySelector('.q').value||0); const q = (isNaN(qv)||qv<1) ? 1 : qv; if(h<=0||w<=0){ tr.querySelector('.area').innerText = '0'; return; } tr.querySelector('.area').innerText = (h*w*q).toFixed(3); }
 
 function computeTotals(){ 
     let totalQty=0, totalArea=0, grandTotal=0; 
@@ -834,7 +834,7 @@ function computeTotals(){
         const price = parseFloat((card.querySelector('.price')||{value:0}).value)||0; 
         let itemTotal = 0; 
         card.querySelectorAll('.subbody tr').forEach(tr=>{ 
-            const q = parseInt((tr.querySelector('.q')||{value:1}).value||0)||0; 
+            const qv = parseFloat((tr.querySelector('.q')||{value:1}).value||0); const q = (isNaN(qv)?0:qv);
             totalQty += q; 
             if(type==='size'){ 
                 const a = parseFloat((tr.querySelector('.area')||{innerText:0}).innerText)||0; 
@@ -869,7 +869,7 @@ function saveMeasurements(){
         const price_per_unit = parseFloat((card.querySelector('.price')||{value:0}).value)||0;
         const subs = [];
         card.querySelectorAll('.subbody tr').forEach(tr=>{
-            const q = parseInt((tr.querySelector('.q')||{value:1}).value||0) || 1;
+            const qv = parseFloat((tr.querySelector('.q')||{value:1}).value||0); const q = (isNaN(qv)?1:qv);
             if(item_type==='size'){
                 const h = tr.querySelector('.h').value; const w = tr.querySelector('.w').value;
                 if(!h||!w||parseFloat(h)<=0||parseFloat(w)<=0) valid=false;
