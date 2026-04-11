@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import re
 import os
 from datetime import datetime
@@ -37,8 +37,11 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 # ================= CURRENCY FORMATTING =================
 def format_inr(number):
-    """Format number in Indian numbering system (e.g., 1,01,745.00)"""
-    number = float(number)
+    """Format number in Indian numbering system (e.g., 1,01,745.00)
+    Uses Decimal throughout to avoid float precision loss.
+    """
+    # FIX: was float(number) — now uses Decimal to avoid precision loss
+    number = Decimal(str(number)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     s = f"{number:.2f}"
     parts = s.split(".")
     integer = parts[0]
@@ -258,11 +261,11 @@ def _info_cell(label, value, data_font, data_bold):
 
 
 def _fmt(amount, rupee):
-    """Return '₹ 1,23,456.00' style string."""
+    """Return '₹ 1,23,456.00' style string using Decimal for precision."""
     try:
-        val = Decimal(str(amount)).quantize(Decimal('0.01'))
-        s = f"{val:,.2f}"
-        return f"{rupee} {s}"
+        # FIX: use Decimal throughout — no float conversion
+        val = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return f"{rupee} {format_inr(val)}"
     except Exception:
         return f"{rupee} {amount}"
 
@@ -453,47 +456,43 @@ def save_measurements(request, cust_id):
             total_price = Decimal('0')
 
             for sub in item.get('subs', []):
+                # FIX: all dimension parsing now goes through Decimal(str(...))
+                # never float() — avoids precision loss on 28.75, 29.5 etc.
                 try:
-                    h_val = float(sub.get('height')) if sub.get('height') not in (None, '') else None
-                except Exception:
-                    h_val = None
-                try:
-                    w_val = float(sub.get('width')) if sub.get('width') not in (None, '') else None
-                except Exception:
-                    w_val = None
-                try:
-                    l_val = float(sub.get('length')) if sub.get('length') not in (None, '') else None
-                except Exception:
-                    l_val = None
-                try:
-                    qty = int(sub.get('quantity') or sub.get('qty') or 1)
-                except Exception:
-                    qty = 1
-
-                try:
-                    h_dec = Decimal(str(h_val)) if h_val is not None else None
+                    h_val = sub.get('height')
+                    h_dec = Decimal(str(h_val)) if h_val not in (None, '', 'None') else None
                 except Exception:
                     h_dec = None
                 try:
-                    w_dec = Decimal(str(w_val)) if w_val is not None else None
+                    w_val = sub.get('width')
+                    w_dec = Decimal(str(w_val)) if w_val not in (None, '', 'None') else None
                 except Exception:
                     w_dec = None
                 try:
-                    l_dec = Decimal(str(l_val)) if l_val is not None else None
+                    l_val = sub.get('length')
+                    l_dec = Decimal(str(l_val)) if l_val not in (None, '', 'None') else None
                 except Exception:
                     l_dec = None
 
+                # FIX: quantity stays Decimal — int() would drop fractional quantities
+                try:
+                    qty_raw = sub.get('quantity') or sub.get('qty') or '1'
+                    qty = Decimal(str(qty_raw))
+                except Exception:
+                    qty = Decimal('1')
+
                 si = MeasurementSubItem.objects.create(
-                    item=mi, height=h_dec, width=w_dec, length=l_dec, quantity=qty
+                    item=mi, height=h_dec, width=w_dec, length=l_dec,
+                    quantity=qty
                 )
 
                 try:
                     if si.height is not None and si.width is not None:
-                        area_val = si.height * si.width * Decimal(si.quantity)
+                        area_val = Decimal(str(si.height)) * Decimal(str(si.width)) * Decimal(str(si.quantity))
                     elif si.length is not None:
-                        area_val = si.length * Decimal(si.quantity)
+                        area_val = Decimal(str(si.length)) * Decimal(str(si.quantity))
                     else:
-                        area_val = Decimal(si.quantity)
+                        area_val = Decimal(str(si.quantity))
                 except Exception:
                     area_val = Decimal('0')
 
@@ -517,29 +516,32 @@ def get_measurements_json(request, cust_id):
         subs = []
         for s in mi.subitems.all():
             subs.append({
-                'height': float(s.height) if s.height is not None else None,
-                'width': float(s.width) if s.width is not None else None,
-                'length': float(s.length) if s.length is not None else None,
-                'quantity': int(s.quantity)
+                # FIX: use Decimal(str(...)) then convert to str for JSON
+                # to avoid float repr issues like 28.750000000000004
+                'height': str(Decimal(str(s.height)).normalize()) if s.height is not None else None,
+                'width': str(Decimal(str(s.width)).normalize()) if s.width is not None else None,
+                'length': str(Decimal(str(s.length)).normalize()) if s.length is not None else None,
+                'quantity': str(Decimal(str(s.quantity)).normalize()),
             })
 
-        qty_val = 0.0
-        raw_qty = 0
+        # FIX: accumulate with Decimal — was float + int mix causing precision loss
+        qty_val = Decimal('0')
+        raw_qty = Decimal('0')
         for s in mi.subitems.all():
             try:
                 if mi.item_type == MeasurementItem.SIZE:
                     if s.height is None or s.width is None:
                         continue
-                    qty_val += float(s.height) * float(s.width) * int(s.quantity)
-                    raw_qty += int(s.quantity)
+                    qty_val += Decimal(str(s.height)) * Decimal(str(s.width)) * Decimal(str(s.quantity))
+                    raw_qty += Decimal(str(s.quantity))
                 elif mi.item_type == MeasurementItem.LENGTH:
                     if s.length is None:
                         continue
-                    qty_val += float(s.length) * int(s.quantity)
-                    raw_qty += int(s.quantity)
+                    qty_val += Decimal(str(s.length)) * Decimal(str(s.quantity))
+                    raw_qty += Decimal(str(s.quantity))
                 else:
-                    raw_qty += int(s.quantity)
-                    qty_val += int(s.quantity)
+                    raw_qty += Decimal(str(s.quantity))
+                    qty_val += Decimal(str(s.quantity))
             except Exception:
                 continue
 
@@ -549,11 +551,12 @@ def get_measurements_json(request, cust_id):
             'service_name': mi.service.name if mi.service else None,
             'custom_item_name': mi.custom_item_name,
             'description': mi.description,
-            'quantity': round(qty_val, 3) if isinstance(qty_val, float) else qty_val,
+            # FIX: was round(qty_val, 3) — now use Decimal quantize for exact rounding
+            'quantity': str(qty_val.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)),
             'unit': mi.unit,
-            'raw_quantity': raw_qty,
-            'price_per_unit': float(mi.price_per_unit or 0),
-            'total_price': float(mi.total_price or 0),
+            'raw_quantity': str(raw_qty.normalize()),
+            'price_per_unit': str(Decimal(str(mi.price_per_unit or '0'))),
+            'total_price': str(Decimal(str(mi.total_price or '0'))),
             'subs': subs
         })
 
@@ -574,7 +577,8 @@ def services_api(request):
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
     qs = Service.objects.all().order_by('name')
-    out = [{'id': s.id, 'name': s.name, 'description': s.name, 'price': float(s.price)}
+    out = [{'id': s.id, 'name': s.name, 'description': s.name,
+            'price': str(Decimal(str(s.price)))}
            for s in qs]
     return JsonResponse(out, safe=False)
 
@@ -603,7 +607,7 @@ def create_service_api(request):
     if existing:
         return JsonResponse({
             'id': existing.id, 'name': existing.name,
-            'description': existing.name, 'price': float(existing.price)
+            'description': existing.name, 'price': str(Decimal(str(existing.price)))
         })
 
     try:
@@ -612,7 +616,8 @@ def create_service_api(request):
         price = Decimal('0')
 
     s = Service.objects.create(name=name, description=description, price=price)
-    return JsonResponse({'id': s.id, 'name': s.name, 'description': s.name, 'price': float(s.price)})
+    return JsonResponse({'id': s.id, 'name': s.name, 'description': s.name,
+                         'price': str(Decimal(str(s.price)))})
 
 
 @login_required(login_url='/login/')
@@ -710,8 +715,8 @@ def create_quotation(request):
             if not desc or not qty or not price:
                 continue
             try:
-                qty = Decimal(qty)
-                price = Decimal(price)
+                qty = Decimal(str(qty))
+                price = Decimal(str(price))
             except Exception:
                 continue
 
@@ -719,7 +724,7 @@ def create_quotation(request):
             subtotal += total
             QuotationItem.objects.create(
                 quotation=quotation, description=desc,
-                quantity=(qty), unit=unit, price=price, total=total
+                quantity=qty, unit=unit, price=price, total=total
             )
 
         quotation.subtotal = subtotal
@@ -827,8 +832,8 @@ def edit_quotation(request, id):
             if not desc and not qty and not price:
                 continue
             try:
-                qty_dec = Decimal(qty)
-                price_dec = Decimal(price)
+                qty_dec = Decimal(str(qty))
+                price_dec = Decimal(str(price))
             except (InvalidOperation, TypeError):
                 continue
 
@@ -836,7 +841,7 @@ def edit_quotation(request, id):
             subtotal += total
             QuotationItem.objects.create(
                 quotation=q, description=desc,
-                quantity=(qty_dec), unit=unit, price=price_dec, total=total
+                quantity=qty_dec, unit=unit, price=price_dec, total=total
             )
 
         q.subtotal = subtotal
@@ -1010,7 +1015,8 @@ def quotation_pdf(request, id):
         return Paragraph(text, style)
 
     def format_inr_local(n):
-        n = float(n)
+        # FIX: was float(n) — now uses Decimal to avoid precision loss
+        n = Decimal(str(n)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         s = f"{n:.2f}"
         integer, dec = s.split(".")
         if len(integer) > 3:
@@ -1145,11 +1151,12 @@ def quotation_pdf(request, id):
 
     subtotal = Decimal("0")
     for i, item in enumerate(items, 1):
-        subtotal += Decimal(item.total)
+        subtotal += Decimal(str(item.total))
         tbl_data.append([
             P(str(i), s_td_c),
             P(item.description, s_td),
-            P(f"{item.quantity}\u00A0{item.unit}", s_td_c),
+            # FIX: format quantity with Decimal to avoid display rounding
+            P(f"{Decimal(str(item.quantity)).normalize()}\u00A0{item.unit}", s_td_c),
             P(format_inr_local(item.price), s_td_r),
             P(format_inr_local(item.total), s_td_r),
         ])
@@ -1200,7 +1207,7 @@ def quotation_pdf(request, id):
         cgst = subtotal * Decimal("0.09")
         sgst = subtotal * Decimal("0.09")
 
-    discount = getattr(q, 'discount', Decimal('0')) or Decimal('0')
+    discount = Decimal(str(getattr(q, 'discount', Decimal('0')) or Decimal('0')))
     grand_total = (subtotal + cgst + sgst - discount) if q.gst_type == "with_gst" \
                   else (subtotal - discount)
     grand_total = max(grand_total, Decimal('0'))
@@ -1316,9 +1323,10 @@ def generate_reminder_pdf(request, order_id):
     customer = order.customer
     payments = OrderPayment.objects.filter(order=order).order_by('date')
 
-    payments_sum = sum((p.amount for p in payments), Decimal('0'))
-    total_paid   = order.advance_paid + payments_sum
-    remaining    = order.total_amount - total_paid
+    # FIX: sum stays Decimal — no float conversion
+    payments_sum = sum((Decimal(str(p.amount)) for p in payments), Decimal('0'))
+    total_paid   = Decimal(str(order.advance_paid)) + payments_sum
+    remaining    = Decimal(str(order.total_amount)) - total_paid
 
     # Colour palette
     _NAVY      = colors.HexColor("#0D1B2A")
@@ -1344,7 +1352,7 @@ def generate_reminder_pdf(request, order_id):
         try:
             return f"{rupee_symbol} {format_inr(amount)}"
         except Exception:
-            return f"{rupee_symbol} {Decimal(amount).quantize(Decimal('0.01'))}"
+            return f"{rupee_symbol} {Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}"
 
     class GoldRule(Flowable):
         def __init__(self, width=515, thickness=1.2, color=_RULE, top_gap=0, bot_gap=0):
@@ -1646,7 +1654,7 @@ def convert_to_order(request, q_id):
     if request.method == "POST":
         advance_str = request.POST.get('advance')
         try:
-            advance = Decimal(advance_str or '0')
+            advance = Decimal(str(advance_str or '0'))
         except InvalidOperation:
             return render(request, 'convert_order.html', {
                 'q': q, 'error': 'Invalid amount format'
@@ -1656,7 +1664,7 @@ def convert_to_order(request, q_id):
 
         if advance < 0:
             return render(request, 'convert_order.html', {'q': q, 'error': 'Advance cannot be negative'})
-        if advance > Decimal(total):
+        if advance > Decimal(str(total)):
             return render(request, 'convert_order.html', {'q': q, 'error': 'Advance cannot exceed total quotation amount'})
 
         order = Order.objects.create(
@@ -1676,7 +1684,7 @@ def add_order_payment(request, order_id):
     if request.method == "POST":
         amount_str = request.POST.get('amount')
         try:
-            amount = Decimal(amount_str or '0')
+            amount = Decimal(str(amount_str or '0'))
         except InvalidOperation:
             return render(request, 'add_payment.html', {
                 'order': order, 'error': 'Invalid amount format'
@@ -1711,9 +1719,9 @@ def add_employee(request):
             })
 
         try:
-            daily_salary    = Decimal(salary_str)
-            half_day_salary = Decimal(half_str)
-            overtime_salary = Decimal(overtime_str) if (overtime_str not in (None, '', 'None')) else None
+            daily_salary    = Decimal(str(salary_str))
+            half_day_salary = Decimal(str(half_str))
+            overtime_salary = Decimal(str(overtime_str)) if (overtime_str not in (None, '', 'None')) else None
         except Exception:
             return render(request, 'add_employee.html', {'error': 'Invalid salary format'})
 
@@ -1745,9 +1753,9 @@ def edit_employee(request, emp_id):
         overtime_str = request.POST.get('overtime_salary')
 
         try:
-            emp.daily_salary    = Decimal(salary_str)
-            emp.half_day_salary = Decimal(half_str)
-            emp.overtime_salary = Decimal(overtime_str) if (overtime_str not in (None, '', 'None')) else None
+            emp.daily_salary    = Decimal(str(salary_str))
+            emp.half_day_salary = Decimal(str(half_str))
+            emp.overtime_salary = Decimal(str(overtime_str)) if (overtime_str not in (None, '', 'None')) else None
         except Exception:
             return render(request, 'edit_employee.html', {'emp': emp, 'error': 'Invalid salary format'})
 
@@ -1818,18 +1826,18 @@ def salary(request, emp_id):
 
     for r in attendance:
         if r.status == 'full':
-            full_total += emp.daily_salary
+            full_total += Decimal(str(emp.daily_salary))
         elif r.status == 'half':
-            half_total += emp.half_day_salary
+            half_total += Decimal(str(emp.half_day_salary))
 
         try:
             if getattr(r, 'overtime', False) and emp.overtime_salary is not None:
-                overtime_total += emp.overtime_salary
+                overtime_total += Decimal(str(emp.overtime_salary))
         except Exception:
             pass
 
     total_earned = full_total + half_total + overtime_total
-    total_paid   = sum((p.amount_paid for p in payments), Decimal('0'))
+    total_paid   = sum((Decimal(str(p.amount_paid)) for p in payments), Decimal('0'))
     remaining    = total_earned - total_paid
 
     return render(request, 'salary.html', {
@@ -1854,23 +1862,23 @@ def pay_salary(request, emp_id):
 
     for r in attendance:
         if r.status == 'full':
-            full_total += emp.daily_salary
+            full_total += Decimal(str(emp.daily_salary))
         elif r.status == 'half':
-            half_total += emp.half_day_salary
+            half_total += Decimal(str(emp.half_day_salary))
         try:
             if getattr(r, 'overtime', False) and emp.overtime_salary is not None:
-                overtime_total += emp.overtime_salary
+                overtime_total += Decimal(str(emp.overtime_salary))
         except Exception:
             pass
 
     total_earned = full_total + half_total + overtime_total
-    total_paid   = sum((p.amount_paid for p in payments), Decimal('0'))
+    total_paid   = sum((Decimal(str(p.amount_paid)) for p in payments), Decimal('0'))
     remaining    = total_earned - total_paid
 
     if request.method == "POST":
         amount_str = request.POST.get('amount')
         try:
-            amount = Decimal(amount_str)
+            amount = Decimal(str(amount_str))
         except Exception:
             return render(request, 'pay_salary.html', {
                 'emp': emp, 'error': 'Invalid amount format',
@@ -2061,14 +2069,16 @@ def salary_pdf(request, emp_id):
     attendance = Attendance.objects.filter(employee=emp).order_by('date')
     payments   = Payment.objects.filter(employee=emp).order_by('date')
 
+    # FIX: all salary arithmetic uses Decimal — no float division
     total_earned = Decimal('0')
     for r in attendance:
         if r.status == 'full':
-            total_earned += emp.daily_salary
+            total_earned += Decimal(str(emp.daily_salary))
         elif r.status == 'half':
-            total_earned += emp.daily_salary / 2
+            # FIX: was emp.daily_salary / 2 which produces float if daily_salary is Decimal
+            total_earned += Decimal(str(emp.daily_salary)) / Decimal('2')
 
-    total_paid = sum((p.amount_paid for p in payments), Decimal('0'))
+    total_paid = sum((Decimal(str(p.amount_paid)) for p in payments), Decimal('0'))
     remaining  = total_earned - total_paid
 
     response = HttpResponse(content_type='application/pdf')
@@ -2159,17 +2169,23 @@ def salary_pdf(request, emp_id):
         date_str = r.date.strftime('%d %b %Y') if hasattr(r.date, 'strftime') else str(r.date)
         day_str  = r.date.strftime('%A')        if hasattr(r.date, 'strftime') else ''
         if r.status == 'full':
-            amt, desc = emp.daily_salary, 'Full Day'
+            # FIX: keep as Decimal — no float conversion
+            amt  = Decimal(str(emp.daily_salary))
+            desc = 'Full Day'
         elif r.status == 'half':
-            amt, desc = emp.daily_salary / 2, 'Half Day'
+            # FIX: Decimal division — was emp.daily_salary / 2 which can produce float
+            amt  = Decimal(str(emp.daily_salary)) / Decimal('2')
+            desc = 'Half Day'
         else:
             amt, desc = Decimal('0'), 'Absent'
-        rows_data.append([date_str, day_str, 'Earned', desc, f"{amt:,.2f}"])
+        rows_data.append([date_str, day_str, 'Earned', desc,
+                           f"{amt.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP):,}"])
 
     for p in payments:
         date_str = p.date.strftime('%d %b %Y') if hasattr(p.date, 'strftime') else str(p.date)
         day_str  = p.date.strftime('%A')        if hasattr(p.date, 'strftime') else ''
-        rows_data.append([date_str, day_str, 'Paid', 'Salary Paid', f"{p.amount_paid:,.2f}"])
+        amt = Decimal(str(p.amount_paid)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        rows_data.append([date_str, day_str, 'Paid', 'Salary Paid', f"{amt:,}"])
 
     ledger_data = [hdr] + rows_data
     l_style = TableStyle([
