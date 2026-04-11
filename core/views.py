@@ -42,7 +42,7 @@ def format_inr(number):
     No rounding applied — the value is formatted as-is.
     """
     number = Decimal(str(number))
-    s = f"{number:.2f}"
+    s = format(number, 'f')
     parts = s.split(".")
     integer = parts[0]
     decimal = parts[1]
@@ -688,8 +688,8 @@ def create_quotation(request):
             if not desc or not qty or not price:
                 continue
             try:
-                qty = Decimal(str(qty))
-                price = Decimal(str(price))
+                qty = safe_decimal(qty)
+                price = safe_decimal(price)
             except Exception:
                 continue
 
@@ -803,8 +803,8 @@ def edit_quotation(request, id):
             if not desc and not qty and not price:
                 continue
             try:
-                qty_dec = Decimal(str(qty))
-                price_dec = Decimal(str(price))
+                qty_dec = safe_decimal(qty)
+                price_dec = safe_decimal(price)
             except (InvalidOperation, TypeError):
                 continue
 
