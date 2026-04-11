@@ -39,9 +39,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 def format_inr(number):
     """Format number in Indian numbering system (e.g., 1,01,745.00)
     Uses Decimal throughout to avoid float precision loss.
+    No rounding applied — the value is formatted as-is.
     """
-    # FIX: was float(number) — now uses Decimal to avoid precision loss
-    number = Decimal(str(number)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    number = Decimal(str(number))
     s = f"{number:.2f}"
     parts = s.split(".")
     integer = parts[0]
@@ -65,26 +65,17 @@ def format_inr(number):
 
 # ================= FONT / LOGO HELPERS =================
 def _load_unicode_font():
-    """Register and return DejaVuSans font for rupee rendering.
-
-    Uses settings.BASE_DIR to locate the font at <BASE_DIR>/fonts/DejaVuSans.ttf.
-    Raises FileNotFoundError with a helpful message if the font file is missing.
-    Ensures the font is registered only once.
-    Returns (font_name, '₹').
-    """
+    """Register and return DejaVuSans font for rupee rendering."""
     font_name = 'DejaVuSans'
-    # try project-local fonts folder first
     candidates = []
     try:
         candidates.append(os.path.join(settings.BASE_DIR, 'fonts', 'DejaVuSans.ttf'))
     except Exception:
         pass
-    # common linux locations
     candidates += [
         '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
     ]
-    # windows fonts folder
     windir = os.environ.get('WINDIR')
     if windir:
         candidates.append(os.path.join(windir, 'Fonts', 'DejaVuSans.ttf'))
@@ -104,28 +95,20 @@ def _load_unicode_font():
         except Exception:
             pass
 
-    # fallback to built-in Helvetica if DejaVu is not available
     return 'Helvetica', 'Rs.'
 
 
 def _register_times_new_roman():
-    """Attempt to register Times New Roman cross-platform.
-
-    Returns the registered font name on success, or None if not available.
-    Falls back silently to DejaVuSans when not found.
-    """
+    """Attempt to register Times New Roman cross-platform."""
     candidates = []
-    # Windows
     windir = os.environ.get('WINDIR')
     if windir:
         candidates += [os.path.join(windir, 'Fonts', x) for x in (
             'Times New Roman.ttf', 'TimesNewRoman.ttf', 'times.ttf', 'timesbd.ttf')]
-    # macOS
     candidates += [
         '/Library/Fonts/Times New Roman.ttf',
         '/System/Library/Fonts/Supplemental/Times New Roman.ttf'
     ]
-    # Common Linux locations
     candidates += [
         '/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf',
         '/usr/share/fonts/truetype/freefont/FreeSerif.ttf',
@@ -145,12 +128,7 @@ def _register_times_new_roman():
 
 
 def _load_logo_image(width=100, height=100, circular=False):
-    """Locate logo.png using staticfiles finders or fallback to <BASE_DIR>/static/logo.png.
-
-    Returns a ReportLab Image object sized to (width, height) or a Spacer if not found.
-    If circular=True, tries to apply a circular crop using Pillow; if Pillow unavailable or
-    fails, returns the rectangular image gracefully.
-    """
+    """Locate logo.png and return a ReportLab Image object."""
     from reportlab.platypus import Image as RLImage, Spacer as RLSpacer
 
     logo_name = 'logo.png'
@@ -261,10 +239,9 @@ def _info_cell(label, value, data_font, data_bold):
 
 
 def _fmt(amount, rupee):
-    """Return '₹ 1,23,456.00' style string using Decimal for precision."""
+    """Return '₹ 1,23,456.00' style string using Decimal — no rounding."""
     try:
-        # FIX: use Decimal throughout — no float conversion
-        val = Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        val = Decimal(str(amount))
         return f"{rupee} {format_inr(val)}"
     except Exception:
         return f"{rupee} {amount}"
@@ -456,8 +433,6 @@ def save_measurements(request, cust_id):
             total_price = Decimal('0')
 
             for sub in item.get('subs', []):
-                # FIX: all dimension parsing now goes through Decimal(str(...))
-                # never float() — avoids precision loss on 28.75, 29.5 etc.
                 try:
                     h_val = sub.get('height')
                     h_dec = Decimal(str(h_val)) if h_val not in (None, '', 'None') else None
@@ -474,7 +449,6 @@ def save_measurements(request, cust_id):
                 except Exception:
                     l_dec = None
 
-                # FIX: quantity stays Decimal — int() would drop fractional quantities
                 try:
                     qty_raw = sub.get('quantity') or sub.get('qty') or '1'
                     qty = Decimal(str(qty_raw))
@@ -516,15 +490,14 @@ def get_measurements_json(request, cust_id):
         subs = []
         for s in mi.subitems.all():
             subs.append({
-                # FIX: use Decimal(str(...)) then convert to str for JSON
-                # to avoid float repr issues like 28.750000000000004
-                'height': str(Decimal(str(s.height)).normalize()) if s.height is not None else None,
-                'width': str(Decimal(str(s.width)).normalize()) if s.width is not None else None,
-                'length': str(Decimal(str(s.length)).normalize()) if s.length is not None else None,
-                'quantity': str(Decimal(str(s.quantity)).normalize()),
+                # Return exact string representation — no normalize(), no rounding
+                'height':   str(Decimal(str(s.height)))   if s.height   is not None else None,
+                'width':    str(Decimal(str(s.width)))    if s.width    is not None else None,
+                'length':   str(Decimal(str(s.length)))   if s.length   is not None else None,
+                'quantity': str(Decimal(str(s.quantity))),
             })
 
-        # FIX: accumulate with Decimal — was float + int mix causing precision loss
+        # Accumulate totals with Decimal — no normalize(), preserves trailing zeros
         qty_val = Decimal('0')
         raw_qty = Decimal('0')
         for s in mi.subitems.all():
@@ -547,16 +520,16 @@ def get_measurements_json(request, cust_id):
 
         out.append({
             'measurement_item_id': mi.id,
-            'service_id': mi.service.id if mi.service else None,
-            'service_name': mi.service.name if mi.service else None,
-            'custom_item_name': mi.custom_item_name,
-            'description': mi.description,
-            # FIX: was round(qty_val, 3) — now use Decimal quantize for exact rounding
-            'quantity': str(qty_val),
-            'unit': mi.unit,
-            'raw_quantity': str(raw_qty.normalize()),
+            'service_id':          mi.service.id   if mi.service else None,
+            'service_name':        mi.service.name if mi.service else None,
+            'custom_item_name':    mi.custom_item_name,
+            'description':         mi.description,
+            # Exact decimal strings — no normalize(), no quantize()
+            'quantity':      str(qty_val),
+            'unit':          mi.unit,
+            'raw_quantity':  str(raw_qty),
             'price_per_unit': str(Decimal(str(mi.price_per_unit or '0'))),
-            'total_price': str(Decimal(str(mi.total_price or '0'))),
+            'total_price':    str(Decimal(str(mi.total_price    or '0'))),
             'subs': subs
         })
 
@@ -747,7 +720,6 @@ def create_quotation(request):
 
         print("DEBUG TERMS:", selected_terms)
 
-        # delete old terms (VERY IMPORTANT)
         quotation.quotation_terms.all().delete()
 
         for term_id in selected_terms:
@@ -785,7 +757,6 @@ def create_quotation(request):
 def view_quotation(request, id):
     q = get_object_or_404(Quotation, id=id)
     items = QuotationItem.objects.filter(quotation=q)
-    # Pass QuotationTerm queryset so template/PDF can access `qt.term` and `qt.order`
     ordered_terms = q.quotation_terms.select_related('term').order_by('order', 'id')
 
     return render(request, 'view_quotation.html', {
@@ -865,7 +836,6 @@ def edit_quotation(request, id):
 
         print("DEBUG TERMS:", selected_terms)
 
-        # delete old terms (VERY IMPORTANT)
         q.quotation_terms.all().delete()
 
         for term_id in selected_terms:
@@ -890,7 +860,6 @@ def edit_quotation(request, id):
             return JsonResponse({'status': 'success', 'message': 'Quotation updated', 'quotation_id': q.id})
         return redirect('create_quotation')
 
-    # Attach selected_order attribute to TermCondition objects for template prefill
     term_orders_map = {qt.term_id: qt.order for qt in q.quotation_terms.all()}
     for t in terms_qs:
         try:
@@ -1015,8 +984,8 @@ def quotation_pdf(request, id):
         return Paragraph(text, style)
 
     def format_inr_local(n):
-        # FIX: was float(n) — now uses Decimal to avoid precision loss
-        n = Decimal(str(n)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # No rounding — format the exact Decimal value as given
+        n = Decimal(str(n))
         s = f"{n:.2f}"
         integer, dec = s.split(".")
         if len(integer) > 3:
@@ -1155,8 +1124,8 @@ def quotation_pdf(request, id):
         tbl_data.append([
             P(str(i), s_td_c),
             P(item.description, s_td),
-            # FIX: format quantity with Decimal to avoid display rounding
-            P(f"{Decimal(str(item.quantity)).normalize()}\u00A0{item.unit}", s_td_c),
+            # Exact quantity — no normalize(), no rounding
+            P(f"{Decimal(str(item.quantity))}\u00A0{item.unit}", s_td_c),
             P(format_inr_local(item.price), s_td_r),
             P(format_inr_local(item.total), s_td_r),
         ])
@@ -1323,7 +1292,6 @@ def generate_reminder_pdf(request, order_id):
     customer = order.customer
     payments = OrderPayment.objects.filter(order=order).order_by('date')
 
-    # FIX: sum stays Decimal — no float conversion
     payments_sum = sum((Decimal(str(p.amount)) for p in payments), Decimal('0'))
     total_paid   = Decimal(str(order.advance_paid)) + payments_sum
     remaining    = Decimal(str(order.total_amount)) - total_paid
@@ -1352,7 +1320,7 @@ def generate_reminder_pdf(request, order_id):
         try:
             return f"{rupee_symbol} {format_inr(amount)}"
         except Exception:
-            return f"{rupee_symbol} {Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}"
+            return f"{rupee_symbol} {Decimal(str(amount))}"
 
     class GoldRule(Flowable):
         def __init__(self, width=515, thickness=1.2, color=_RULE, top_gap=0, bot_gap=0):
@@ -1450,7 +1418,6 @@ def generate_reminder_pdf(request, order_id):
 
     elements = []
 
-    # Header block
     logo_img = _load_logo_image(width=0.85 * inch, height=0.85 * inch, circular=False)
     logo_img.hAlign = "CENTER"
 
@@ -1480,7 +1447,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(header_block)
     elements.append(Spacer(1, 20))
 
-    # Payment reminder title
     reminder_title = Paragraph(
         "<font name='Times-Bold' size='15' color='#0D1B2A'>PAYMENT REMINDER</font>",
         ParagraphStyle("BannerText", alignment=TA_CENTER, leading=20),
@@ -1504,7 +1470,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(banner)
     elements.append(Spacer(1, 20))
 
-    # Billed to / order details
     billed_label = Paragraph("BILLED TO", s_label)
     billed_name  = Paragraph(
         f"<font name='Times-Bold' size='12' color='#0D1B2A'>{clean_text(customer.name)}</font>",
@@ -1539,7 +1504,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(info_table)
     elements.append(Spacer(1, 22))
 
-    # Financial summary table
     elements.append(Paragraph("Financial Summary", s_section_title))
     elements.append(GoldRule(width=CONTENT_W, thickness=0.8, color=_RULE, top_gap=3, bot_gap=6))
 
@@ -1593,7 +1557,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(summary_table)
     elements.append(Spacer(1, 18))
 
-    # Amount due box
     due_left = Paragraph(
         "<font name='Times-Bold' size='13' color='#0D1B2A'>TOTAL AMOUNT DUE</font>"
         "<br/><font name='Helvetica' size='8' color='#9B1C1C'>"
@@ -1619,7 +1582,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(due_table)
     elements.append(Spacer(1, 26))
 
-    # Message
     elements.append(GoldRule(width=CONTENT_W, thickness=0.6, color=_RULE, top_gap=2, bot_gap=6))
     msg = (
         f"Dear <b>{clean_text(customer.name)}</b>,<br/>"
@@ -1634,7 +1596,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(Spacer(1, 20))
     elements.append(GoldRule(width=CONTENT_W, thickness=0.6, color=_RULE, top_gap=2, bot_gap=4))
 
-    # Footer
     elements.append(Spacer(1, 6))
     elements.append(Paragraph(
         "Shop No 4, Ganesh Plaza, Gokul Rd, Hubballi  &nbsp;|&nbsp;  "
@@ -2069,13 +2030,11 @@ def salary_pdf(request, emp_id):
     attendance = Attendance.objects.filter(employee=emp).order_by('date')
     payments   = Payment.objects.filter(employee=emp).order_by('date')
 
-    # FIX: all salary arithmetic uses Decimal — no float division
     total_earned = Decimal('0')
     for r in attendance:
         if r.status == 'full':
             total_earned += Decimal(str(emp.daily_salary))
         elif r.status == 'half':
-            # FIX: was emp.daily_salary / 2 which produces float if daily_salary is Decimal
             total_earned += Decimal(str(emp.daily_salary)) / Decimal('2')
 
     total_paid = sum((Decimal(str(p.amount_paid)) for p in payments), Decimal('0'))
@@ -2131,7 +2090,6 @@ def salary_pdf(request, emp_id):
     elements.append(title_band)
     elements.append(Spacer(1, 20))
 
-    # Employee info panel
     gen_date = datetime.now().strftime('%d %B, %Y')
     emp_role = getattr(emp, 'role', None) or 'N/A'
 
@@ -2159,7 +2117,6 @@ def salary_pdf(request, emp_id):
     elements.append(info_tbl)
     elements.append(Spacer(1, 22))
 
-    # Ledger table
     elements += _section_heading('ATTENDANCE & PAYMENT LEDGER', PAGE_W)
 
     hdr = ['DATE', 'DAY', 'TYPE', 'DESCRIPTION', f'AMOUNT ({RUPEE})']
@@ -2169,23 +2126,22 @@ def salary_pdf(request, emp_id):
         date_str = r.date.strftime('%d %b %Y') if hasattr(r.date, 'strftime') else str(r.date)
         day_str  = r.date.strftime('%A')        if hasattr(r.date, 'strftime') else ''
         if r.status == 'full':
-            # FIX: keep as Decimal — no float conversion
             amt  = Decimal(str(emp.daily_salary))
             desc = 'Full Day'
         elif r.status == 'half':
-            # FIX: Decimal division — was emp.daily_salary / 2 which can produce float
             amt  = Decimal(str(emp.daily_salary)) / Decimal('2')
             desc = 'Half Day'
         else:
             amt, desc = Decimal('0'), 'Absent'
         rows_data.append([date_str, day_str, 'Earned', desc,
-                           f"{amt.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP):,}"])
+                           # Exact decimal display — no quantize/rounding
+                           str(amt)])
 
     for p in payments:
         date_str = p.date.strftime('%d %b %Y') if hasattr(p.date, 'strftime') else str(p.date)
         day_str  = p.date.strftime('%A')        if hasattr(p.date, 'strftime') else ''
-        amt = Decimal(str(p.amount_paid)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        rows_data.append([date_str, day_str, 'Paid', 'Salary Paid', f"{amt:,}"])
+        amt = Decimal(str(p.amount_paid))
+        rows_data.append([date_str, day_str, 'Paid', 'Salary Paid', str(amt)])
 
     ledger_data = [hdr] + rows_data
     l_style = TableStyle([
@@ -2215,7 +2171,6 @@ def salary_pdf(request, emp_id):
     elements.append(ledger_tbl)
     elements.append(Spacer(1, 22))
 
-    # Financial summary
     elements += _section_heading('FINANCIAL SUMMARY', PAGE_W)
 
     summary_rows = [
@@ -2257,7 +2212,6 @@ def salary_pdf(request, emp_id):
     elements.append(bal_tbl)
     elements.append(Spacer(1, 28))
 
-    # Footer
     elements.append(HRFlowable(width=PAGE_W, thickness=1.5, color=GOLD, spaceAfter=6))
     elements.append(Paragraph(
         'This is a system-generated document. No physical signature required.',
