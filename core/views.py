@@ -34,6 +34,12 @@ from reportlab.platypus import (
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+def safe_decimal(value, default="0"):
+    try:
+        return Decimal(str(value).strip())
+    except:
+        return Decimal(default)
+
 
 # ================= CURRENCY FORMATTING =================
 def format_inr(number):
