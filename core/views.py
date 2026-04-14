@@ -13,6 +13,8 @@ from django.conf import settings
 from django.contrib.staticfiles import finders
 from io import BytesIO
 from django.db import transaction
+import psutil
+import os
 
 from .utils import generate_advance_acknowledgement_pdf
 from .models import (
@@ -58,6 +60,16 @@ def format_inr(number):
         integer = new_rest + "," + last3
 
     return integer + "." + decimal
+
+
+def check_memory():
+    """Print current process RSS memory in MB for quick monitoring."""
+    try:
+        process = psutil.Process(os.getpid())
+        mem = process.memory_info().rss / 1024 / 1024
+        print(f"RAM Used: {mem:.2f} MB")
+    except Exception:
+        pass
 
 
 # ================= FONT / LOGO HELPERS =================
@@ -247,6 +259,7 @@ def _fmt(amount, rupee):
 
 # ================= DASHBOARD =================
 def dashboard(request):
+    check_memory()
     return render(request, 'dashboard.html', {
         'customers': Customer.objects.count(),
         'orders': Order.objects.count(),
