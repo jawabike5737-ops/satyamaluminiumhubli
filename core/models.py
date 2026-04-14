@@ -5,7 +5,7 @@ from decimal import Decimal
 
 # ================= CUSTOMER =================
 class Customer(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.TextField()
     phone = models.CharField(max_length=15)
     address = models.TextField()
 
@@ -15,7 +15,7 @@ class Customer(models.Model):
 
 # ================= PRODUCT =================
 class Product(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -92,7 +92,7 @@ class Service(models.Model):
 class QuotationItem(models.Model):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
 
-    description = models.CharField(max_length=255)
+    description = models.TextField()
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.CharField(max_length=50)
 
@@ -123,9 +123,9 @@ class MeasurementItem(models.Model):
     # Link to a predefined Service (optional). If set, use Service.name as item name.
     service = models.ForeignKey('Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='measurement_items')
     # If user typed a custom item name (not a Service), store it here.
-    custom_item_name = models.CharField(max_length=200, null=True, blank=True)
+    custom_item_name = models.TextField(null=True, blank=True)
     # Description (editable copy)
-    description = models.CharField(max_length=200)
+    description = models.TextField()
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES, default=SIZE)
     unit = models.CharField(max_length=20, default='Sq Ft')
     # Price per unit for this item (editable by user when creating quotation)
