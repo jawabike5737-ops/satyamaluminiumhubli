@@ -16,7 +16,7 @@ from django.db import transaction
 import psutil
 import os
 
-from .utils import generate_advance_acknowledgement_pdf
+from .utils import generate_advance_acknowledgement_pdf, get_ram_usage
 from .models import (
     Customer, Order, Employee, Attendance, Payment,
     Service, Quotation, QuotationItem, OrderPayment, TermCondition,
@@ -259,11 +259,14 @@ def _fmt(amount, rupee):
 
 # ================= DASHBOARD =================
 def dashboard(request):
+    # lightweight RAM info for dashboard + quick console log
+    ram = get_ram_usage()
     check_memory()
     return render(request, 'dashboard.html', {
         'customers': Customer.objects.count(),
         'orders': Order.objects.count(),
-        'employees': Employee.objects.count()
+        'employees': Employee.objects.count(),
+        'ram': ram,
     })
 
 

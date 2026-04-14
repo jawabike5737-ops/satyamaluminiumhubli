@@ -375,6 +375,12 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* RAM widget styles */
+.ram-track { width:100%; background:#ddd; border-radius:5px; }
+.ram-bar { color:white; padding:5px; border-radius:5px; width:0%; transition: width .6s ease; text-align:center; }
+.ram-high { background: #ef4444; }
+.ram-ok   { background: #10b981; }
+
 @media (max-width: 640px) {
     .sa-hero { padding: 40px 20px; }
     .sa-corner { display: none; }
@@ -458,6 +464,34 @@ for (let i = 0; i < 9; i++) {
     l.style.animationDelay = (Math.random() * 16) + 's';
     linesWrap.appendChild(l);
 }
+</script>
+    
+    <!-- RAM USAGE WIDGET -->
+    <div style="padding:20px; border-radius:10px; background:#f5f5f5; margin-top:20px;">
+        <h3>📊 Server RAM Usage</h3>
+
+        <p><b>Used:</b> {{ ram.used }} MB / {{ ram.total }} MB</p>
+
+        <div class="ram-track">
+            <div class="ram-bar {% if ram.is_high %}ram-high{% else %}ram-ok{% endif %}" data-percent="{{ ram.percent }}">
+                {{ ram.percent }}%
+            </div>
+        </div>
+
+        {% if ram.is_high %}
+            <p style="color:red; font-weight:bold;">
+                ⚠️ High Memory Usage! Optimize your app.
+            </p>
+        {% endif %}
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.ram-bar').forEach(function(el){
+        var p = el.getAttribute('data-percent') || '0';
+        el.style.width = p + '%';
+    });
+});
 </script>
 
 {% endblock %}

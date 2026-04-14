@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.contrib.staticfiles import finders   # ← ADD THIS
 import os
+import psutil
 import re
 from decimal import Decimal
 from datetime import datetime
@@ -370,3 +371,22 @@ def generate_advance_acknowledgement_pdf(order, quotation, advance_amount):
 
     doc.build(elements)
     return response
+
+
+def get_ram_usage():
+    """Return simple RAM usage info (MB) and percent for quick dashboard display."""
+    try:
+        process = psutil.Process(os.getpid())
+        ram_used = process.memory_info().rss / 1024 / 1024  # MB
+    except Exception:
+        ram_used = 0.0
+
+    total_ram = 512  # default / approximate for Render free plan
+    percent = (ram_used / total_ram) * 100 if total_ram else 0
+
+    return {
+        "used": round(ram_used, 2),
+        "total": total_ram,
+        "percent": round(percent, 2),
+        "is_high": ram_used > 300,
+    }
