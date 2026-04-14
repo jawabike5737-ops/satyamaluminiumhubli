@@ -1,11 +1,12 @@
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 from decimal import Decimal
 
 
 # ================= CUSTOMER =================
 class Customer(models.Model):
-    name = models.TextField()
+    name = models.TextField(db_index=True)
     phone = models.CharField(max_length=15)
     address = models.TextField()
 
@@ -15,7 +16,7 @@ class Customer(models.Model):
 
 # ================= PRODUCT =================
 class Product(models.Model):
-    name = models.TextField()
+    name = models.TextField(db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -34,8 +35,9 @@ class TermCondition(models.Model):
 
 # ================= QUOTATION =================
 class Quotation(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="quotations")
-    date = models.DateField(auto_now_add=True)
+    # NOTE: use select_related('customer') when querying quotations
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="quotations", db_index=True)
+    date = models.DateField(auto_now_add=True, db_index=True)
 
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     cgst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -47,9 +49,9 @@ class Quotation(models.Model):
     # ManyToMany to TermCondition allows selecting multiple predefined terms
     # custom_terms stores freeform terms entered for this quotation
     terms = models.ManyToManyField('TermCondition', blank=True, through='QuotationTerm')
-    custom_terms = models.TextField(blank=True, null=True)
+    custom_terms = models.TextField(blank=True)
     # Store the full terms & conditions text for this quotation (editable copy)
-    terms_and_conditions = models.TextField(blank=True, null=True)
+    terms_and_conditions = models.TextField(blank=True)
     
     # GST Type: with_gst or without_gst
     gst_type = models.CharField(
@@ -64,23 +66,35 @@ class Quotation(models.Model):
     def __str__(self):
         return f"Quotation {self.id}"
 
+    class Meta:
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['customer']),
+            models.Index(fields=['date']),
+            models.Index(fields=['customer', 'date']),
+        ]
+
 
 # Through model to store ordering for terms selected on a quotation
 class QuotationTerm(models.Model):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='quotation_terms')
-    term = models.ForeignKey(TermCondition, on_delete=models.CASCADE)
-    order = models.PositiveIntegerField(default=0)
+    term = models.ForeignKey(TermCondition, on_delete=models.CASCADE, related_name='quotation_terms_on_term')
+    order = models.PositiveIntegerField(default=0, db_index=True)
 
     class Meta:
         ordering = ['order', 'id']
+        indexes = [
+            models.Index(fields=['quotation']),
+            models.Index(fields=['term']),
+        ]
 
     def __str__(self):
-        return f"Q{self.quotation.id} - T{self.term.id} ({self.order})"
+        return f"Q{self.quotation_id} - T{self.term_id} ({self.order})"
 
 
 # ================= SERVICE =================
 class Service(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, db_index=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -90,7 +104,7 @@ class Service(models.Model):
 
 # ================= QUOTATION ITEMS =================
 class QuotationItem(models.Model):
-    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='items', db_index=True)
 
     description = models.TextField()
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
@@ -99,14 +113,20 @@ class QuotationItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2)
 
+    def __str__(self):
+        return self.description[:60] if self.description else f"Item {self.id}"
+
 
 # ================= MEASUREMENTS =================
 class Measurement(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='measurements')
-    created_at = models.DateTimeField(auto_now_add=True)
+    # NOTE: use select_related('customer') when querying measurements
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='measurements', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
-        return f"Measurements for {self.customer.name} ({self.id})"
+        return f"Measurements {self.id}"
+    class Meta:
+        ordering = ['-created_at']
 
 
 class MeasurementItem(models.Model):
@@ -119,11 +139,12 @@ class MeasurementItem(models.Model):
         (NOS, 'Count / Nos'),
     ]
 
-    measurement = models.ForeignKey(Measurement, on_delete=models.CASCADE, related_name='items')
+    measurement = models.ForeignKey(Measurement, on_delete=models.CASCADE, related_name='items', db_index=True)
     # Link to a predefined Service (optional). If set, use Service.name as item name.
-    service = models.ForeignKey('Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='measurement_items')
+    service = models.ForeignKey('Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='measurement_items', db_index=True)
     # If user typed a custom item name (not a Service), store it here.
-    custom_item_name = models.TextField(null=True, blank=True)
+    # blank=True is sufficient for text fields; avoid null=True for consistency
+    custom_item_name = models.TextField(blank=True)
     # Description (editable copy)
     description = models.TextField()
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES, default=SIZE)
@@ -134,11 +155,11 @@ class MeasurementItem(models.Model):
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.description} ({self.measurement.customer.name})"
+        return f"{self.description} (M{self.measurement_id})"
 
 
 class MeasurementSubItem(models.Model):
-    item = models.ForeignKey(MeasurementItem, on_delete=models.CASCADE, related_name='subitems')
+    item = models.ForeignKey(MeasurementItem, on_delete=models.CASCADE, related_name='subitems', db_index=True)
 
     # For size based items
     height = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
@@ -164,46 +185,60 @@ class MeasurementSubItem(models.Model):
             return None
 
     def __str__(self):
-        return f"Subitem {self.id} of {self.item.description}"
+        return f"Subitem {self.id} of Item {self.item_id}"
 # ================= ORDER =================
 class Order(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="orders")
-    quotation = models.ForeignKey(Quotation, on_delete=models.SET_NULL, null=True, blank=True)
+    # NOTE: use select_related('customer') when querying orders
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="orders", db_index=True)
+    quotation = models.ForeignKey(Quotation, on_delete=models.SET_NULL, null=True, blank=True, db_index=True)
 
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     advance_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     def total_paid(self):
-        extra = sum((p.amount for p in self.payments.all()), Decimal('0'))
+        # Use ORM aggregation to avoid Python-level summation and N+1
+        extra = self.payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
         return self.advance_paid + extra
 
     def remaining(self):
         return self.total_amount - self.total_paid()
 
     def __str__(self):
-        return f"Order {self.id} - {self.customer.name}"
+        return f"Order {self.id}"
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Orders"
+        indexes = [
+            models.Index(fields=['customer']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['quotation']),
+            models.Index(fields=['customer', 'created_at']),
+        ]
 
 
 # ================= ORDER ITEMS =================
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items", db_index=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items', db_index=True)
     quantity = models.IntegerField()
 
     def __str__(self):
-        return f"{self.product.name} ({self.quantity})"
+        return f"OrderItem {self.id} (P{self.product_id})"
 
 
 # ================= ORDER PAYMENT =================
 class OrderPayment(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments")
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateField(auto_now_add=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments", db_index=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, db_index=True)
+    date = models.DateField(auto_now_add=True, db_index=True)
 
     def __str__(self):
-        return f"Order {self.order.id} - {self.amount}"
+        return f"OrderPayment OP{self.id} (O{self.order_id}) - {self.amount}"
+
+    class Meta:
+        indexes = [models.Index(fields=['order']), models.Index(fields=['date'])]
 
 
 # ================= BILL =================
@@ -213,12 +248,12 @@ class Bill(models.Model):
     gst = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"Bill for Order {self.order.id}"
+        return f"Bill for Order {self.order_id}"
 
 
 # ================= EMPLOYEE =================
 class Employee(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, db_index=True)
     phone = models.CharField(max_length=15)
     role = models.CharField(max_length=100)
     # Manual salary fields
@@ -242,25 +277,26 @@ class Attendance(models.Model):
         ('out', 'Out of City Work'),
     ]
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="attendance")
-    date = models.DateField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="attendance", db_index=True)
+    date = models.DateField(db_index=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, db_index=True)
     # Whether overtime is marked for this attendance record.
     overtime = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ['employee', 'date']
+        indexes = [models.Index(fields=['employee', 'date'])]
 
     def __str__(self):
-        return f"{self.employee.name} - {self.date}"
+        return f"Attendance {self.id} - E{self.employee_id} {self.date}"
 
 
 # ================= PAYMENT =================
 class Payment(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payments")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payments", db_index=True)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(auto_now_add=True, db_index=True)
     remaining_salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.employee.name} - {self.amount_paid}"
+        return f"Payment {self.id} - E{self.employee_id} - {self.amount_paid}"

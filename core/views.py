@@ -262,10 +262,13 @@ def dashboard(request):
     # lightweight RAM info for dashboard + quick console log
     ram = get_ram_usage()
     check_memory()
+    # show a small list of recent orders (avoid N+1 by using select_related)
+    recent_orders = list(Order.objects.select_related('customer').order_by('-created_at')[:10])
     return render(request, 'dashboard.html', {
         'customers': Customer.objects.count(),
         'orders': Order.objects.count(),
         'employees': Employee.objects.count(),
+        'recent_orders': recent_orders,
         'ram': ram,
     })
 
@@ -567,8 +570,9 @@ def get_measurements_json(request, cust_id):
 # ================= SERVICES =================
 @login_required(login_url='/login/')
 def services(request):
+    # limit services to keep the page lightweight
     return render(request, 'services.html', {
-        'data': Service.objects.all().order_by('-id')
+        'data': Service.objects.all().order_by('-id')[:50]
     })
 
 
@@ -577,9 +581,9 @@ def services_api(request):
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
-    qs = Service.objects.all().order_by('name')
-    out = [{'id': s.id, 'name': s.name, 'description': s.name, 'price': float(s.price)}
-           for s in qs]
+    # return minimal fields and limit results for fast API responses
+    qs = Service.objects.all().order_by('name').values('id', 'name', 'price')[:50]
+    out = [{'id': s['id'], 'name': s['name'], 'description': s['name'], 'price': float(s['price'])} for s in qs]
     return JsonResponse(out, safe=False)
 
 
@@ -679,9 +683,10 @@ def delete_service(request, id):
 # ================= QUOTATIONS =================
 @login_required(login_url='/login/')
 def create_quotation(request):
-    customers = Customer.objects.all()
+    # limit result sets to keep the form lightweight
+    customers = Customer.objects.order_by('name')[:50]
     quotations = Quotation.objects.all().order_by('-id')[:50]
-    terms_qs = TermCondition.objects.all()
+    terms_qs = TermCondition.objects.order_by('id')[:20]
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
 
     if request.method == "POST":
@@ -792,11 +797,13 @@ def create_quotation(request):
 # ================= VIEW QUOTATION =================
 @login_required(login_url='/login/')
 def view_quotation(request, id):
-    q = get_object_or_404(Quotation, id=id)
-    # FIX: added select_related('quotation') to avoid per-item FK lookups
-    items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
-    # already uses select_related — keep as-is
-    ordered_terms = q.quotation_terms.select_related('term').order_by('order', 'id')
+    # Fetch quotation with related customer and prefetch items and terms to avoid N+1
+    q = get_object_or_404(
+        Quotation.objects.select_related('customer').prefetch_related('items', 'quotation_terms__term'),
+        id=id
+    )
+    items = list(q.items.all())
+    ordered_terms = list(q.quotation_terms.all())
 
     return render(request, 'view_quotation.html', {
         'q': q,
@@ -808,9 +815,8 @@ def view_quotation(request, id):
 # ================= EDIT QUOTATION =================
 @login_required(login_url='/login/')
 def edit_quotation(request, id):
-    q = get_object_or_404(Quotation, id=id)
-    # FIX: select_related to avoid per-item FK lookups
-    items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
+    q = get_object_or_404(Quotation.objects.select_related('customer').prefetch_related('items', 'quotation_terms__term'), id=id)
+    items = list(q.items.all())
     terms_qs = TermCondition.objects.all()
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
 
@@ -1929,7 +1935,7 @@ def payment_history(request, emp_id):
     emp = get_object_or_404(Employee, id=emp_id)
     return render(request, 'payment_history.html', {
         'emp': emp,
-        'payments': Payment.objects.filter(employee=emp)
+        'payments': Payment.objects.filter(employee=emp).order_by('-date')
     })
 
 
@@ -1944,7 +1950,8 @@ def reset_salary(request, emp_id):
 @login_required(login_url='/login/')
 def view_attendance(request, emp_id):
     emp     = get_object_or_404(Employee, id=emp_id)
-    records = Attendance.objects.filter(employee=emp)
+    # use select_related to include employee on each attendance record and avoid per-row lookup
+    records = Attendance.objects.filter(employee=emp).select_related('employee')
 
     start = request.GET.get('start_date')
     end   = request.GET.get('end_date')
