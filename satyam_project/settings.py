@@ -14,8 +14,12 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 # SECRET_KEY: prefer env var, fallback to a safe dev key locally
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
-# ALLOWED_HOSTS from env (comma separated). Default fallback as requested:
-allowed = os.environ.get('ALLOWED_HOSTS', '.onrender.com')
+# ALLOWED_HOSTS from env (comma separated). Default fallback supports
+# local loopback, localhost and Render subdomains.
+allowed = os.environ.get(
+    'ALLOWED_HOSTS',
+    '127.0.0.1,localhost,.onrender.com'
+)
 ALLOWED_HOSTS = [h.strip() for h in allowed.split(',') if h.strip()]
 
 # ========================

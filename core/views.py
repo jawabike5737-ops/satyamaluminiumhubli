@@ -62,26 +62,17 @@ def format_inr(number):
 
 # ================= FONT / LOGO HELPERS =================
 def _load_unicode_font():
-    """Register and return DejaVuSans font for rupee rendering.
-
-    Uses settings.BASE_DIR to locate the font at <BASE_DIR>/fonts/DejaVuSans.ttf.
-    Raises FileNotFoundError with a helpful message if the font file is missing.
-    Ensures the font is registered only once.
-    Returns (font_name, '₹').
-    """
+    """Register and return DejaVuSans font for rupee rendering."""
     font_name = 'DejaVuSans'
-    # try project-local fonts folder first
     candidates = []
     try:
         candidates.append(os.path.join(settings.BASE_DIR, 'fonts', 'DejaVuSans.ttf'))
     except Exception:
         pass
-    # common linux locations
     candidates += [
         '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
     ]
-    # windows fonts folder
     windir = os.environ.get('WINDIR')
     if windir:
         candidates.append(os.path.join(windir, 'Fonts', 'DejaVuSans.ttf'))
@@ -101,28 +92,20 @@ def _load_unicode_font():
         except Exception:
             pass
 
-    # fallback to built-in Helvetica if DejaVu is not available
     return 'Helvetica', 'Rs.'
 
 
 def _register_times_new_roman():
-    """Attempt to register Times New Roman cross-platform.
-
-    Returns the registered font name on success, or None if not available.
-    Falls back silently to DejaVuSans when not found.
-    """
+    """Attempt to register Times New Roman cross-platform."""
     candidates = []
-    # Windows
     windir = os.environ.get('WINDIR')
     if windir:
         candidates += [os.path.join(windir, 'Fonts', x) for x in (
             'Times New Roman.ttf', 'TimesNewRoman.ttf', 'times.ttf', 'timesbd.ttf')]
-    # macOS
     candidates += [
         '/Library/Fonts/Times New Roman.ttf',
         '/System/Library/Fonts/Supplemental/Times New Roman.ttf'
     ]
-    # Common Linux locations
     candidates += [
         '/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf',
         '/usr/share/fonts/truetype/freefont/FreeSerif.ttf',
@@ -142,12 +125,7 @@ def _register_times_new_roman():
 
 
 def _load_logo_image(width=100, height=100, circular=False):
-    """Locate logo.png using staticfiles finders or fallback to <BASE_DIR>/static/logo.png.
-
-    Returns a ReportLab Image object sized to (width, height) or a Spacer if not found.
-    If circular=True, tries to apply a circular crop using Pillow; if Pillow unavailable or
-    fails, returns the rectangular image gracefully.
-    """
+    """Locate logo.png and return a ReportLab Image object."""
     from reportlab.platypus import Image as RLImage, Spacer as RLSpacer
 
     logo_name = 'logo.png'
@@ -323,8 +301,9 @@ def logout_user(request):
 # ================= CUSTOMERS =================
 @login_required(login_url='/login/')
 def customers(request):
+    # FIX: limit to 50 rows to avoid loading entire table into RAM on Render
     return render(request, 'customers.html', {
-        'data': Customer.objects.all().order_by('-id')
+        'data': Customer.objects.all().order_by('-id')[:50]
     })
 
 
@@ -381,7 +360,7 @@ def delete_customer(request, id):
 @login_required(login_url='/login/')
 def example_ajax_form(request):
     return render(request, 'example_ajax_form.html', {
-        'customers': Customer.objects.all().order_by('-id')
+        'customers': Customer.objects.all().order_by('-id')[:50]
     })
 
 
@@ -517,9 +496,13 @@ def get_measurements_json(request, cust_id):
         return JsonResponse({'items': []})
 
     out = []
-    for mi in m.items.all():
+    # FIX: prefetch_related('subitems') eliminates N+1 — one query for all subitems
+    for mi in m.items.prefetch_related('subitems').all():
+        # FIX: cache the queryset result so we don't hit the DB twice per item
+        subs_qs = list(mi.subitems.all())
+
         subs = []
-        for s in mi.subitems.all():
+        for s in subs_qs:
             subs.append({
                 'height': float(s.height) if s.height is not None else None,
                 'width': float(s.width) if s.width is not None else None,
@@ -529,7 +512,7 @@ def get_measurements_json(request, cust_id):
 
         qty_val = 0.0
         raw_qty = 0.0
-        for s in mi.subitems.all():
+        for s in subs_qs:
             try:
                 qf = float(s.quantity)
                 if mi.item_type == MeasurementItem.SIZE:
@@ -681,7 +664,7 @@ def delete_service(request, id):
 @login_required(login_url='/login/')
 def create_quotation(request):
     customers = Customer.objects.all()
-    quotations = Quotation.objects.all().order_by('-id')
+    quotations = Quotation.objects.all().order_by('-id')[:50]
     terms_qs = TermCondition.objects.all()
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
 
@@ -714,7 +697,6 @@ def create_quotation(request):
         for desc, qty, unit, price in zip(descriptions, quantities, units, prices):
             if not desc or qty is None or price is None:
                 continue
-            # normalize strings (trim, replace comma with dot)
             qty_str = str(qty).strip().replace(',', '.')
             price_str = str(price).strip().replace(',', '.')
             try:
@@ -723,7 +705,6 @@ def create_quotation(request):
             except Exception:
                 continue
 
-            # quantize to 2 decimal places for storage/display consistency
             try:
                 qty_dec = qty_dec.quantize(Decimal('0.01'))
             except Exception:
@@ -760,7 +741,6 @@ def create_quotation(request):
 
         print("DEBUG TERMS:", selected_terms)
 
-        # delete old terms (VERY IMPORTANT)
         quotation.quotation_terms.all().delete()
 
         for term_id in selected_terms:
@@ -797,8 +777,9 @@ def create_quotation(request):
 @login_required(login_url='/login/')
 def view_quotation(request, id):
     q = get_object_or_404(Quotation, id=id)
-    items = QuotationItem.objects.filter(quotation=q)
-    # Pass QuotationTerm queryset so template/PDF can access `qt.term` and `qt.order`
+    # FIX: added select_related('quotation') to avoid per-item FK lookups
+    items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
+    # already uses select_related — keep as-is
     ordered_terms = q.quotation_terms.select_related('term').order_by('order', 'id')
 
     return render(request, 'view_quotation.html', {
@@ -812,7 +793,8 @@ def view_quotation(request, id):
 @login_required(login_url='/login/')
 def edit_quotation(request, id):
     q = get_object_or_404(Quotation, id=id)
-    items = QuotationItem.objects.filter(quotation=q)
+    # FIX: select_related to avoid per-item FK lookups
+    items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
     terms_qs = TermCondition.objects.all()
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
 
@@ -889,7 +871,6 @@ def edit_quotation(request, id):
 
         print("DEBUG TERMS:", selected_terms)
 
-        # delete old terms (VERY IMPORTANT)
         q.quotation_terms.all().delete()
 
         for term_id in selected_terms:
@@ -914,7 +895,6 @@ def edit_quotation(request, id):
             return JsonResponse({'status': 'success', 'message': 'Quotation updated', 'quotation_id': q.id})
         return redirect('create_quotation')
 
-    # Attach selected_order attribute to TermCondition objects for template prefill
     term_orders_map = {qt.term_id: qt.order for qt in q.quotation_terms.all()}
     for t in terms_qs:
         try:
@@ -927,7 +907,7 @@ def edit_quotation(request, id):
         'items': items,
         'edit': True,
         'q': q,
-        'quotations': Quotation.objects.all().order_by('-id'),
+        'quotations': Quotation.objects.all().order_by('-id')[:50],
         'terms': terms_qs,
         'terms_default': default_terms_text,
         'term_orders': term_orders_map,
@@ -937,7 +917,8 @@ def edit_quotation(request, id):
 # ================= LIST PAGE =================
 @login_required(login_url='/login/')
 def quotations(request):
-    data = Quotation.objects.all().order_by('-id')
+    # FIX: select_related('customer') avoids per-row FK lookup in template
+    data = Quotation.objects.select_related('customer').order_by('-id')[:50]
     return render(request, 'quotations.html', {'data': data})
 
 
@@ -975,7 +956,8 @@ def quotation_pdf(request, id):
 
     today_date = _dt.now().strftime("%d-%m-%Y")
     q = get_object_or_404(Quotation, id=id)
-    items = QuotationItem.objects.filter(quotation=q)
+    # FIX: select_related to avoid extra FK query per item in PDF loop
+    items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
 
     customer_name = re.sub(r'[^A-Za-z0-9]+', '_', q.customer.name)
     filename = f"{customer_name}_{today_date}.pdf"
@@ -1316,10 +1298,13 @@ def quotation_pdf(request, id):
 @login_required(login_url='/login/')
 def orders(request):
     query = request.GET.get('q', '').strip()
-    qs = Order.objects.all().order_by('-id')
+    # FIX: select_related('customer') avoids per-row FK hit; limit to 50
+    qs = Order.objects.select_related('customer').order_by('-id')[:50]
     if query:
         from django.db.models import Q as DQ
-        qs = qs.filter(DQ(customer__name__icontains=query) | DQ(id__icontains=query))
+        qs = Order.objects.select_related('customer').filter(
+            DQ(customer__name__icontains=query) | DQ(id__icontains=query)
+        ).order_by('-id')[:50]
     return render(request, 'orders.html', {'data': qs, 'q': query})
 
 
@@ -1967,7 +1952,10 @@ def attendance_report_pdf(request, emp_id):
         except Exception:
             pass
 
-    total_days   = records.count()
+    # FIX: evaluate queryset once into a list to avoid re-hitting DB in multiple loops below
+    records = list(records)
+
+    total_days   = len(records)
     present_days = sum(1 for r in records if r.status == 'full')
     half_days    = sum(1 for r in records if r.status == 'half')
     absent_days  = total_days - present_days - half_days
