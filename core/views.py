@@ -1,3 +1,367 @@
+# Add this import at the top for login_required
+from django.contrib.auth.decorators import login_required
+# ================= MEASUREMENT PDF =================
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
+from io import BytesIO
+from decimal import Decimal
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table,
+    TableStyle, HRFlowable, KeepTogether
+)
+
+from .models import Customer, Measurement
+
+# ── Colour palette (white & grey) ──────────────────────────────
+DARK_GREY    = colors.HexColor("#2C2C2C")   # headings, strong text
+MID_GREY     = colors.HexColor("#555555")   # body text
+LIGHT_GREY   = colors.HexColor("#F2F2F2")   # alternating row / card bg
+BORDER_GREY  = colors.HexColor("#CCCCCC")   # all borders
+HEADER_BG    = colors.HexColor("#3A3A3A")   # table header bg
+ACCENT_GREY  = colors.HexColor("#6C6C6C")   # totals row / accent
+WHITE        = colors.HexColor("#FFFFFF")
+BANNER_BG    = colors.HexColor("#E8E8E8")   # top page banner
+
+PAGE_W, PAGE_H = A4
+MARGIN = 18 * mm
+
+
+# ── Styles ─────────────────────────────────────────────────────
+def _styles():
+    return {
+        "section_head": ParagraphStyle(
+            "section_head",
+            fontName="Helvetica-Bold",
+            fontSize=9,
+            textColor=WHITE,
+            alignment=TA_LEFT,
+        ),
+        "label": ParagraphStyle(
+            "label",
+            fontName="Helvetica-Bold",
+            fontSize=8.5,
+            textColor=MID_GREY,
+        ),
+        "value": ParagraphStyle(
+            "value",
+            fontName="Helvetica",
+            fontSize=8.5,
+            textColor=DARK_GREY,
+        ),
+        "item_name": ParagraphStyle(
+            "item_name",
+            fontName="Helvetica-Bold",
+            fontSize=10,
+            textColor=DARK_GREY,
+            spaceBefore=4,
+            spaceAfter=2,
+        ),
+        "item_desc": ParagraphStyle(
+            "item_desc",
+            fontName="Helvetica-Oblique",
+            fontSize=8,
+            textColor=MID_GREY,
+            spaceAfter=4,
+        ),
+        "footer": ParagraphStyle(
+            "footer",
+            fontName="Helvetica",
+            fontSize=7,
+            textColor=MID_GREY,
+            alignment=TA_CENTER,
+        ),
+    }
+
+
+# ── Canvas: header banner + footer ────────────────────────────
+def _make_canvas_cb(customer, measurement_date):
+
+    def on_page(canvas, doc):
+        canvas.saveState()
+
+        # ── Top banner ─────────────────────────────────────────
+        banner_h = 26 * mm
+
+        # Light grey banner background
+        canvas.setFillColor(BANNER_BG)
+        canvas.rect(0, PAGE_H - banner_h, PAGE_W, banner_h, fill=1, stroke=0)
+
+        # Dark top stripe
+        canvas.setFillColor(HEADER_BG)
+        canvas.rect(0, PAGE_H - 3 * mm, PAGE_W, 3 * mm, fill=1, stroke=0)
+
+        # Company name
+        canvas.setFillColor(DARK_GREY)
+        canvas.setFont("Helvetica-Bold", 18)
+        canvas.drawCentredString(PAGE_W / 2, PAGE_H - 13 * mm, "SATYAM ALUMINIUM")
+
+        # Tagline
+        canvas.setFont("Helvetica", 8)
+        canvas.setFillColor(MID_GREY)
+        canvas.drawCentredString(
+            PAGE_W / 2, PAGE_H - 19 * mm,
+            "Aluminium Works & Fabrication  |  Quality You Can See"
+        )
+
+        # Bottom border of banner
+        canvas.setStrokeColor(BORDER_GREY)
+        canvas.setLineWidth(0.8)
+        canvas.line(0, PAGE_H - banner_h, PAGE_W, PAGE_H - banner_h)
+
+        # ── Footer ─────────────────────────────────────────────
+        canvas.setStrokeColor(BORDER_GREY)
+        canvas.setLineWidth(0.5)
+        canvas.line(MARGIN, 14 * mm, PAGE_W - MARGIN, 14 * mm)
+
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(MID_GREY)
+        canvas.drawString(MARGIN, 10 * mm, f"Customer: {customer.name}")
+        canvas.drawCentredString(PAGE_W / 2, 10 * mm, f"Date: {measurement_date}")
+        canvas.drawRightString(PAGE_W - MARGIN, 10 * mm, f"Page {doc.page}")
+
+        canvas.restoreState()
+
+    return on_page, on_page
+
+
+# ── View ───────────────────────────────────────────────────────
+@login_required(login_url='/login/')
+def measurement_pdf(request, cust_id):
+    customer = get_object_or_404(Customer, id=cust_id)
+    measurement = (
+        Measurement.objects
+        .filter(customer=customer)
+        .order_by('-id')
+        .first()
+    )
+    if not measurement:
+        return HttpResponse("No measurements found for this customer.", status=404)
+
+    S = _styles()
+    elements = []
+
+    # Spacer to clear header banner
+    elements.append(Spacer(1, 30 * mm))
+
+    # ── Customer info card ─────────────────────────────────────
+    def section_bar(text):
+        t = Table(
+            [[Paragraph(text, S["section_head"])]],
+            colWidths=[PAGE_W - 2 * MARGIN],
+        )
+        t.setStyle(TableStyle([
+            ("BACKGROUND",    (0, 0), (-1, -1), HEADER_BG),
+            ("TOPPADDING",    (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 8),
+        ]))
+        return t
+
+    info_data = [
+        [
+            Paragraph("Name", S["label"]),
+            Paragraph(customer.name or "—", S["value"]),
+            Paragraph("Phone", S["label"]),
+            Paragraph(customer.phone or "—", S["value"]),
+        ],
+        [
+            Paragraph("Address", S["label"]),
+            Paragraph(customer.address or "—", S["value"]),
+            Paragraph("Measurement ID", S["label"]),
+            Paragraph(f"#{measurement.id}", S["value"]),
+        ],
+    ]
+    col_w = PAGE_W - 2 * MARGIN
+    info_table = Table(
+        info_data,
+        colWidths=[col_w * p for p in [0.18, 0.32, 0.20, 0.30]],
+    )
+    info_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), WHITE),
+        ("ROWBACKGROUNDS",(0, 0), (-1, -1), [WHITE, LIGHT_GREY]),
+        ("TOPPADDING",    (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 8),
+        ("BOX",           (0, 0), (-1, -1), 0.8, BORDER_GREY),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.4, BORDER_GREY),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+
+    elements.append(section_bar("CUSTOMER DETAILS"))
+    elements.append(info_table)
+    elements.append(Spacer(1, 6 * mm))
+
+    # ── Measurement section header ─────────────────────────────
+    elements.append(section_bar("MEASUREMENT DETAILS"))
+    elements.append(Spacer(1, 4 * mm))
+
+    # ── Per-item tables ────────────────────────────────────────
+    TH = ParagraphStyle("th", fontName="Helvetica-Bold", fontSize=8,
+                        textColor=WHITE, alignment=TA_CENTER)
+    TD = ParagraphStyle("td", fontName="Helvetica", fontSize=8,
+                        textColor=DARK_GREY, alignment=TA_CENTER)
+    TOT_LBL = ParagraphStyle("tl", fontName="Helvetica-Bold", fontSize=8,
+                              textColor=WHITE, alignment=TA_CENTER)
+    TOT_VAL = ParagraphStyle("tv", fontName="Helvetica-Bold", fontSize=8,
+                              textColor=WHITE, alignment=TA_CENTER)
+
+    widths = [col_w * p for p in [0.20, 0.20, 0.20, 0.15, 0.25]]
+
+    for idx, item in enumerate(
+        measurement.items.prefetch_related('subitems').all(), start=1
+    ):
+        item_name = (
+            item.service.name if item.service
+            else item.custom_item_name or item.description or "—"
+        )
+        desc = item.description or ""
+
+        label_block = [Paragraph(f"{idx}.  {item_name}", S["item_name"])]
+        if desc and desc != item_name:
+            label_block.append(Paragraph(desc, S["item_desc"]))
+
+        # Header row
+        table_data = [[Paragraph(h, TH) for h in
+                       ["Height", "Width", "Length", "Qty", "Area"]]]
+
+        total_area = Decimal("0")
+        for sub in item.subitems.all():
+            h = float(sub.height)   if sub.height   else 0.0
+            w = float(sub.width)    if sub.width    else 0.0
+            l = float(sub.length)   if sub.length   else 0.0
+            q = float(sub.quantity)
+
+            if h and w:
+                area = h * w * q
+            elif l:
+                area = l * q
+            else:
+                area = q
+            total_area += Decimal(str(area))
+
+            table_data.append([
+                Paragraph(f"{h:.2f}" if h else "—", TD),
+                Paragraph(f"{w:.2f}" if w else "—", TD),
+                Paragraph(f"{l:.2f}" if l else "—", TD),
+                Paragraph(f"{q:.2f}", TD),
+                Paragraph(f"{area:.2f}", TD),
+            ])
+
+        unit = getattr(item, "unit", "") or ""
+        n = len(table_data)
+
+        # Totals row
+        table_data.append([
+            Paragraph("", TD), Paragraph("", TD), Paragraph("", TD),
+            Paragraph("TOTAL", TOT_LBL),
+            Paragraph(f"{total_area:.2f} {unit}", TOT_VAL),
+        ])
+
+        tbl = Table(table_data, colWidths=widths, repeatRows=1)
+        tbl.setStyle(TableStyle([
+            # Column header
+            ("BACKGROUND",     (0, 0),    (-1, 0),    HEADER_BG),
+            ("TOPPADDING",     (0, 0),    (-1, 0),    5),
+            ("BOTTOMPADDING",  (0, 0),    (-1, 0),    5),
+            # Data rows — alternating white / light grey
+            ("ROWBACKGROUNDS", (0, 1),    (-1, n - 1), [WHITE, LIGHT_GREY]),
+            ("TOPPADDING",     (0, 1),    (-1, n - 1), 4),
+            ("BOTTOMPADDING",  (0, 1),    (-1, n - 1), 4),
+            # Totals row
+            ("BACKGROUND",     (0, n),    (-1, n),    ACCENT_GREY),
+            ("TOPPADDING",     (0, n),    (-1, n),    5),
+            ("BOTTOMPADDING",  (0, n),    (-1, n),    5),
+            # Borders
+            ("BOX",            (0, 0),    (-1, -1),   0.8, BORDER_GREY),
+            ("INNERGRID",      (0, 0),    (-1, -1),   0.4, BORDER_GREY),
+            ("VALIGN",         (0, 0),    (-1, -1),   "MIDDLE"),
+        ]))
+
+        elements.append(KeepTogether(label_block + [tbl]))
+        elements.append(Spacer(1, 5 * mm))
+
+    # ── Document footer note ───────────────────────────────────
+    elements.append(HRFlowable(
+        width="100%", thickness=0.6,
+        color=BORDER_GREY, spaceAfter=3 * mm,
+    ))
+    elements.append(Paragraph(
+        "Thank you for your business with <b>Satyam Aluminium</b>. "
+        "This document is system-generated.",
+        S["footer"],
+    ))
+
+    # ── Build PDF ──────────────────────────────────────────────
+    measurement_date = (
+        measurement.created_at.strftime("%d %b %Y")
+        if hasattr(measurement, "created_at") and measurement.created_at
+        else "—"
+    )
+    on_first, on_later = _make_canvas_cb(customer, measurement_date)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="Measurement_{customer.name}.pdf"'
+    )
+    doc = SimpleDocTemplate(
+        response, pagesize=A4,
+        leftMargin=MARGIN, rightMargin=MARGIN,
+        topMargin=MARGIN, bottomMargin=18 * mm,
+        title=f"Measurement – {customer.name}",
+        author="Satyam Aluminium",
+    )
+    doc.build(elements, onFirstPage=on_first, onLaterPages=on_later)
+    return response
+
+# ================= CENTRALIZED SALARY CALCULATION =================
+def calculate_salary(employee):
+    """Centralized salary calculation for dashboard, PDF, API, etc."""
+    from .models import Attendance, Payment
+    attendances = Attendance.objects.filter(employee=employee)
+    payments = Payment.objects.filter(employee=employee)
+
+    total_full_day = Decimal('0')
+    total_half_day = Decimal('0')
+    total_overtime = Decimal('0')
+
+    for att in attendances:
+        if att.status == 'full':
+            total_full_day += employee.daily_salary
+        elif att.status == 'half':
+            total_half_day += employee.half_day_salary
+        if getattr(att, 'overtime', False) and employee.overtime_salary is not None:
+            total_overtime += employee.overtime_salary
+
+    total_earned = total_full_day + total_half_day + total_overtime
+    total_paid = sum((p.amount_paid for p in payments), Decimal('0'))
+    remaining = total_earned - total_paid
+
+    return {
+        'earned': total_earned,
+        'paid': total_paid,
+        'remaining': remaining,
+        'full_total': total_full_day,
+        'half_total': total_half_day,
+        'overtime_total': total_overtime,
+        'attendance': attendances,
+        'payments': payments,
+    }
+
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -23,7 +387,6 @@ from .models import (
     QuotationTerm, Measurement, MeasurementItem, MeasurementSubItem,
 )
 
-# ReportLab imports (used across multiple views)
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
@@ -181,15 +544,15 @@ def clean_text(text):
 
 
 # ================= SALARY PDF HELPERS (module-level) =================
-GOLD   = colors.HexColor('#B8962E')
-DARK   = colors.HexColor('#0D1B2A')
-CREAM  = colors.HexColor('#F7F4EF')
-RULE   = colors.HexColor('#D4C5A0')
-RED    = colors.HexColor('#8B1A1A')
-GREEN  = colors.HexColor('#1A6B2B')
-GREY   = colors.HexColor('#777777')
-LGREY  = colors.HexColor('#888888')
-WHITE  = colors.white
+GOLD  = colors.HexColor('#B8962E')
+DARK  = colors.HexColor('#0D1B2A')
+CREAM = colors.HexColor('#F7F4EF')
+RULE  = colors.HexColor('#D4C5A0')
+RED   = colors.HexColor('#8B1A1A')
+GREEN = colors.HexColor('#1A6B2B')
+GREY  = colors.HexColor('#777777')
+LGREY = colors.HexColor('#888888')
+WHITE = colors.white
 
 _FONTS_REGISTERED = False
 
@@ -259,10 +622,8 @@ def _fmt(amount, rupee):
 
 # ================= DASHBOARD =================
 def dashboard(request):
-    # lightweight RAM info for dashboard + quick console log
     ram = get_ram_usage()
     check_memory()
-    # show a small list of recent orders (avoid N+1 by using select_related)
     recent_orders = list(Order.objects.select_related('customer').order_by('-created_at')[:10])
     return render(request, 'dashboard.html', {
         'customers': Customer.objects.count(),
@@ -320,7 +681,6 @@ def logout_user(request):
 # ================= CUSTOMERS =================
 @login_required(login_url='/login/')
 def customers(request):
-    # FIX: limit to 50 rows to avoid loading entire table into RAM on Render
     return render(request, 'customers.html', {
         'data': Customer.objects.all().order_by('-id')[:50]
     })
@@ -391,9 +751,6 @@ def take_measurements(request, cust_id):
 
 @login_required(login_url='/login/')
 def save_measurements(request, cust_id):
-    """Save measurement data. Expects JSON body with structure:
-    { items: [ {description, item_type, unit, subs: [{height, width, quantity}] } ] }
-    """
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=400)
 
@@ -431,7 +788,6 @@ def save_measurements(request, cust_id):
                 except Exception:
                     service = None
 
-            # ensure we never pass None to DB; use empty string as safe default
             custom_name = item.get('custom_item_name') or ''
 
             try:
@@ -505,7 +861,11 @@ def save_measurements(request, cust_id):
             mi.total_price = total_price
             mi.save()
 
-    return JsonResponse({'ok': True, 'measurement_id': m.id})
+    return JsonResponse({
+        'ok': True,
+        'measurement_id': m.id,
+        'pdf_url': f'/measurement-pdf/{customer.id}/'
+    })
 
 
 @login_required(login_url='/login/')
@@ -516,9 +876,7 @@ def get_measurements_json(request, cust_id):
         return JsonResponse({'items': []})
 
     out = []
-    # FIX: prefetch_related('subitems') eliminates N+1 — one query for all subitems
     for mi in m.items.prefetch_related('subitems').all():
-        # FIX: cache the queryset result so we don't hit the DB twice per item
         subs_qs = list(mi.subitems.all())
 
         subs = []
@@ -571,7 +929,6 @@ def get_measurements_json(request, cust_id):
 # ================= SERVICES =================
 @login_required(login_url='/login/')
 def services(request):
-    # limit services to keep the page lightweight
     return render(request, 'services.html', {
         'data': Service.objects.all().order_by('-id')[:50]
     })
@@ -582,7 +939,6 @@ def services_api(request):
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
-    # return minimal fields and limit results for fast API responses
     qs = Service.objects.all().order_by('name').values('id', 'name', 'price')[:50]
     out = [{'id': s['id'], 'name': s['name'], 'description': s['name'], 'price': float(s['price'])} for s in qs]
     return JsonResponse(out, safe=False)
@@ -590,7 +946,7 @@ def services_api(request):
 
 @login_required(login_url='/login/')
 def create_service_api(request):
-    """Create a Service via AJAX. Expects JSON or form POST with 'name', optional 'price'."""
+    """Create a Service via AJAX."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=400)
 
@@ -684,7 +1040,6 @@ def delete_service(request, id):
 # ================= QUOTATIONS =================
 @login_required(login_url='/login/')
 def create_quotation(request):
-    # limit result sets to keep the form lightweight
     customers = Customer.objects.order_by('name')[:50]
     quotations = Quotation.objects.all().order_by('-id')[:50]
     terms_qs = TermCondition.objects.order_by('id')[:20]
@@ -760,16 +1115,13 @@ def create_quotation(request):
         quotation.total = total_calc
 
         selected_terms = request.POST.getlist('terms')
-
         print("DEBUG TERMS:", selected_terms)
-
         quotation.quotation_terms.all().delete()
 
         for term_id in selected_terms:
             try:
                 order = request.POST.get(f'term_order_{term_id}', '').strip()
                 order = int(order) if order else 0
-
                 QuotationTerm.objects.create(
                     quotation=quotation,
                     term_id=int(term_id),
@@ -798,7 +1150,6 @@ def create_quotation(request):
 # ================= VIEW QUOTATION =================
 @login_required(login_url='/login/')
 def view_quotation(request, id):
-    # Fetch quotation with related customer and prefetch items and terms to avoid N+1
     q = get_object_or_404(
         Quotation.objects.select_related('customer').prefetch_related('items', 'quotation_terms__term'),
         id=id
@@ -843,7 +1194,8 @@ def edit_quotation(request, id):
             except Exception:
                 pass
 
-        items.delete()
+        # Delete existing items via queryset (items is a list, re-fetch queryset)
+        q.items.all().delete()
         subtotal = Decimal('0')
 
         for desc, qty, unit, price in zip(descriptions, quantities, units, prices):
@@ -891,16 +1243,13 @@ def edit_quotation(request, id):
         q.total = total_calc
 
         selected_terms = request.POST.getlist('terms')
-
         print("DEBUG TERMS:", selected_terms)
-
         q.quotation_terms.all().delete()
 
         for term_id in selected_terms:
             try:
                 order = request.POST.get(f'term_order_{term_id}', '').strip()
                 order = int(order) if order else 0
-
                 QuotationTerm.objects.create(
                     quotation=q,
                     term_id=int(term_id),
@@ -940,7 +1289,6 @@ def edit_quotation(request, id):
 # ================= LIST PAGE =================
 @login_required(login_url='/login/')
 def quotations(request):
-    # FIX: select_related('customer') avoids per-row FK lookup in template
     data = Quotation.objects.select_related('customer').order_by('-id')[:50]
     return render(request, 'quotations.html', {'data': data})
 
@@ -979,7 +1327,6 @@ def quotation_pdf(request, id):
 
     today_date = _dt.now().strftime("%d-%m-%Y")
     q = get_object_or_404(Quotation, id=id)
-    # FIX: select_related to avoid extra FK query per item in PDF loop
     items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
 
     customer_name = re.sub(r'[^A-Za-z0-9]+', '_', q.customer.name)
@@ -998,7 +1345,6 @@ def quotation_pdf(request, id):
 
     font_name, _ = _load_unicode_font()
 
-    # Palette
     NAVY        = colors.HexColor('#0F2044')
     ACCENT      = colors.HexColor('#2563EB')
     SLATE_LIGHT = colors.HexColor('#F1F5F9')
@@ -1321,7 +1667,6 @@ def quotation_pdf(request, id):
 @login_required(login_url='/login/')
 def orders(request):
     query = request.GET.get('q', '').strip()
-    # FIX: select_related('customer') avoids per-row FK hit; limit to 50
     qs = Order.objects.select_related('customer').order_by('-id')[:50]
     if query:
         from django.db.models import Q as DQ
@@ -1357,7 +1702,6 @@ def generate_reminder_pdf(request, order_id):
     total_paid   = order.advance_paid + payments_sum
     remaining    = order.total_amount - total_paid
 
-    # Colour palette
     _NAVY      = colors.HexColor("#0D1B2A")
     _GOLD      = colors.HexColor("#B8922A")
     GOLD_LIGHT = colors.HexColor("#F5E6C8")
@@ -1479,7 +1823,6 @@ def generate_reminder_pdf(request, order_id):
 
     elements = []
 
-    # Header block
     logo_img = _load_logo_image(width=0.85 * inch, height=0.85 * inch, circular=False)
     logo_img.hAlign = "CENTER"
 
@@ -1509,7 +1852,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(header_block)
     elements.append(Spacer(1, 20))
 
-    # Payment reminder title
     reminder_title = Paragraph(
         "<font name='Times-Bold' size='15' color='#0D1B2A'>PAYMENT REMINDER</font>",
         ParagraphStyle("BannerText", alignment=TA_CENTER, leading=20),
@@ -1533,7 +1875,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(banner)
     elements.append(Spacer(1, 20))
 
-    # Billed to / order details
     billed_label = Paragraph("BILLED TO", s_label)
     billed_name  = Paragraph(
         f"<font name='Times-Bold' size='12' color='#0D1B2A'>{clean_text(customer.name)}</font>",
@@ -1568,7 +1909,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(info_table)
     elements.append(Spacer(1, 22))
 
-    # Financial summary table
     elements.append(Paragraph("Financial Summary", s_section_title))
     elements.append(GoldRule(width=CONTENT_W, thickness=0.8, color=_RULE, top_gap=3, bot_gap=6))
 
@@ -1622,7 +1962,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(summary_table)
     elements.append(Spacer(1, 18))
 
-    # Amount due box
     due_left = Paragraph(
         "<font name='Times-Bold' size='13' color='#0D1B2A'>TOTAL AMOUNT DUE</font>"
         "<br/><font name='Helvetica' size='8' color='#9B1C1C'>"
@@ -1648,7 +1987,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(due_table)
     elements.append(Spacer(1, 26))
 
-    # Message
     elements.append(GoldRule(width=CONTENT_W, thickness=0.6, color=_RULE, top_gap=2, bot_gap=6))
     msg = (
         f"Dear <b>{clean_text(customer.name)}</b>,<br/>"
@@ -1663,7 +2001,6 @@ def generate_reminder_pdf(request, order_id):
     elements.append(Spacer(1, 20))
     elements.append(GoldRule(width=CONTENT_W, thickness=0.6, color=_RULE, top_gap=2, bot_gap=4))
 
-    # Footer
     elements.append(Spacer(1, 6))
     elements.append(Paragraph(
         "Shop No 4, Ganesh Plaza, Gokul Rd, Hubballi  &nbsp;|&nbsp;  "
@@ -1847,62 +2184,28 @@ def mark_attendance(request, emp_id):
 
 @login_required(login_url='/login/')
 def salary(request, emp_id):
-    emp        = get_object_or_404(Employee, id=emp_id)
-    attendance = Attendance.objects.filter(employee=emp)
-    payments   = Payment.objects.filter(employee=emp)
-
-    full_total = half_total = overtime_total = Decimal('0')
-
-    for r in attendance:
-        if r.status == 'full':
-            full_total += emp.daily_salary
-        elif r.status == 'half':
-            half_total += emp.half_day_salary
-
-        try:
-            if getattr(r, 'overtime', False) and emp.overtime_salary is not None:
-                overtime_total += emp.overtime_salary
-        except Exception:
-            pass
-
-    total_earned = full_total + half_total + overtime_total
-    total_paid   = sum((p.amount_paid for p in payments), Decimal('0'))
-    remaining    = total_earned - total_paid
-
+    emp = get_object_or_404(Employee, id=emp_id)
+    result = calculate_salary(emp)
     return render(request, 'salary.html', {
         'emp': emp,
-        'full_total': full_total,
-        'half_total': half_total,
-        'overtime_total': overtime_total,
-        'total_earned': total_earned,
-        'total_paid': total_paid,
-        'remaining': remaining,
-        'payments': payments
+        'full_total': result['full_total'],
+        'half_total': result['half_total'],
+        'overtime_total': result['overtime_total'],
+        'total_earned': result['earned'],
+        'total_paid': result['paid'],
+        'remaining': result['remaining'],
+        'payments': result['payments'],
     })
 
 
 @login_required(login_url='/login/')
 def pay_salary(request, emp_id):
-    emp        = get_object_or_404(Employee, id=emp_id)
-    attendance = Attendance.objects.filter(employee=emp)
-    payments   = Payment.objects.filter(employee=emp)
-
-    full_total = half_total = overtime_total = Decimal('0')
-
-    for r in attendance:
-        if r.status == 'full':
-            full_total += emp.daily_salary
-        elif r.status == 'half':
-            half_total += emp.half_day_salary
-        try:
-            if getattr(r, 'overtime', False) and emp.overtime_salary is not None:
-                overtime_total += emp.overtime_salary
-        except Exception:
-            pass
-
-    total_earned = full_total + half_total + overtime_total
-    total_paid   = sum((p.amount_paid for p in payments), Decimal('0'))
-    remaining    = total_earned - total_paid
+    emp = get_object_or_404(Employee, id=emp_id)
+    # Use centralized calculation — no duplicate logic
+    result    = calculate_salary(emp)
+    total_earned = result['earned']
+    total_paid   = result['paid']
+    remaining    = result['remaining']
 
     if request.method == "POST":
         amount_str = request.POST.get('amount')
@@ -1951,7 +2254,6 @@ def reset_salary(request, emp_id):
 @login_required(login_url='/login/')
 def view_attendance(request, emp_id):
     emp     = get_object_or_404(Employee, id=emp_id)
-    # use select_related to include employee on each attendance record and avoid per-row lookup
     records = Attendance.objects.filter(employee=emp).select_related('employee')
 
     start = request.GET.get('start_date')
@@ -1976,7 +2278,6 @@ def attendance_report_pdf(request, emp_id):
         except Exception:
             pass
 
-    # FIX: evaluate queryset once into a list to avoid re-hitting DB in multiple loops below
     records = list(records)
 
     total_days   = len(records)
@@ -2098,205 +2399,136 @@ def attendance_report_pdf(request, emp_id):
 # ================= SALARY PDF =================
 @login_required(login_url='/login/')
 def salary_pdf(request, emp_id):
-    emp        = get_object_or_404(Employee, id=emp_id)
-    attendance = Attendance.objects.filter(employee=emp).order_by('date')
-    payments   = Payment.objects.filter(employee=emp).order_by('date')
+    emp = get_object_or_404(Employee, id=emp_id)
 
-    total_earned = Decimal('0')
-    for r in attendance:
-        if r.status == 'full':
-            total_earned += emp.daily_salary
-        elif r.status == 'half':
-            total_earned += emp.daily_salary / 2
+    # ✅ ALWAYS use centralized function (single source of truth)
+    result = calculate_salary(emp)
 
-    total_paid = sum((p.amount_paid for p in payments), Decimal('0'))
-    remaining  = total_earned - total_paid
+    total_earned = result['earned']
+    total_paid   = result['paid']
+    remaining    = result['remaining']
 
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{emp.name}_salary_report.pdf"'
+    attendance = result['attendance'].order_by('date')
+    payments   = result['payments'].order_by('date')
 
     DATA, BOLD, RUPEE = _get_fonts()
 
-    W, _ = A4
-    doc  = SimpleDocTemplate(
-        response, pagesize=A4,
+    PAGE_W, _ = A4
+    USABLE_W  = PAGE_W - 80
+
+    # ✅ Create response FIRST
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="salary_{emp.name}.pdf"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
         leftMargin=40, rightMargin=40,
         topMargin=36, bottomMargin=36,
     )
-    PAGE_W = W - 80
 
+    elements = []
+
+    # ================= HEADER =================
     s_co      = _ps('co',  'Times-Bold',  26, TA_CENTER, DARK,  32)
     s_tag     = _ps('tag', 'Times-Roman', 10, TA_CENTER, colors.HexColor('#555555'))
     s_contact = _ps('ct',  DATA,           8, TA_CENTER, GREY)
     s_small   = _ps('sm',  DATA,           8, TA_CENTER, LGREY)
 
-    elements = []
-
-    stripe = Table([['']], colWidths=[PAGE_W])
-    stripe.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), GOLD),
-        ('ROWHEIGHT',  (0, 0), (-1, -1), 5),
-    ]))
-    elements.append(stripe)
-    elements.append(Spacer(1, 14))
-
     elements.append(Paragraph('SATYAM ALUMINIUM', s_co))
-    elements.append(Spacer(1, 4))
-    elements.append(HRFlowable(width=PAGE_W, thickness=1.5, color=GOLD, spaceAfter=4))
+    elements.append(Spacer(1, 6))
     elements.append(Paragraph(
-        'Shop No. 4, Ganesh Plaza, Gokul Road, Hubballi, Karnataka \u2014 580030', s_tag))
+        'Shop No. 4, Ganesh Plaza, Gokul Road, Hubballi', s_tag))
     elements.append(Paragraph(
-        '+91-8073709478   |   satyamaluminiumhubli@gmail.com', s_contact))
-    elements.append(Spacer(1, 16))
-
-    title_p = Paragraph(
-        "<font name='Times-Bold' size='15' color='white'>EMPLOYEE SALARY REPORT</font>",
-        _ps('tb', 'Times-Bold', 15, TA_CENTER, WHITE),
-    )
-    title_band = Table([[title_p]], colWidths=[PAGE_W])
-    title_band.setStyle(TableStyle([
-        ('BACKGROUND',    (0, 0), (-1, -1), DARK),
-        ('TOPPADDING',    (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-    ]))
-    elements.append(title_band)
+        '+91-8073709478 | satyamaluminiumhubli@gmail.com', s_contact))
     elements.append(Spacer(1, 20))
 
-    # Employee info panel
+    # ================= TITLE =================
+    elements.append(Paragraph(
+        "<font name='Times-Bold' size='15'>EMPLOYEE SALARY REPORT</font>",
+        _ps('title', 'Times-Bold', 15, TA_CENTER)
+    ))
+    elements.append(Spacer(1, 20))
+
+    # ================= EMPLOYEE INFO =================
     gen_date = datetime.now().strftime('%d %B, %Y')
-    emp_role = getattr(emp, 'role', None) or 'N/A'
 
-    left_cells  = [_info_cell('EMPLOYEE NAME', emp.name,           DATA, BOLD),
-                   Spacer(1, 8),
-                   _info_cell('ROLE',          emp_role,           DATA, BOLD)]
-    mid_cells   = [_info_cell('EMPLOYEE ID',   f'#EMP-{emp.id}',  DATA, BOLD),
-                   Spacer(1, 8),
-                   _info_cell('REPORT DATE',   gen_date,           DATA, BOLD)]
-    right_cells = [_info_cell('DAILY SALARY',  _fmt(emp.daily_salary, RUPEE), DATA, BOLD),
-                   Spacer(1, 8),
-                   _info_cell('PERIOD',        'All Time',         DATA, BOLD)]
+    info_tbl = Table([
+        ["Employee Name", emp.name],
+        ["Employee ID", f"#EMP-{emp.id}"],
+        ["Role", getattr(emp, 'role', 'N/A')],
+        ["Daily Salary", _fmt(emp.daily_salary, RUPEE)],
+        ["Report Date", gen_date],
+    ], colWidths=[150, USABLE_W - 150])
 
-    info_tbl = Table([[left_cells, mid_cells, right_cells]], colWidths=[PAGE_W / 3] * 3)
     info_tbl.setStyle(TableStyle([
-        ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
-        ('BOX',           (0, 0), (-1, -1), 0.8, RULE),
-        ('INNERGRID',     (0, 0), (-1, -1), 0.4, RULE),
-        ('BACKGROUND',    (0, 0), (-1, -1), CREAM),
-        ('TOPPADDING',    (0, 0), (-1, -1), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('LEFTPADDING',   (0, 0), (-1, -1), 14),
-        ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.whitesmoke),
+        ('PADDING', (0, 0), (-1, -1), 8),
     ]))
+
     elements.append(info_tbl)
-    elements.append(Spacer(1, 22))
+    elements.append(Spacer(1, 20))
 
-    # Ledger table
-    elements += _section_heading('ATTENDANCE & PAYMENT LEDGER', PAGE_W)
+    # ================= LEDGER =================
+    elements.append(Paragraph("ATTENDANCE & PAYMENT LEDGER",
+        _ps('sec', 'Times-Bold', 12, TA_LEFT)))
+    elements.append(Spacer(1, 10))
 
-    hdr = ['DATE', 'DAY', 'TYPE', 'DESCRIPTION', f'AMOUNT ({RUPEE})']
-    rows_data = []
+    ledger = [["Date", "Day", "Type", "Description", "Amount"]]
 
-    for r in attendance:
-        date_str = r.date.strftime('%d %b %Y') if hasattr(r.date, 'strftime') else str(r.date)
-        day_str  = r.date.strftime('%A')        if hasattr(r.date, 'strftime') else ''
-        if r.status == 'full':
-            amt, desc = emp.daily_salary, 'Full Day'
-        elif r.status == 'half':
-            amt, desc = emp.daily_salary / 2, 'Half Day'
-        else:
-            amt, desc = Decimal('0'), 'Absent'
-        rows_data.append([date_str, day_str, 'Earned', desc, f"{amt:,.2f}"])
+    for att in attendance:
+        date = att.date.strftime('%d %b %Y')
+        day  = att.date.strftime('%A')
+
+        if att.status == 'full':
+            ledger.append([date, day, "Earned", "Full Day", f"{emp.daily_salary:.2f}"])
+
+        elif att.status == 'half':
+            ledger.append([date, day, "Earned", "Half Day", f"{emp.half_day_salary:.2f}"])
+
+        # ✅ FIX: OVERTIME INCLUDED (MAIN BUG FIX)
+        if getattr(att, 'overtime', False):
+            ledger.append([date, day, "Earned", "Overtime", f"{emp.overtime_salary:.2f}"])
 
     for p in payments:
-        date_str = p.date.strftime('%d %b %Y') if hasattr(p.date, 'strftime') else str(p.date)
-        day_str  = p.date.strftime('%A')        if hasattr(p.date, 'strftime') else ''
-        rows_data.append([date_str, day_str, 'Paid', 'Salary Paid', f"{p.amount_paid:,.2f}"])
+        date = p.date.strftime('%d %b %Y')
+        day  = p.date.strftime('%A')
+        ledger.append([date, day, "Paid", "Salary Paid", f"{p.amount_paid:.2f}"])
 
-    ledger_data = [hdr] + rows_data
-    l_style = TableStyle([
-        ('BACKGROUND',    (0, 0), (-1, 0),  DARK),
-        ('TEXTCOLOR',     (0, 0), (-1, 0),  WHITE),
-        ('FONTNAME',      (0, 0), (-1, 0),  BOLD),
-        ('FONTSIZE',      (0, 0), (-1, 0),  8.5),
-        ('TOPPADDING',    (0, 0), (-1, 0),  8),
-        ('BOTTOMPADDING', (0, 0), (-1, 0),  8),
-        ('FONTNAME',      (0, 1), (-1, -1), DATA),
-        ('FONTSIZE',      (0, 1), (-1, -1), 8.5),
-        ('TOPPADDING',    (0, 1), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-        ('ALIGN',         (4, 0), (4, -1),  'RIGHT'),
-        ('ALIGN',         (2, 0), (2, -1),  'CENTER'),
-        ('GRID',          (0, 0), (-1, -1), 0.4, RULE),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [WHITE, CREAM]),
-    ])
-
-    for i, row in enumerate(rows_data, 1):
-        clr = GREEN if row[2] == 'Earned' else RED
-        l_style.add('TEXTCOLOR', (2, i), (2, i), clr)
-        l_style.add('FONTNAME',  (2, i), (2, i), BOLD)
-
-    ledger_tbl = Table(ledger_data, colWidths=[72, 78, 55, PAGE_W - 335, 85])
-    ledger_tbl.setStyle(l_style)
-    elements.append(ledger_tbl)
-    elements.append(Spacer(1, 22))
-
-    # Financial summary
-    elements += _section_heading('FINANCIAL SUMMARY', PAGE_W)
-
-    summary_rows = [
-        ['Total Earned', _fmt(total_earned, RUPEE)],
-        ['Total Paid',   _fmt(total_paid,   RUPEE)],
-    ]
-    sum_tbl = Table(summary_rows, colWidths=[PAGE_W - 160, 160])
-    sum_tbl.setStyle(TableStyle([
-        ('FONTNAME',      (0, 0), (-1, -1), DATA),
-        ('FONTSIZE',      (0, 0), (-1, -1), 9.5),
-        ('ALIGN',         (1, 0), (1, -1),  'RIGHT'),
-        ('TOPPADDING',    (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING',   (0, 0), (-1, -1), 14),
-        ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
-        ('GRID',          (0, 0), (-1, -1), 0.4, RULE),
-        ('ROWBACKGROUNDS', (0, 0), (-1, -1), [CREAM, WHITE]),
+    table = Table(ledger, colWidths=[80, 80, 70, USABLE_W - 330, 80])
+    table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.3, colors.grey),
+        ('BACKGROUND', (0,0), (-1,0), colors.black),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (4,0), (-1,-1), 'RIGHT'),
     ]))
-    elements.append(sum_tbl)
-    elements.append(Spacer(1, 2))
 
-    bal_label = Paragraph(
-        "<font name='Times-Bold' size='12'>REMAINING BALANCE</font>",
-        _ps('_bl', 'Times-Bold', 12, TA_LEFT, WHITE),
-    )
-    bal_amount = Paragraph(
-        f"<font name='{BOLD}' size='13'>{_fmt(remaining, RUPEE)}</font>",
-        _ps('_ba', BOLD, 13, TA_RIGHT, WHITE),
-    )
-    bal_tbl = Table([[bal_label, bal_amount]], colWidths=[PAGE_W - 160, 160])
-    bal_tbl.setStyle(TableStyle([
-        ('BACKGROUND',    (0, 0), (-1, -1), RED),
-        ('TOPPADDING',    (0, 0), (-1, -1), 11),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 11),
-        ('LEFTPADDING',   (0, 0), (0, 0),   14),
-        ('RIGHTPADDING',  (1, 0), (1, 0),   14),
-        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+    elements.append(table)
+    elements.append(Spacer(1, 20))
+
+    # ================= SUMMARY =================
+    elements.append(Paragraph("FINANCIAL SUMMARY",
+        _ps('sec2', 'Times-Bold', 12)))
+
+    summary = Table([
+        ["Total Earned", _fmt(total_earned, RUPEE)],
+        ["Total Paid", _fmt(total_paid, RUPEE)],
+        ["Remaining", _fmt(remaining, RUPEE)],
+    ], colWidths=[USABLE_W - 150, 150])
+
+    summary.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('BACKGROUND', (0,2), (-1,2), colors.red),
+        ('TEXTCOLOR', (0,2), (-1,2), colors.white),
+        ('PADDING', (0,0), (-1,-1), 8),
     ]))
-    elements.append(bal_tbl)
-    elements.append(Spacer(1, 28))
 
-    # Footer
-    elements.append(HRFlowable(width=PAGE_W, thickness=1.5, color=GOLD, spaceAfter=6))
-    elements.append(Paragraph(
-        'This is a system-generated document. No physical signature required.',
-        s_small,
-    ))
-    elements.append(Spacer(1, 6))
-    bot = Table([['']], colWidths=[PAGE_W])
-    bot.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), GOLD),
-        ('ROWHEIGHT',  (0, 0), (-1, -1), 4),
-    ]))
-    elements.append(bot)
+    elements.append(summary)
 
+    # ================= BUILD =================
     doc.build(elements)
+
     return response
 
 
@@ -2324,7 +2556,6 @@ def export_excel(request, emp_id):
 # ================= TERMS & CONDITIONS =================
 @login_required(login_url='/login/')
 def add_term(request):
-    """AJAX endpoint to create a new TermCondition. Expects POST with 'text'."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=400)
 
@@ -2338,7 +2569,6 @@ def add_term(request):
 
 @login_required(login_url='/login/')
 def edit_term(request, id):
-    """AJAX endpoint to edit an existing TermCondition."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=400)
 

@@ -3,6 +3,9 @@ from . import views
 
 urlpatterns = [
 
+    # ================= MEASUREMENT PDF =================
+    path('measurement-pdf/<int:cust_id>/', views.measurement_pdf, name='measurement_pdf'),
+
     # ================= DASHBOARD =================
     path('', views.dashboard, name='dashboard'),
 
@@ -35,7 +38,8 @@ urlpatterns = [
     path('edit-quotation/<int:id>/', views.edit_quotation, name='edit_quotation'),
     path('quotation-pdf/<int:id>/', views.quotation_pdf, name='quotation_pdf'),
     path('delete-quotation/<int:id>/', views.delete_quotation, name='delete_quotation'),
-    # Measurements
+
+    # ================= MEASUREMENTS =================
     path('customer/<int:cust_id>/measurements/', views.take_measurements, name='take_measurements'),
     path('take-measurements/<int:cust_id>/', views.take_measurements, name='take_measurements_alias'),
     path('customer/<int:cust_id>/measurements/save/', views.save_measurements, name='save_measurements'),

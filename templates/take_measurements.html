@@ -894,7 +894,12 @@ function saveMeasurements(){
         .then(r=>r.json())
         .then(data=>{
             if(data.error){ formError.innerText = data.error || 'Could not save'; formError.style.display='block'; saveBtn.disabled=false; saveBtn.innerText=prev; return; }
-            saveBtn.innerText='Saved Successfully'; setTimeout(()=>{ saveBtn.innerText=prev; saveBtn.disabled=false; window.location.href='{% url "customers" %}'; },700);
+            saveBtn.innerText='Saved Successfully';
+            // Open the measurement PDF in a new tab if pdf_url is present
+            if(data.pdf_url){
+                window.open(data.pdf_url, '_blank');
+            }
+            setTimeout(()=>{ saveBtn.innerText=prev; saveBtn.disabled=false; window.location.href='{% url "customers" %}'; },700);
         }).catch(err=>{ formError.innerText='Could not save'; formError.style.display='block'; saveBtn.disabled=false; saveBtn.innerText=prev; });
 }
 
