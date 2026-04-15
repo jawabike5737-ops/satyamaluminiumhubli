@@ -431,7 +431,8 @@ def save_measurements(request, cust_id):
                 except Exception:
                     service = None
 
-            custom_name = item.get('custom_item_name') or None
+            # ensure we never pass None to DB; use empty string as safe default
+            custom_name = item.get('custom_item_name') or ''
 
             try:
                 ppu = Decimal(str(item.get('price_per_unit') or '0'))
@@ -777,7 +778,7 @@ def create_quotation(request):
             except Exception as e:
                 print("ERROR:", e)
 
-        quotation.custom_terms = request.POST.get('custom_terms')
+        quotation.custom_terms = request.POST.get('custom_terms') or ''
         tac = request.POST.get('terms_and_conditions', '').strip()
         quotation.terms_and_conditions = tac if tac else default_terms_text
         quotation.save()

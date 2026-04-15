@@ -49,7 +49,7 @@ class Quotation(models.Model):
     # ManyToMany to TermCondition allows selecting multiple predefined terms
     # custom_terms stores freeform terms entered for this quotation
     terms = models.ManyToManyField('TermCondition', blank=True, through='QuotationTerm')
-    custom_terms = models.TextField(blank=True)
+    custom_terms = models.TextField(blank=True, default='')
     # Store the full terms & conditions text for this quotation (editable copy)
     terms_and_conditions = models.TextField(blank=True)
     
@@ -143,8 +143,8 @@ class MeasurementItem(models.Model):
     # Link to a predefined Service (optional). If set, use Service.name as item name.
     service = models.ForeignKey('Service', on_delete=models.SET_NULL, null=True, blank=True, related_name='measurement_items', db_index=True)
     # If user typed a custom item name (not a Service), store it here.
-    # blank=True is sufficient for text fields; avoid null=True for consistency
-    custom_item_name = models.TextField(blank=True)
+    # Use a model-level default to avoid NULLs and make field safe across forms/apis
+    custom_item_name = models.TextField(blank=True, default='')
     # Description (editable copy)
     description = models.TextField()
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES, default=SIZE)
