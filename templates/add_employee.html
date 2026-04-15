@@ -6,24 +6,21 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: #f0ede8;
-    min-height: 100vh;
+  /* page-level body styles removed - keep body controlled by base.html */
+
+  /* Center page content within the main .content area (use in base) */
+  .content {
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 40px 16px;
-    background-image:
-      radial-gradient(circle at 20% 20%, rgba(210,195,175,0.5) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(180,200,215,0.4) 0%, transparent 50%);
+    align-items: center; /* vertically center the card within content area */
+    padding: 40px 16px; /* preserve spacing originally on body */
   }
 
   .card {
     background: #ffffff;
     border-radius: 24px;
-    width: 420px;
-    max-width: 100%;
+    width: 100%;
+    max-width: 420px;
     box-shadow:
       0 1px 2px rgba(0,0,0,0.04),
       0 4px 16px rgba(0,0,0,0.06),
@@ -231,6 +228,57 @@
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(49,130,206,0.2);
   }
+
+  /* GRID LAYOUT */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .form-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fafafa;
+    color: #1a202c;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  @media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .card { max-width: 420px; }
+  }
+
+  /* Larger card + centered spacing */
+  .card {
+    max-width: 900px;
+    margin: 48px auto;
+  }
+
+  .form-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+  }
+
+  .submit-btn {
+    padding: 14px 18px;
+    font-size: 15px;
+    border-radius: 14px;
+    min-width: 240px;
+  }
 </style>
 
 <div class="card">
@@ -246,61 +294,48 @@
 
   <form method="POST" class="form-body ajax-form" data-reset-on-success="true">
 
-    <div class="field">
-      <label>Employee Name</label>
-      <div class="input-wrap">
-        <input type="text" name="name" placeholder="e.g. Rahul Sharma" required>
-        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+    <div class="form-grid">
+
+      <!-- LEFT COLUMN -->
+      <div class="form-col">
+        <div class="field">
+          <label>Employee Name</label>
+          <input type="text" name="name" placeholder="e.g. Rahul Sharma" required>
+        </div>
+
+        <div class="field">
+          <label>Phone</label>
+          <input type="text" name="phone" placeholder="+91 98765 43210" required>
+        </div>
+
+        <div class="field">
+          <label>Role</label>
+          <input type="text" name="role" placeholder="Site Supervisor" required>
+        </div>
       </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="form-col">
+        <div class="field">
+          <label>Daily Salary</label>
+          <input type="number" step="0.01" name="salary" placeholder="0.00" required>
+        </div>
+
+        <div class="field">
+          <label>Half Day Salary</label>
+          <input type="number" step="0.01" name="half_salary" placeholder="0.00" required>
+        </div>
+
+        <div class="field">
+          <label>Overtime Salary</label>
+          <input type="number" step="0.01" name="overtime_salary" placeholder="0.00">
+        </div>
+      </div>
+
     </div>
 
-    <div class="field">
-      <label>Phone</label>
-      <div class="input-wrap">
-        <input type="text" name="phone" placeholder="e.g. +91 98765 43210" required>
-        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 3.08 5.18 2 2 0 0 1 5.07 3h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L9.09 10.1a16 16 0 0 0 6.2 6.2l1.16-1.16a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Role</label>
-      <div class="input-wrap">
-        <input type="text" name="role" placeholder="e.g. Site Supervisor" required>
-        <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="field">
-      <label>Daily Salary</label>
-      <div class="input-wrap">
-        <input type="number" step="0.01" name="salary" placeholder="0.00" required>
-        <span class="input-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Half Day Salary</label>
-      <div class="input-wrap">
-        <input type="number" step="0.01" name="half_salary" placeholder="0.00" required>
-        <span class="input-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg></span>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Overtime Salary <span class="optional-tag">optional</span></label>
-      <div class="input-wrap">
-        <input type="number" step="0.01" name="overtime_salary" placeholder="0.00">
-        <span class="input-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="submit" class="submit-btn">
-        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-        Add Employee
-      </button>
+    <div class="form-footer" style="margin-top:18px;">
+      <button type="submit" class="submit-btn">Add Employee</button>
     </div>
 
   </form>
