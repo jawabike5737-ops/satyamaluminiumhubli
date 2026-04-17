@@ -1258,7 +1258,7 @@ def edit_quotation(request, id):
             except Exception as e:
                 print("ERROR:", e)
 
-        q.custom_terms = request.POST.get('custom_terms')
+        q.custom_terms = (request.POST.get('custom_terms') or '').strip()
         tac = request.POST.get('terms_and_conditions', '').strip()
         q.terms_and_conditions = tac if tac else (q.terms_and_conditions or default_terms_text)
         q.save()
