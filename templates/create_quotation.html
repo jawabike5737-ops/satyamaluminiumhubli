@@ -1,119 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create Quotation – Satyam Aluminium</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Line items -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="card-title-dot"></span>
+                Line Items
+            </div>
+            <span style="font-size:12px; color:var(--text-3);" id="rowCount">0 items</span>
+        </div>
+        <div class="card-body" style="padding-bottom:0;">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:35%;">Description</th>
+                            <th style="width:10%;">Qty</th>
+                            <th style="width:14%;">Unit</th>
+                            <th style="width:14%;">Unit Price</th>
+                            <th style="width:13%;">Total</th>
+                            <th style="width:8%; text-align:center;">Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% if edit and items %}
+                            {% for item in items %}
+                            <tr>
+                                <td>
+                                    <textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)">{{ item.description }}</textarea>
+                                </td>
+                                <td><input type="number" name="quantity" step="0.001" min="0" value="{{ item.quantity }}" oninput="calculate()" placeholder="1"></td>
+                                <td>
+                                    <select name="unit">
+                                        <option {% if item.unit == 'Nos' %}selected{% endif %}>Nos</option>
+                                        <option {% if item.unit == 'Sq Ft' %}selected{% endif %}>Sq Ft</option>
+                                        <option {% if item.unit == 'Feet' %}selected{% endif %}>Feet</option>
+                                        <option {% if item.unit == 'Metre' %}selected{% endif %}>Metre</option>
+                                        <option {% if item.unit == 'Sq Mtr' %}selected{% endif %}>Sq Mtr</option>
+                                        <option {% if item.unit == 'Kg' %}selected{% endif %}>Kg</option>
+                                        <option {% if item.unit == 'inch' %}selected{% endif %}>inch</option>
+                                        <option {% if item.unit == 'Sets' %}selected{% endif %}>Sets</option>
+                                        <option {% if item.unit == 'RFT' %}selected{% endif %}>RFT</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="price" step="0.01" min="0" value="{{ item.price }}" oninput="calculate()" placeholder="0.00"></td>
+                                <td class="rowTotal row-total-cell">₹ {{ item.total }}</td>
+                                <td style="text-align:center;">
+                                    <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td>
+                                    <textarea name="description" class="desc-box" rows="1"
+                                        placeholder="Item description"
+                                        oninput="autoResize(this)"></textarea>
+                                </td>
+                                <td><input type="number" name="quantity" step="0.001" min="0" value="1" oninput="calculate()" placeholder="1"></td>
+                                <td>
+                                    <select name="unit">
+                                        <option>Nos</option><option>Sq Ft</option><option>Feet</option>
+                                        <option>Metre</option><option>Sq Mtr</option><option>Kg</option><option>inch</option>
+                                        <option>Sets</option><option>RFT</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="price" step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00"></td>
+                                <td class="rowTotal row-total-cell">₹ 0.00</td>
+                                <td style="text-align:center;">
+                                    <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
 
-<style>
-/* ── Reset & Variables ── */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+            <div class="table-actions">
+                <button type="button" class="btn btn-ghost" onclick="addRow()">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Row
+                </button>
+                <span style="font-size:12px; color:var(--text-3);">Tip: press tab to move between fields</span>
+            </div>
 
-:root {
-  --gold:        #C9A84C;
-  --gold-lt:     #E8C97A;
-  --gold-dim:    rgba(201,168,76,.18);
-  --gold-glow:   rgba(201,168,76,.10);
-  --bg:          #F3F4F7;
-  --surface:     #FFFFFF;
-  --surface-2:   #F9FAFB;
-  --surface-3:   #F1F3F6;
-  --border:      #E4E7ED;
-  --border-f:    #C9A84C;
-  --text-1:      #111827;
-  --text-2:      #4B5563;
-  --text-3:      #9CA3AF;
-  --blue:        #1D4ED8;
-  --blue-lt:     #EFF6FF;
-  --red:         #DC2626;
-  --red-lt:      #FEF2F2;
-  --green:       #059669;
-  --green-lt:    #ECFDF5;
-  --orange:      #D97706;
-  --orange-lt:   #FFFBEB;
-  --r:           10px;
-  --r-lg:        16px;
-  --sh-sm:       0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
-  --sh-md:       0 4px 16px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
-  --sh-lg:       0 12px 40px rgba(0,0,0,.10),0 2px 8px rgba(0,0,0,.06);
-  --sh-gold:     0 4px 20px rgba(201,168,76,.18);
-}
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text-1);
-  min-height: 100vh;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* ── Topbar ── */
-.topbar {
-  position: sticky; top: 0; z-index: 50;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  height: 64px;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 32px;
-  box-shadow: var(--sh-sm);
-}
-.topbar-brand { display: flex; align-items: center; gap: 12px; }
-.topbar-icon {
-  width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
-  background: linear-gradient(135deg,#8A6A1F,var(--gold),var(--gold-lt));
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--sh-gold);
-}
-.topbar-icon svg { width: 18px; height: 18px; }
-.topbar-name {
-  font-family: 'Syne', sans-serif;
-  font-size: 17px; font-weight: 700; color: var(--text-1);
-}
-.topbar-badge {
-  font-size: 11px; font-weight: 500; letter-spacing: .05em;
-  color: var(--gold);
-  background: var(--gold-glow);
-  border: 1px solid var(--gold-dim);
-  border-radius: 20px; padding: 2px 10px;
-}
-
-/* ── Page ── */
-.page {
-  max-width: 1160px; margin: 0 auto;
-  padding: 32px 24px 80px;
-  animation: pageIn .5s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* ── Heading ── */
-.page-heading {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 28px; gap: 12px; flex-wrap: wrap;
-}
-.page-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 26px; font-weight: 800; color: var(--text-1); line-height: 1.1;
-}
-.page-title span {
-  background: linear-gradient(135deg, var(--gold), var(--gold-lt));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.page-breadcrumb { font-size: 13px; color: var(--text-3); margin-top: 4px; }
-
-/* ── Card ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-md);
-  overflow: hidden;
+            <!-- Totals -->
+            <div class="totals-panel">
+                <div class="totals-row">
+                    <span class="totals-label">Subtotal</span>
+                    <span class="totals-value">₹ <span id="subtotal">0.00</span></span>
+                </div>
+                <div class="totals-row" id="cgstRow">
+                    <span class="totals-label">CGST (9%)</span>
+                    <span class="totals-value">₹ <span id="cgst">0.00</span></span>
+                </div>
+                <div class="totals-row" id="sgstRow">
+                    <span class="totals-label">SGST (9%)</span>
+                    <span class="totals-value">₹ <span id="sgst">0.00</span></span>
+                </div>
+                <div class="totals-row" id="discountRow">
+                    <span class="totals-label">Special Discount</span>
+                    <span class="totals-value">- ₹ <span id="discountDisplay">0.00</span></span>
+                </div>
+                <div class="totals-divider"></div>
+                <div class="totals-row">
+                    <span class="totals-grand-label">Grand Total</span>
+                    <span class="totals-grand-value">₹ <span id="grandTotal">0.00</span></span>
+                </div>
+            </div>
+            <div style="height:24px;"></div>
+        </div>
+    </div>
   margin-bottom: 24px;
   transition: box-shadow .2s;
 }
