@@ -1,441 +1,379 @@
 <!DOCTYPE html>
 <html lang="en">
-    <!-- Line items -->
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">
-                <span class="card-title-dot"></span>
-                Line Items
-            </div>
-            <span style="font-size:12px; color:var(--text-3);" id="rowCount">0 items</span>
-        </div>
-        <div class="card-body" style="padding-bottom:0;">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:35%;">Description</th>
-                            <th style="width:10%;">Qty</th>
-                            <th style="width:14%;">Unit</th>
-                            <th style="width:14%;">Unit Price</th>
-                            <th style="width:13%;">Total</th>
-                            <th style="width:8%; text-align:center;">Remove</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        {% if edit and items %}
-                            {% for item in items %}
-                            <tr>
-                                <td>
-                                    <textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)">{{ item.description }}</textarea>
-                                </td>
-                                <td><input type="number" name="quantity" step="0.001" min="0" value="{{ item.quantity }}" oninput="calculate()" placeholder="1"></td>
-                                <td>
-                                    <select name="unit">
-                                        <option {% if item.unit == 'Nos' %}selected{% endif %}>Nos</option>
-                                        <option {% if item.unit == 'Sq Ft' %}selected{% endif %}>Sq Ft</option>
-                                        <option {% if item.unit == 'Feet' %}selected{% endif %}>Feet</option>
-                                        <option {% if item.unit == 'Metre' %}selected{% endif %}>Metre</option>
-                                        <option {% if item.unit == 'Sq Mtr' %}selected{% endif %}>Sq Mtr</option>
-                                        <option {% if item.unit == 'Kg' %}selected{% endif %}>Kg</option>
-                                        <option {% if item.unit == 'inch' %}selected{% endif %}>inch</option>
-                                        <option {% if item.unit == 'Sets' %}selected{% endif %}>Sets</option>
-                                        <option {% if item.unit == 'RFT' %}selected{% endif %}>RFT</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="price" step="0.01" min="0" value="{{ item.price }}" oninput="calculate()" placeholder="0.00"></td>
-                                <td class="rowTotal row-total-cell">₹ {{ item.total }}</td>
-                                <td style="text-align:center;">
-                                    <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td>
-                                    <textarea name="description" class="desc-box" rows="1"
-                                        placeholder="Item description"
-                                        oninput="autoResize(this)"></textarea>
-                                </td>
-                                <td><input type="number" name="quantity" step="0.001" min="0" value="1" oninput="calculate()" placeholder="1"></td>
-                                <td>
-                                    <select name="unit">
-                                        <option>Nos</option><option>Sq Ft</option><option>Feet</option>
-                                        <option>Metre</option><option>Sq Mtr</option><option>Kg</option><option>inch</option>
-                                        <option>Sets</option><option>RFT</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="price" step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00"></td>
-                                <td class="rowTotal row-total-cell">₹ 0.00</td>
-                                <td style="text-align:center;">
-                                    <button type="button" class="btn btn-danger btn-sm btn-icon-only" onclick="removeRow(this)" title="Remove row">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Quotation — Satyam Aluminium</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-lt: #E2C97E;
+      --gold-dim: rgba(201,168,76,.25);
+      --gold-glow: rgba(201,168,76,.08);
+      --blue: #1D4ED8;
+      --blue-lt: #EFF6FF;
+      --red: #DC2626;
+      --red-lt: #FEF2F2;
+      --green: #059669;
+      --green-lt: #ECFDF5;
+      --orange: #D97706;
+      --orange-lt: #FFFBEB;
+      --surface: #FFFFFF;
+      --surface-2: #F9FAFB;
+      --surface-3: #F3F4F6;
+      --border: #E5E7EB;
+      --border-f: var(--gold);
+      --text-1: #111827;
+      --text-2: #6B7280;
+      --text-3: #9CA3AF;
+      --r: 10px;
+      --r-lg: 14px;
+      --sh-gold: 0 4px 18px rgba(201,168,76,.18);
+      --sh-lg: 0 8px 32px rgba(0,0,0,.10);
+    }
 
-            <div class="table-actions">
-                <button type="button" class="btn btn-ghost" onclick="addRow()">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Add Row
-                </button>
-                <span style="font-size:12px; color:var(--text-3);">Tip: press tab to move between fields</span>
-            </div>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-            <!-- Totals -->
-            <div class="totals-panel">
-                <div class="totals-row">
-                    <span class="totals-label">Subtotal</span>
-                    <span class="totals-value">₹ <span id="subtotal">0.00</span></span>
-                </div>
-                <div class="totals-row" id="cgstRow">
-                    <span class="totals-label">CGST (9%)</span>
-                    <span class="totals-value">₹ <span id="cgst">0.00</span></span>
-                </div>
-                <div class="totals-row" id="sgstRow">
-                    <span class="totals-label">SGST (9%)</span>
-                    <span class="totals-value">₹ <span id="sgst">0.00</span></span>
-                </div>
-                <div class="totals-row" id="discountRow">
-                    <span class="totals-label">Special Discount</span>
-                    <span class="totals-value">- ₹ <span id="discountDisplay">0.00</span></span>
-                </div>
-                <div class="totals-divider"></div>
-                <div class="totals-row">
-                    <span class="totals-grand-label">Grand Total</span>
-                    <span class="totals-grand-value">₹ <span id="grandTotal">0.00</span></span>
-                </div>
-            </div>
-            <div style="height:24px;"></div>
-        </div>
-    </div>
-  margin-bottom: 24px;
-  transition: box-shadow .2s;
-}
-.card:hover { box-shadow: var(--sh-lg); }
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.card-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 700; color: var(--text-1);
-  display: flex; align-items: center; gap: 9px;
-}
-.card-title-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--gold), var(--gold-lt));
-  box-shadow: 0 0 6px var(--gold-dim);
-}
-.card-body { padding: 24px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F5;
+      color: var(--text-1);
+      min-height: 100vh;
+    }
 
-/* ── Form helpers ── */
-.field-label {
-  display: block;
-  font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
-  color: var(--text-2); margin-bottom: 7px;
-}
-input, select, textarea {
-  width: 100%; padding: 10px 14px;
-  border: 1.5px solid var(--border); border-radius: var(--r);
-  font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-1);
-  background: var(--surface);
-  transition: border-color .2s, box-shadow .2s, background .2s;
-  outline: none; -webkit-appearance: none; appearance: none;
-}
-input:hover, select:hover, textarea:hover { border-color: rgba(201,168,76,.4); }
-input:focus, select:focus, textarea:focus {
-  border-color: var(--border-f);
-  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
-  background: #FFFDF5;
-}
-input::placeholder, textarea::placeholder { color: var(--text-3); }
-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-select {
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
-  padding-right: 38px;
-}
+    /* ── Topbar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      background: linear-gradient(135deg, #0A0E12, #1A2035);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 12px; }
+    .topbar-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .topbar-icon svg { width: 18px; height: 18px; }
+    .topbar-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px; font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: .01em;
+    }
+    .topbar-badge {
+      font-size: 11px; font-weight: 600; letter-spacing: .06em;
+      color: var(--gold);
+      background: rgba(201,168,76,.12);
+      border: 1px solid var(--gold-dim);
+      padding: 4px 12px; border-radius: 20px;
+    }
 
-/* auto-resize textarea */
-.desc-box {
-  min-height: 36px; max-height: 120px;
-  resize: none; overflow-y: hidden;
-  line-height: 1.45; white-space: pre-wrap; word-break: break-word;
-}
+    /* ── Page ── */
+    .page { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
 
-/* 2-col form row */
-.form-row-2 {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-}
-.form-row-3 {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
-}
-.form-row-auto {
-  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end;
-}
+    .page-heading { margin-bottom: 28px; }
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px; font-weight: 700; color: var(--text-1);
+      line-height: 1.2;
+    }
+    .page-title span { color: var(--gold); }
+    .page-breadcrumb { font-size: 12px; color: var(--text-3); margin-top: 4px; }
 
-/* ── GST Toggle ── */
-.gst-toggle {
-  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
-  background: linear-gradient(135deg,#FFFDF5,#FFF8E1);
-  border: 1.5px solid var(--gold-dim); border-radius: var(--r);
-  padding: 14px 18px;
-}
-.gst-toggle-label {
-  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--gold); white-space: nowrap;
-}
-.radio-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.radio-option {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 14px; border-radius: 20px;
-  border: 1.5px solid var(--border); background: var(--surface);
-  cursor: pointer; font-size: 13px; color: var(--text-2);
-  user-select: none; transition: all .2s;
-}
-.radio-option:has(input:checked) {
-  border-color: var(--gold); background: var(--gold-glow);
-  color: var(--gold); font-weight: 500; box-shadow: var(--sh-gold);
-}
-.radio-option input[type="radio"] {
-  width: 14px; height: 14px; accent-color: var(--gold); cursor: pointer;
-}
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      margin-bottom: 24px;
+      transition: box-shadow .2s;
+    }
+    .card:hover { box-shadow: var(--sh-lg); }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700; color: var(--text-1);
+      display: flex; align-items: center; gap: 9px;
+    }
+    .card-title-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+      box-shadow: 0 0 6px var(--gold-dim);
+    }
+    .card-body { padding: 24px; }
 
-/* ── Buttons ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: var(--r); border: none;
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-  cursor: pointer; transition: all .18s; white-space: nowrap;
-  text-decoration: none; line-height: 1; vertical-align: middle;
-}
-.btn:active { transform: scale(.97); }
+    /* ── Form helpers ── */
+    .field-label {
+      display: block;
+      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-2); margin-bottom: 7px;
+    }
+    input, select, textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-1);
+      background: var(--surface);
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      outline: none; -webkit-appearance: none; appearance: none;
+    }
+    input:hover, select:hover, textarea:hover { border-color: rgba(201,168,76,.4); }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--border-f);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+      background: #FFFDF5;
+    }
+    input::placeholder, textarea::placeholder { color: var(--text-3); }
+    input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 38px;
+    }
+    .desc-box {
+      min-height: 36px; max-height: 120px;
+      resize: none; overflow-y: hidden;
+      line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+    }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-row-auto { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
 
-.btn-primary {
-  background: linear-gradient(135deg,#1A3FC4,var(--blue));
-  color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,.25);
-}
-.btn-primary:hover { box-shadow: 0 6px 20px rgba(29,78,216,.35); transform: translateY(-1px); }
+    /* ── GST Toggle ── */
+    .gst-toggle {
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      background: linear-gradient(135deg, #FFFDF5, #FFF8E1);
+      border: 1.5px solid var(--gold-dim); border-radius: var(--r);
+      padding: 14px 18px;
+    }
+    .gst-toggle-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--gold); white-space: nowrap;
+    }
+    .radio-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .radio-option {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      cursor: pointer; font-size: 13px; color: var(--text-2);
+      user-select: none; transition: all .2s;
+    }
+    .radio-option:has(input:checked) {
+      border-color: var(--gold); background: var(--gold-glow);
+      color: var(--gold); font-weight: 500; box-shadow: var(--sh-gold);
+    }
+    .radio-option input[type="radio"] {
+      width: 14px; height: 14px; accent-color: var(--gold); cursor: pointer;
+    }
+    .discount-row {
+      display: flex; align-items: flex-end; gap: 16px;
+      margin-top: 18px; flex-wrap: wrap;
+    }
+    .discount-row .field-wrap { flex: 0 0 220px; }
 
-.btn-gold {
-  background: linear-gradient(135deg,#8A6A1F,var(--gold),var(--gold-lt));
-  color: #0A0E12; font-weight: 600; box-shadow: var(--sh-gold);
-}
-.btn-gold:hover { box-shadow: 0 6px 24px rgba(201,168,76,.35); transform: translateY(-1px); }
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--r); border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .18s; white-space: nowrap;
+      text-decoration: none; line-height: 1; vertical-align: middle;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, #1A3FC4, var(--blue));
+      color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,.25);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(29,78,216,.35); transform: translateY(-1px); }
+    .btn-gold {
+      background: linear-gradient(135deg, #8A6A1F, var(--gold), var(--gold-lt));
+      color: #0A0E12; font-weight: 600; box-shadow: var(--sh-gold);
+    }
+    .btn-gold:hover { box-shadow: 0 6px 24px rgba(201,168,76,.35); transform: translateY(-1px); }
+    .btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid #FECACA; }
+    .btn-danger:hover { background: #FEE2E2; }
+    .btn-success { background: var(--green-lt); color: var(--green); border: 1px solid #A7F3D0; }
+    .btn-success:hover { background: #D1FAE5; }
+    .btn-warning { background: var(--orange-lt); color: var(--orange); border: 1px solid #FDE68A; }
+    .btn-warning:hover { background: #FEF3C7; }
+    .btn-ghost { background: var(--surface-3); color: var(--text-2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-sm  { padding: 6px 12px; font-size: 12px; }
+    .btn-lg  { padding: 12px 24px; font-size: 15px; font-weight: 600; }
+    .btn-icon { padding: 7px; border-radius: 7px; }
 
-.btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid #FECACA; }
-.btn-danger:hover { background: #FEE2E2; }
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; font-size: 14px; }
+    thead th {
+      background: var(--surface-2);
+      padding: 11px 12px;
+      text-align: left; font-size: 11px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    tbody tr { transition: background .15s; animation: rowIn .3s ease both; }
+    tbody tr:nth-child(1) { animation-delay: .04s; }
+    tbody tr:nth-child(2) { animation-delay: .08s; }
+    tbody tr:nth-child(3) { animation-delay: .12s; }
+    tbody tr:nth-child(n+4) { animation-delay: .16s; }
+    @keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+    tbody tr:hover { background: var(--surface-3); }
+    tbody td {
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody td input, tbody td select { padding: 8px 10px; font-size: 13px; border-radius: 7px; }
+    .row-total { font-weight: 600; color: var(--text-1); white-space: nowrap; min-width: 90px; }
+    .table-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0 16px; flex-wrap: wrap; gap: 8px;
+    }
 
-.btn-success { background: var(--green-lt); color: var(--green); border: 1px solid #A7F3D0; }
-.btn-success:hover { background: #D1FAE5; }
+    /* ── Totals panel ── */
+    .totals-panel {
+      margin-top: 20px; margin-left: auto;
+      max-width: 380px;
+      background: linear-gradient(135deg, var(--surface-2), #FFFDF5);
+      border: 1.5px solid var(--gold-dim); border-radius: var(--r-lg);
+      padding: 22px 28px;
+      box-shadow: var(--sh-gold);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .totals-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 32px; }
+    .totals-label { font-size: 13px; color: var(--text-2); }
+    .totals-value { font-size: 14px; font-weight: 500; color: var(--text-1); font-variant-numeric: tabular-nums; }
+    #discountRow .totals-value { color: var(--red); font-weight: 700; }
+    .totals-divider { width: 100%; height: 1px; background: var(--gold-dim); margin: 4px 0; }
+    .totals-grand-label { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-1); }
+    .totals-grand-value {
+      font-family: 'Times New Roman', serif;
+      font-size: 24px; font-weight: 800; color: #000000;
+    }
 
-.btn-warning { background: var(--orange-lt); color: var(--orange); border: 1px solid #FDE68A; }
-.btn-warning:hover { background: #FEF3C7; }
+    /* ── Terms ── */
+    .terms-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 280px; overflow-y: auto; padding-right: 4px;
+    }
+    .terms-list::-webkit-scrollbar { width: 4px; }
+    .terms-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .term-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface-3); border: 1px solid var(--border); border-radius: var(--r);
+      transition: all .15s;
+    }
+    .term-row:hover { border-color: var(--gold-dim); background: #FFFDF5; }
+    .term-row label {
+      display: flex; align-items: center; gap: 10px;
+      flex: 1; cursor: pointer; font-size: 13.5px; color: var(--text-2);
+    }
+    .term-row input[type="checkbox"] {
+      width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0;
+    }
+    .term-row:has(input:checked) { background: linear-gradient(135deg, #FFFDF5, #FFF8E1); border-color: var(--gold-dim); }
+    .term-row:has(input:checked) label { color: var(--text-1); font-weight: 500; }
 
-.btn-ghost { background: var(--surface-3); color: var(--text-2); border: 1px solid var(--border); }
-.btn-ghost:hover { background: var(--border); }
+    /* ── Payment ── */
+    .payment-inline-check {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; color: var(--text-2); margin: 12px 0; cursor: pointer;
+    }
+    .payment-inline-check input[type="checkbox"] {
+      width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0;
+    }
 
-.btn-sm  { padding: 6px 12px; font-size: 12px; }
-.btn-lg  { padding: 12px 24px; font-size: 15px; font-weight: 600; }
-.btn-icon { padding: 7px; border-radius: 7px; }
+    /* ── History ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: .04em;
+    }
+    .badge-green { background: var(--green-lt); color: var(--green); border: 1px solid #A7F3D0; }
+    .badge-blue  { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #BFDBFE; }
+    .section-divider {
+      display: flex; align-items: center; gap: 16px; margin: 36px 0 28px;
+    }
+    .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .section-divider-text {
+      font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+    }
 
-/* ── Line-items table ── */
-.table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); }
-table { width: 100%; border-collapse: collapse; min-width: 720px; font-size: 14px; }
-thead th {
-  background: var(--surface-2);
-  padding: 11px 12px;
-  text-align: left; font-size: 11px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
-  border-bottom: 1px solid var(--border); white-space: nowrap;
-}
-tbody tr { transition: background .15s; }
-tbody tr:hover { background: var(--surface-3); }
-tbody td {
-  padding: 8px 10px; border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-tbody tr:last-child td { border-bottom: none; }
-tbody td input, tbody td select {
-  padding: 8px 10px; font-size: 13px; border-radius: 7px;
-}
-.row-total { font-weight: 600; color: var(--text-1); white-space: nowrap; min-width: 90px; }
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(17,24,39,.55); backdrop-filter: blur(4px);
+      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; animation: mfade .2s ease both; }
+    @keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
+    .modal-card {
+      background: var(--surface); width: 100%; max-width: 520px;
+      border-radius: var(--r-lg); box-shadow: var(--sh-lg); border: 1px solid var(--border);
+      overflow: hidden; animation: mslide .25s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes mslide {
+      from { opacity: 0; transform: translateY(20px) scale(.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+    }
+    .modal-title {
+      font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-1);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--surface-3); border: 1px solid var(--border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-2); font-size: 20px; line-height: 1; transition: all .15s;
+    }
+    .modal-close:hover { background: var(--red-lt); color: var(--red); border-color: #FECACA; }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-2);
+    }
 
-/* table action bar */
-.table-actions {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0 16px; flex-wrap: wrap; gap: 8px;
-}
+    /* ── Submit bar ── */
+    .submit-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 12px; padding-top: 8px; flex-wrap: wrap;
+    }
 
-/* ── Totals panel ── */
-.totals-panel {
-  margin-top: 20px; margin-left: auto;
-  max-width: 380px;
-  background: linear-gradient(135deg, var(--surface-2), #FFFDF5);
-  border: 1.5px solid var(--gold-dim); border-radius: var(--r-lg);
-  padding: 22px 28px;
-  box-shadow: var(--sh-gold);
-  display: flex; flex-direction: column; gap: 8px;
-}
-.totals-row {
-  display: flex; justify-content: space-between; align-items: center;
-  width: 100%; gap: 32px;
-}
-.totals-label { font-size: 13px; color: var(--text-2); }
-.totals-value { font-size: 14px; font-weight: 500; color: var(--text-1); font-variant-numeric: tabular-nums; }
-#discountRow .totals-value { color: var(--red); font-weight: 700; }
-.totals-divider { width: 100%; height: 1px; background: var(--gold-dim); margin: 4px 0; }
-.totals-grand-label { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-1); }
-.totals-grand-value {
-  font-family: 'Times New Roman', serif;
-  font-size: 24px;
-  font-weight: 800;
-  color: #000000;   /* Pure Black */
-}
-
-/* ── Terms ── */
-.terms-list {
-  display: flex; flex-direction: column; gap: 8px;
-  max-height: 280px; overflow-y: auto; padding-right: 4px;
-}
-.terms-list::-webkit-scrollbar { width: 4px; }
-.terms-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-.term-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px;
-  background: var(--surface-3); border: 1px solid var(--border); border-radius: var(--r);
-  transition: all .15s;
-}
-.term-row:hover { border-color: var(--gold-dim); background: #FFFDF5; }
-.term-row label {
-  display: flex; align-items: center; gap: 10px;
-  flex: 1; cursor: pointer; font-size: 13.5px; color: var(--text-2);
-}
-.term-row input[type="checkbox"] {
-  width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0;
-}
-.term-row:has(input:checked) { background: linear-gradient(135deg,#FFFDF5,#FFF8E1); border-color: var(--gold-dim); }
-.term-row:has(input:checked) label { color: var(--text-1); font-weight: 500; }
-
-/* ── Discount field layout ── */
-.discount-row {
-  display: flex; align-items: flex-end; gap: 16px;
-  margin-top: 18px; flex-wrap: wrap;
-}
-.discount-row .field-wrap { flex: 0 0 220px; }
-
-/* ── Payment ── */
-.payment-inline-check {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 14px; color: var(--text-2); margin: 12px 0; cursor: pointer;
-}
-.payment-inline-check input[type="checkbox"] {
-  width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer;
-  flex-shrink: 0;
-}
-
-/* ── History ── */
-.badge {
-  display: inline-flex; align-items: center;
-  padding: 3px 10px; border-radius: 20px;
-  font-size: 11px; font-weight: 600; letter-spacing: .04em;
-}
-.badge-green { background: var(--green-lt); color: var(--green); border: 1px solid #A7F3D0; }
-.badge-blue  { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #BFDBFE; }
-
-.section-divider {
-  display: flex; align-items: center; gap: 16px; margin: 36px 0 28px;
-}
-.section-divider-line { flex: 1; height: 1px; background: var(--border); }
-.section-divider-text {
-  font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
-}
-
-/* ── Modal ── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(17,24,39,.55); backdrop-filter: blur(4px);
-  z-index: 1000; align-items: center; justify-content: center; padding: 20px;
-}
-.modal-overlay.show { display: flex; animation: mfade .2s ease both; }
-@keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
-.modal-card {
-  background: var(--surface); width: 100%; max-width: 520px;
-  border-radius: var(--r-lg); box-shadow: var(--sh-lg); border: 1px solid var(--border);
-  overflow: hidden; animation: mslide .25s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes mslide {
-  from { opacity: 0; transform: translateY(20px) scale(.97); }
-  to   { opacity: 1; transform: none; }
-}
-.modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 24px; border-bottom: 1px solid var(--border); background: var(--surface-2);
-}
-.modal-title {
-  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-1);
-  display: flex; align-items: center; gap: 8px;
-}
-.modal-close {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: var(--surface-3); border: 1px solid var(--border);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  color: var(--text-2); font-size: 20px; line-height: 1; transition: all .15s;
-}
-.modal-close:hover { background: var(--red-lt); color: var(--red); border-color: #FECACA; }
-.modal-body { padding: 24px; }
-.modal-footer {
-  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
-  padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-2);
-}
-
-/* ── Submit bar ── */
-.submit-bar {
-  display: flex; align-items: center; justify-content: flex-end;
-  gap: 12px; padding-top: 8px; flex-wrap: wrap;
-}
-
-/* ── Empty state ── */
-.empty-state { text-align: center; padding: 48px 24px; color: var(--text-3); }
-.empty-state-icon { font-size: 32px; margin-bottom: 8px; }
-
-/* ── Row animations ── */
-tbody tr { animation: rowIn .3s ease both; }
-tbody tr:nth-child(1) { animation-delay: .04s; }
-tbody tr:nth-child(2) { animation-delay: .08s; }
-tbody tr:nth-child(3) { animation-delay: .12s; }
-tbody tr:nth-child(n+4) { animation-delay: .16s; }
-@keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
-
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
-  .topbar { padding: 0 16px; }
-  .page { padding: 20px 14px 60px; }
-  .card-body { padding: 16px; }
-  .totals-panel { max-width: 100%; }
-  .page-title { font-size: 22px; }
-}
-@media (max-width: 480px) {
-  .gst-toggle { flex-direction: column; align-items: flex-start; gap: 12px; }
-}
-</style>
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+      .topbar { padding: 0 16px; }
+      .page { padding: 20px 14px 60px; }
+      .card-body { padding: 16px; }
+      .totals-panel { max-width: 100%; }
+      .page-title { font-size: 22px; }
+    }
+    @media (max-width: 480px) {
+      .gst-toggle { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
 </head>
-
 <body>
 
 <!-- ── Topbar ── -->
@@ -475,7 +413,6 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
       </div>
       <div class="card-body">
 
-        <!-- Customer row -->
         <div class="form-row-auto" style="max-width:640px;">
           <div>
             <label class="field-label">Select Customer</label>
@@ -501,36 +438,39 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
           </div>
         </div>
 
-        <!-- GST + Discount -->
         <div style="margin-top:18px;">
           <label class="field-label">Quotation Type</label>
           <div class="gst-toggle">
             <span class="gst-toggle-label">GST</span>
             <div class="radio-group">
               <label class="radio-option">
-                <input type="radio" name="gst_type" value="with_gst" {% if not edit or q.gst_type == 'with_gst' %}checked{% endif %} onchange="calculate()">
+                <input type="radio" name="gst_type" value="with_gst"
+                  {% if not edit or q.gst_type == 'with_gst' %}checked{% endif %}
+                  onchange="calculate()">
                 With GST
               </label>
               <label class="radio-option">
-                <input type="radio" name="gst_type" value="without_gst" {% if edit and q.gst_type == 'without_gst' %}checked{% endif %} onchange="calculate()">
+                <input type="radio" name="gst_type" value="without_gst"
+                  {% if edit and q.gst_type == 'without_gst' %}checked{% endif %}
+                  onchange="calculate()">
                 Without GST
               </label>
             </div>
           </div>
         </div>
 
-        <!-- Discount directly below GST toggle -->
-          <div class="discount-row">
+        <div class="discount-row">
           <div class="field-wrap">
             <label class="field-label">Special Discount (₹)</label>
             <input type="number" name="discount" id="discount"
-                   step="0.01" min="0" value="{% if edit %}{{ q.discount }}{% else %}0{% endif %}"
-                   oninput="calculate()" placeholder="0.00">
+              step="0.01" min="0"
+              value="{% if edit %}{{ q.discount }}{% else %}0{% endif %}"
+              oninput="calculate()" placeholder="0.00">
           </div>
         </div>
 
       </div>
-    </div><!-- /Customer card -->
+    </div>
 
     <!-- ── 2. Line Items ── -->
     <div class="card">
@@ -553,65 +493,97 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
               </tr>
             </thead>
             <tbody id="tableBody">
-                      {% if edit and items %}
-                        {% for item in items %}
-                        <tr>
-                          <td><textarea name="description" class="desc-box" rows="1" oninput="autoResize(this)">{{ item.description }}</textarea></td>
-                          <td><input type="number" name="quantity" step="0.01" min="0" value="{{ item.quantity }}" oninput="calculate()" placeholder="1"></td>
-                          <td>
-                            <select name="unit">
-                              <option {% if item.unit == 'Nos' %}selected{% endif %}>Nos</option>
-                              <option {% if item.unit == 'Sq Ft' %}selected{% endif %}>Sq Ft</option>
-                              <option {% if item.unit == 'Feet' %}selected{% endif %}>Feet</option>
-                              <option {% if item.unit == 'Metre' %}selected{% endif %}>Metre</option>
-                              <option {% if item.unit == 'Sq Mtr' %}selected{% endif %}>Sq Mtr</option>
-                              <option {% if item.unit == 'Kg' %}selected{% endif %}>Kg</option>
-                              <option {% if item.unit == 'inch' %}selected{% endif %}>inch</option>
-                              <option {% if item.unit == 'Sets' %}selected{% endif %}>Sets</option>
-                              <option {% if item.unit == 'RFT' %}selected{% endif %}>RFT</option>
-                            </select>
-                          </td>
-                          <td><input type="number" name="price" step="0.01" min="0" value="{{ item.price }}" oninput="calculate()" placeholder="0.00"></td>
-                          <td class="rowTotal row-total">₹ {{ item.total }}</td>
-                          <td style="text-align:center;">
-                            <button type="button" class="btn btn-danger btn-sm btn-icon" onclick="removeRow(this)" title="Remove">
-                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      {% else %}
-                        <tr>
-                          <td><textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)"></textarea></td>
-                          <td><input type="number" name="quantity" step="0.01" min="0" value="1" oninput="calculate()" placeholder="1"></td>
-                          <tr>
-                            <td><textarea name="description" class="desc-box" rows="1" oninput="autoResize(this)">{{ item.description }}</textarea></td>
-                            <td><input type="number" name="quantity" step="0.01" min="0" value="{{ item.quantity }}" oninput="calculate()" placeholder="1"></td>
-                              <option>Metre</option><option>Sq Mtr</option><option>Kg</option>
-                              <option>inch</option><option>Sets</option><option>RFT</option>
-                            </select>
-                          </td>
-                          <td><input type="number" name="price" step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00"></td>
-                          <td class="rowTotal row-total">₹ 0.00</td>
-                          <td style="text-align:center;">
-                            <button type="button" class="btn btn-danger btn-sm btn-icon" onclick="removeRow(this)" title="Remove">
-                              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                      {% endif %}
-                    </tbody>
+              {% if edit and items %}
+                {% for item in items %}
+                <tr>
+                  <td>
+                    <textarea name="description" class="desc-box" rows="1"
+                      oninput="autoResize(this)">{{ item.description }}</textarea>
+                  </td>
+                  <td>
+                    <input type="number" name="quantity" step="0.01" min="0"
+                      value="{{ item.quantity }}" oninput="calculate()" placeholder="1">
+                  </td>
+                  <td>
+                    <select name="unit">
+                      <option {% if item.unit == 'Nos' %}selected{% endif %}>Nos</option>
+                      <option {% if item.unit == 'Sq Ft' %}selected{% endif %}>Sq Ft</option>
+                      <option {% if item.unit == 'Feet' %}selected{% endif %}>Feet</option>
+                      <option {% if item.unit == 'Metre' %}selected{% endif %}>Metre</option>
+                      <option {% if item.unit == 'Sq Mtr' %}selected{% endif %}>Sq Mtr</option>
+                      <option {% if item.unit == 'Kg' %}selected{% endif %}>Kg</option>
+                      <option {% if item.unit == 'inch' %}selected{% endif %}>inch</option>
+                      <option {% if item.unit == 'Sets' %}selected{% endif %}>Sets</option>
+                      <option {% if item.unit == 'RFT' %}selected{% endif %}>RFT</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="number" name="price" step="0.01" min="0"
+                      value="{{ item.price }}" oninput="calculate()" placeholder="0.00">
+                  </td>
+                  <td class="rowTotal row-total">₹ {{ item.total }}</td>
+                  <td style="text-align:center;">
+                    <button type="button" class="btn btn-danger btn-sm btn-icon"
+                      onclick="removeRow(this)" title="Remove">
+                      <svg width="14" height="14" fill="none" stroke="currentColor"
+                        stroke-width="2.5" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td>
+                    <textarea name="description" class="desc-box" rows="1"
+                      placeholder="Item description" oninput="autoResize(this)"></textarea>
+                  </td>
+                  <td>
+                    <input type="number" name="quantity" step="0.01" min="0"
+                      value="1" oninput="calculate()" placeholder="1">
+                  </td>
+                  <td>
+                    <select name="unit">
+                      <option>Nos</option>
+                      <option>Sq Ft</option>
+                      <option>Feet</option>
+                      <option>Metre</option>
+                      <option>Sq Mtr</option>
+                      <option>Kg</option>
+                      <option>inch</option>
+                      <option>Sets</option>
+                      <option>RFT</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="number" name="price" step="0.01" min="0"
+                      value="0" oninput="calculate()" placeholder="0.00">
+                  </td>
+                  <td class="rowTotal row-total">₹ 0.00</td>
+                  <td style="text-align:center;">
+                    <button type="button" class="btn btn-danger btn-sm btn-icon"
+                      onclick="removeRow(this)" title="Remove">
+                      <svg width="14" height="14" fill="none" stroke="currentColor"
+                        stroke-width="2.5" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
           </table>
         </div>
 
         <div class="table-actions">
           <button type="button" class="btn btn-ghost" onclick="addRow()">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <svg width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2.2" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             Add Row
           </button>
@@ -645,33 +617,38 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
 
         <div style="height:24px;"></div>
       </div>
-    </div><!-- /Line Items card -->
+    </div>
 
     <!-- ── 3. Terms & Conditions ── -->
     <div class="card">
       <div class="card-header">
         <div class="card-title"><span class="card-title-dot"></span>Terms &amp; Conditions</div>
         <button type="button" class="btn btn-success btn-sm" onclick="openTermModal()">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          <svg width="14" height="14" fill="none" stroke="currentColor"
+            stroke-width="2.2" viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Add Term
         </button>
       </div>
       <div class="card-body">
         <div class="terms-list" id="termsList">
-          <!-- Sample terms (Django: {% for term in terms %}…{% endfor %}) -->
+          {% for term in terms %}
           <div class="term-row">
             <label>
-              <input type="checkbox" name="terms" value="1" onchange="onTermCheck(this)">
-              50% advance required to start work.
+              <input type="checkbox" name="terms" value="{{ term.id }}"
+                onchange="onTermCheck(this)"
+                {% if edit and term.id in selected_terms %}checked{% endif %}>
+              <span class="term-text" data-term-id="{{ term.id }}">{{ term.text }}</span>
             </label>
             <div style="display:flex; gap:8px; align-items:center;">
-              <input type="number" min="0" name="term_order_1" placeholder="Order"
-                     style="width:80px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); font-size:13px;">
+              <input type="number" min="0" name="term_order_{{ term.id }}" placeholder="Order"
+                style="width:80px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); font-size:13px;">
               <button type="button" class="btn btn-ghost btn-sm"
-                      onclick="openEditTerm('1','50% advance required to start work.')">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                onclick="openEditTerm('{{ term.id }}', this.closest('.term-row').querySelector('.term-text').textContent.trim())">
+                <svg width="12" height="12" fill="none" stroke="currentColor"
+                  stroke-width="2" viewBox="0 0 24 24">
                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
@@ -679,32 +656,21 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
               </button>
             </div>
           </div>
-          <div class="term-row">
-            <label>
-              <input type="checkbox" name="terms" value="2" onchange="onTermCheck(this)">
-              Delivery within 30 working days from order confirmation.
-            </label>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <input type="number" min="0" name="term_order_2" placeholder="Order"
-                     style="width:80px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); font-size:13px;">
-              <button type="button" class="btn btn-ghost btn-sm"
-                      onclick="openEditTerm('2','Delivery within 30 working days from order confirmation.')">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Edit
-              </button>
-            </div>
+          {% empty %}
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p style="font-size:14px;">No terms yet. Add one above.</p>
           </div>
+          {% endfor %}
         </div>
       </div>
-    </div><!-- /Terms card -->
+    </div>
 
     <!-- ── 4. Payment Details (optional) ── -->
     <label class="payment-inline-check">
       <input type="checkbox" id="includePaymentCheckbox" name="include_payment_details"
-             onchange="togglePaymentCard(this.checked)" {% if edit and q.include_payment_details %}checked{% endif %}>
+        onchange="togglePaymentCard(this.checked)"
+        {% if edit and q.include_payment_details %}checked{% endif %}>
       Add Payment Details to this Quotation
     </label>
 
@@ -725,19 +691,20 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
           </div>
           <div>
             <label class="field-label">Select Saved Account</label>
-            <select id="savedPaymentSelect" name="selected_payment_id" onchange="fillSavedPayment(this)">
+            <select id="savedPaymentSelect" name="selected_payment_id"
+              onchange="fillSavedPayment(this)">
               <option value="">— Select saved account —</option>
               {% for p in payment_accounts %}
               <option value="{{ p.id }}"
-                  data-account-type="{{ p.account_type|lower }}"
-                  data-account-name="{{ p.account_name|escape }}"
-                  data-holder-name="{{ p.holder_name|escape }}"
-                  data-bank-name="{{ p.bank_name|escape }}"
-                  data-account-number="{{ p.account_number|escape }}"
-                  data-ifsc="{{ p.ifsc_code|escape }}"
-                  data-branch="{{ p.branch|escape }}"
-                  data-upi="{{ p.upi_id|escape }}"
-                  data-phone="{{ p.phone_number|escape }}"
+                data-account-type="{{ p.account_type|lower }}"
+                data-account-name="{{ p.account_name|escape }}"
+                data-holder-name="{{ p.holder_name|escape }}"
+                data-bank-name="{{ p.bank_name|escape }}"
+                data-account-number="{{ p.account_number|escape }}"
+                data-ifsc="{{ p.ifsc_code|escape }}"
+                data-branch="{{ p.branch|escape }}"
+                data-upi="{{ p.upi_id|escape }}"
+                data-phone="{{ p.phone_number|escape }}"
               >{{ p.account_name|default:p.get_account_type_display }}</option>
               {% endfor %}
             </select>
@@ -745,12 +712,13 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
         </div>
 
         <div id="paymentFields">
-          <!-- BANK FIELDS -->
+          <!-- Bank Fields -->
           <div id="bankFields">
             <div class="form-row-2">
               <div>
                 <label class="field-label">Account Name</label>
-                <input type="text" id="paymentAccountName" name="payment_account_name" placeholder="e.g. Satyam Aluminium SBI">
+                <input type="text" id="paymentAccountName" name="payment_account_name"
+                  placeholder="e.g. Satyam Aluminium SBI">
               </div>
               <div>
                 <label class="field-label">Account Holder Name</label>
@@ -783,7 +751,7 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
             </div>
           </div>
 
-          <!-- UPI FIELDS -->
+          <!-- UPI Fields -->
           <div id="upiFields" style="display:none; margin-top:12px;">
             <div>
               <label class="field-label">UPI ID / PhonePe</label>
@@ -793,122 +761,150 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
 
           <div style="display:flex; align-items:center; gap:20px; margin-top:14px; flex-wrap:wrap;">
             <label style="display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer;">
-              <input type="checkbox" name="save_payment" style="width:14px;height:14px;accent-color:var(--gold);">
+              <input type="checkbox" name="save_payment"
+                style="width:14px; height:14px; accent-color:var(--gold);">
               Save as New Account
             </label>
             <label style="display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer;">
-              <input type="checkbox" name="make_default" style="width:14px;height:14px;accent-color:var(--gold);">
+              <input type="checkbox" name="make_default"
+                style="width:14px; height:14px; accent-color:var(--gold);">
               Make Default
             </label>
           </div>
+
           <div style="margin-top:12px; display:flex; gap:8px;">
             <input type="hidden" name="payment_action" id="paymentAction" value="">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="setPaymentAction('save')">Save as New Account</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="setPaymentAction('update')">Update Existing Account</button>
+            <button type="button" class="btn btn-ghost btn-sm"
+              onclick="setPaymentAction('save')">Save as New Account</button>
+            <button type="button" class="btn btn-ghost btn-sm"
+              onclick="setPaymentAction('update')">Update Existing Account</button>
           </div>
         </div>
 
       </div>
-    </div><!-- /Payment card -->
+    </div>
 
     <!-- ── Submit ── -->
     <div class="submit-bar">
-      <button type="button" class="btn btn-ghost" onclick="window.history.back()">Cancel</button>
+      <button type="button" class="btn btn-ghost"
+        onclick="window.history.back()">Cancel</button>
       <button type="submit" class="btn btn-gold btn-lg">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg width="16" height="16" fill="none" stroke="currentColor"
+          stroke-width="2" viewBox="0 0 24 24">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
           <polyline points="10 9 9 9 8 9"/>
         </svg>
         Generate Quotation
       </button>
     </div>
 
-  </form><!-- /form -->
+  </form>
 
-    <!-- Quotation history -->
-    <div class="section-divider">
-        <div class="section-divider-line"></div>
-        <span class="section-divider-text">Quotation History</span>
-        <div class="section-divider-line"></div>
+  <!-- ── Quotation History ── -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <span class="section-divider-text">Quotation History</span>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-title-dot"></span>All Quotations</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <a href="{% url 'quotations' %}" class="btn btn-primary btn-sm">QUOTATIONS</a>
+        <span class="badge badge-blue">{{ quotations|length }} total</span>
+      </div>
     </div>
-
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">
-                <span class="card-title-dot"></span>
-                All Quotations
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <a href="{% url 'quotations' %}" class="btn btn-primary btn-sm" style="font-size:13px; padding:8px 12px;">QUOTATIONS</a>
-                <span class="badge badge-blue">{{ quotations|length }} total</span>
-            </div>
-        </div>
-        <div class="card-body" style="padding:0;">
-            <div class="table-wrap" style="border:none; border-radius:0;">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Customer</th>
-                            <th>Total</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for q in quotations %}
-                        <tr>
-                            <td>
-                                <span style="font-family:'Syne',sans-serif; font-weight:700; color:var(--gold); font-size:13px;">#{{ q.id }}</span>
-                            </td>
-                            <td style="font-weight:500;">{{ q.customer.name }}</td>
-                            <td>
-                                <span style="font-weight:600; color:var(--text-1);">₹ {{ q.total }}</span>
-                            </td>
-                            <td>
-                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                    <a href="{% url 'view_quotation' q.id %}" class="btn btn-primary btn-sm">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        View
-                                    </a>
-                                    <a href="{% url 'edit_quotation' q.id %}" class="btn btn-warning btn-sm">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                        Edit
-                                    </a>
-                                    <a href="{% url 'delete_quotation' q.id %}" class="btn btn-danger btn-sm">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                                        Delete
-                                    </a>
-                                    <a href="{% url 'convert_to_order' q.id %}" class="btn btn-success btn-sm">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                                        Convert
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" style="text-align:center; padding:48px; color:var(--text-3); font-size:14px;">
-                                No quotations yet. Create your first one above.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-wrap" style="border:none; border-radius:0;">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Total</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for q in quotations %}
+            <tr>
+              <td>
+                <span style="font-family:'Syne',sans-serif; font-weight:700;
+                  color:var(--gold); font-size:13px;">#{{ q.id }}</span>
+              </td>
+              <td style="font-weight:500;">{{ q.customer.name }}</td>
+              <td>
+                <span style="font-weight:600; color:var(--text-1);">₹ {{ q.total }}</span>
+              </td>
+              <td>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <a href="{% url 'view_quotation' q.id %}" class="btn btn-primary btn-sm">
+                    <svg width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    View
+                  </a>
+                  <a href="{% url 'edit_quotation' q.id %}" class="btn btn-warning btn-sm">
+                    <svg width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit
+                  </a>
+                  <a href="{% url 'delete_quotation' q.id %}" class="btn btn-danger btn-sm">
+                    <svg width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" viewBox="0 0 24 24">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14H6L5 6"/>
+                      <path d="M10 11v6M14 11v6"/>
+                      <path d="M9 6V4h6v2"/>
+                    </svg>
+                    Delete
+                  </a>
+                  <a href="{% url 'convert_to_order' q.id %}" class="btn btn-success btn-sm">
+                    <svg width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" viewBox="0 0 24 24">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Convert
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center; padding:48px;
+                color:var(--text-3); font-size:14px;">
+                No quotations yet. Create your first one above.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
-</div><!-- /page -->
+</div>
 
 <!-- ── Term Modal ── -->
-<div id="termModal" class="modal-overlay" role="dialog" aria-modal="true">
+<div id="termModal" class="modal-overlay" role="dialog" aria-modal="true"
+  data-add-term-url="{% url 'add_term' %}"
+  data-edit-term-url="{% url 'edit_term' 0 %}">
   <div class="modal-card">
     <div class="modal-header">
       <div class="modal-title">
-        <svg width="16" height="16" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <svg width="16" height="16" fill="none" stroke="var(--gold)"
+          stroke-width="2" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
         </svg>
         <span id="termModalTitle">Add New Term</span>
       </div>
@@ -916,313 +912,324 @@ tbody tr:nth-child(n+4) { animation-delay: .16s; }
     </div>
     <div class="modal-body">
       <label class="field-label">Term Text</label>
-      <textarea id="newTermText" rows="4" style="resize:vertical;" placeholder="e.g. 50% advance required to start work…"></textarea>
+      <textarea id="newTermText" rows="4" style="resize:vertical;"
+        placeholder="e.g. 50% advance required to start work…"></textarea>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-ghost" onclick="closeTermModal()">Cancel</button>
-      <button type="button" class="btn btn-gold" id="termSaveBtn" onclick="submitTerm()">Save Term</button>
+      <button type="button" class="btn btn-gold" id="termSaveBtn"
+        onclick="submitTerm()">Save Term</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ── Toast helper ── */
-const Toast = Swal.mixin({
-  toast: true, position: 'top-end',
-  showConfirmButton: false, timer: 3000, timerProgressBar: true,
-  didOpen(t){ t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
-});
-const toast = (type, msg) => Toast.fire({ icon: type, title: msg });
-
-function getCookie(name){
-  let cv = null;
-  document.cookie.split(';').forEach(c => {
-    c = c.trim();
-    if(c.startsWith(name + '=')) cv = decodeURIComponent(c.slice(name.length + 1));
+  const Toast = Swal.mixin({
+    toast: true, position: 'top-end',
+    showConfirmButton: false, timer: 3000, timerProgressBar: true,
+    didOpen(t) {
+      t.addEventListener('mouseenter', Swal.stopTimer);
+      t.addEventListener('mouseleave', Swal.resumeTimer);
+    }
   });
-  return cv;
-}
+  const toast = (type, msg) => Toast.fire({ icon: type, title: msg });
 
-/* ── Unit options helper ── */
-function unitOptions(selected='Nos'){
-  return ['Nos','Sq Ft','Feet','Metre','Sq Mtr','Kg','inch','Sets','RFT']
-    .map(u => `<option${u === selected ? ' selected' : ''}>${u}</option>`).join('');
-}
+  function getCookie(name) {
+    let cv = null;
+    document.cookie.split(';').forEach(c => {
+      c = c.trim();
+      if (c.startsWith(name + '=')) cv = decodeURIComponent(c.slice(name.length + 1));
+    });
+    return cv;
+  }
 
-/* ── Row count ── */
-function updateRowCount(){
-  const n = document.querySelectorAll('#tableBody tr').length;
-  document.getElementById('rowCount').textContent = n + ' item' + (n !== 1 ? 's' : '');
-}
+  function unitOptions(selected = 'Nos') {
+    return ['Nos', 'Sq Ft', 'Feet', 'Metre', 'Sq Mtr', 'Kg', 'inch', 'Sets', 'RFT']
+      .map(u => `<option${u === selected ? ' selected' : ''}>${u}</option>`).join('');
+  }
 
-/* ── Auto-resize textarea ── */
-function autoResize(el){
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
+  function updateRowCount() {
+    const n = document.querySelectorAll('#tableBody tr').length;
+    document.getElementById('rowCount').textContent = n + ' item' + (n !== 1 ? 's' : '');
+  }
 
-/* ── Add / Remove rows ── */
-function addRow(){
-  document.getElementById('tableBody').insertAdjacentHTML('beforeend', `
-  <tr>
-    <td><textarea name="description" class="desc-box" rows="1" placeholder="Item description" oninput="autoResize(this)"></textarea></td>
-    <td><input type="number" name="quantity" step="0.001" min="0" value="1" oninput="calculate()" placeholder="1"></td>
-    <td><select name="unit">${unitOptions()}</select></td>
-    <td><input type="number" name="price" step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00"></td>
-    <td class="rowTotal row-total">₹ 0.00</td>
-    <td style="text-align:center;">
-      <button type="button" class="btn btn-danger btn-sm btn-icon" onclick="removeRow(this)" title="Remove">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </td>
-  </tr>`);
-  calculate();
-  updateRowCount();
-  toast('success', 'Row added');
-}
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
 
-function removeRow(btn){
-  btn.closest('tr').remove();
-  calculate();
-  updateRowCount();
-  toast('info', 'Row removed');
-}
+  function addRow() {
+    document.getElementById('tableBody').insertAdjacentHTML('beforeend', `
+    <tr>
+      <td><textarea name="description" class="desc-box" rows="1"
+        placeholder="Item description" oninput="autoResize(this)"></textarea></td>
+      <td><input type="number" name="quantity" step="0.001" min="0"
+        value="1" oninput="calculate()" placeholder="1"></td>
+      <td><select name="unit">${unitOptions()}</select></td>
+      <td><input type="number" name="price" step="0.01" min="0"
+        value="0" oninput="calculate()" placeholder="0.00"></td>
+      <td class="rowTotal row-total">₹ 0.00</td>
+      <td style="text-align:center;">
+        <button type="button" class="btn btn-danger btn-sm btn-icon"
+          onclick="removeRow(this)" title="Remove">
+          <svg width="14" height="14" fill="none" stroke="currentColor"
+            stroke-width="2.5" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </td>
+    </tr>`);
+    calculate();
+    updateRowCount();
+    toast('success', 'Row added');
+  }
 
-/* ── Calculate totals ── */
-function calculate(){
-  let sub = 0;
-  document.querySelectorAll('#tableBody tr').forEach(row => {
-    const q = parseFloat((row.querySelector('[name="quantity"]')?.value || '0').replace(',','.')) || 0;
-    const p = parseFloat((row.querySelector('[name="price"]')?.value  || '0').replace(',','.')) || 0;
-    const t = q * p;
-    const cell = row.querySelector('.rowTotal');
-    if(cell) cell.textContent = '₹ ' + t.toFixed(2);
-    sub += t;
+  function removeRow(btn) {
+    btn.closest('tr').remove();
+    calculate();
+    updateRowCount();
+    toast('info', 'Row removed');
+  }
+
+  function calculate() {
+    let sub = 0;
+    document.querySelectorAll('#tableBody tr').forEach(row => {
+      const q = parseFloat((row.querySelector('[name="quantity"]')?.value || '0').replace(',', '.')) || 0;
+      const p = parseFloat((row.querySelector('[name="price"]')?.value  || '0').replace(',', '.')) || 0;
+      const t = q * p;
+      const cell = row.querySelector('.rowTotal');
+      if (cell) cell.textContent = '₹ ' + t.toFixed(2);
+      sub += t;
+    });
+
+    const withGst = document.querySelector('input[name="gst_type"]:checked')?.value === 'with_gst';
+    const cg = withGst ? sub * 0.09 : 0;
+    const sg = withGst ? sub * 0.09 : 0;
+    document.getElementById('cgstRow').style.display = withGst ? '' : 'none';
+    document.getElementById('sgstRow').style.display = withGst ? '' : 'none';
+
+    const disc = Math.max(0,
+      parseFloat((document.getElementById('discount')?.value || '0').replace(',', '.')) || 0);
+    document.getElementById('discountDisplay').textContent = disc.toFixed(2);
+
+    let grand = withGst ? sub + cg + sg - disc : sub - disc;
+    if (grand < 0) grand = 0;
+
+    document.getElementById('subtotal').textContent   = sub.toFixed(2);
+    document.getElementById('cgst').textContent       = cg.toFixed(2);
+    document.getElementById('sgst').textContent       = sg.toFixed(2);
+    document.getElementById('grandTotal').textContent = grand.toFixed(2);
+  }
+
+  function loadMeasurements() {
+    const id = document.querySelector('select[name="customer"]')?.value;
+    if (!id) { toast('error', 'Select a customer first'); return; }
+    fetch(`/customer/${id}/measurements/json/`, { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.items?.length) { toast('info', 'No measurements found'); return; }
+        document.getElementById('tableBody').innerHTML = '';
+        data.items.forEach(it => {
+          const desc  = it.service_name || it.custom_item_name || it.description || 'Item';
+          const qty   = it.quantity || 0;
+          const unit  = it.unit || 'Sq Ft';
+          const price = it.price_per_unit || 0;
+          document.getElementById('tableBody').insertAdjacentHTML('beforeend', `
+          <tr>
+            <td><textarea name="description" class="desc-box" rows="1"
+              oninput="autoResize(this)">${desc}</textarea></td>
+            <td><input type="number" name="quantity" step="0.01" min="0"
+              value="${qty}" oninput="calculate()"></td>
+            <td><select name="unit">${unitOptions(unit)}</select></td>
+            <td><input type="number" name="price" step="0.01" min="0"
+              value="${price}" oninput="calculate()"></td>
+            <td class="rowTotal row-total">₹ 0.00</td>
+            <td style="text-align:center;">
+              <button type="button" class="btn btn-danger btn-sm btn-icon"
+                onclick="removeRow(this)">
+                <svg width="14" height="14" fill="none" stroke="currentColor"
+                  stroke-width="2.5" viewBox="0 0 24 24">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </td>
+          </tr>`);
+        });
+        calculate();
+        updateRowCount();
+        toast('success', `${data.items.length} measurements loaded`);
+      })
+      .catch(() => toast('error', 'Could not load measurements'));
+  }
+
+  function openTermModal() {
+    const m = document.getElementById('termModal');
+    delete m.dataset.editId;
+    document.getElementById('termModalTitle').textContent = 'Add New Term';
+    document.getElementById('termSaveBtn').textContent   = 'Save Term';
+    document.getElementById('newTermText').value = '';
+    m.classList.add('show');
+    setTimeout(() => document.getElementById('newTermText').focus(), 120);
+  }
+
+  function openEditTerm(id, text) {
+    const m = document.getElementById('termModal');
+    m.dataset.editId = id;
+    document.getElementById('termModalTitle').textContent = 'Edit Term';
+    document.getElementById('termSaveBtn').textContent   = 'Update Term';
+    document.getElementById('newTermText').value = text || '';
+    m.classList.add('show');
+    setTimeout(() => document.getElementById('newTermText').focus(), 120);
+  }
+
+  function closeTermModal() {
+    document.getElementById('termModal').classList.remove('show');
+    document.getElementById('newTermText').value = '';
+  }
+
+  document.addEventListener('click', e => {
+    const m = document.getElementById('termModal');
+    if (m?.classList.contains('show') && e.target === m) closeTermModal();
   });
 
-  const withGst = document.querySelector('input[name="gst_type"]:checked')?.value === 'with_gst';
-  const cg = withGst ? sub * 0.09 : 0;
-  const sg = withGst ? sub * 0.09 : 0;
-  document.getElementById('cgstRow').style.display = withGst ? '' : 'none';
-  document.getElementById('sgstRow').style.display = withGst ? '' : 'none';
+  function submitTerm() {
+    const text = document.getElementById('newTermText').value.trim();
+    if (!text) { toast('error', 'Enter term text'); return; }
+    const modal  = document.getElementById('termModal');
+    const editId = modal.dataset.editId || null;
+    const fd     = new FormData();
+    fd.append('text', text);
 
-  const disc = Math.max(0, parseFloat((document.getElementById('discount')?.value || '0').replace(',','.')) || 0);
-  document.getElementById('discountDisplay').textContent = disc.toFixed(2);
+    const endpoint = editId
+      ? (modal.dataset.editTermUrl || '#').replace('/0/', `/${editId}/`)
+      : (modal.dataset.addTermUrl  || '#');
 
-  let grand = withGst ? sub + cg + sg - disc : sub - disc;
-  if(grand < 0) grand = 0;
-
-  document.getElementById('subtotal').textContent   = sub.toFixed(2);
-  document.getElementById('cgst').textContent       = cg.toFixed(2);
-  document.getElementById('sgst').textContent       = sg.toFixed(2);
-  document.getElementById('grandTotal').textContent = grand.toFixed(2);
-}
-
-/* ── Load measurements ── */
-function loadMeasurements(){
-  const id = document.querySelector('select[name="customer"]')?.value;
-  if(!id){ toast('error', 'Select a customer first'); return; }
-  fetch(`/customer/${id}/measurements/json/`, { credentials: 'same-origin' })
+    fetch(endpoint, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: fd
+    })
     .then(r => r.json())
     .then(data => {
-      if(!data.items?.length){ toast('info', 'No measurements found'); return; }
-      document.getElementById('tableBody').innerHTML = '';
-      data.items.forEach(it => {
-        const desc  = it.service_name || it.custom_item_name || it.description || 'Item';
-        const qty   = it.quantity || 0;
-        const unit  = it.unit || 'Sq Ft';
-        const price = it.price_per_unit || 0;
-        document.getElementById('tableBody').insertAdjacentHTML('beforeend', `
-        <tr>
-          <td><textarea name="description" class="desc-box" rows="1" oninput="autoResize(this)">${desc}</textarea></td>
-          <td><input type="number" name="quantity" step="0.01" min="0" value="${qty}" oninput="calculate()"></td>
-          <td><select name="unit">${unitOptions(unit)}</select></td>
-          <td><input type="number" name="price" step="0.01" min="0" value="${price}" oninput="calculate()"></td>
-          <td class="rowTotal row-total">₹ 0.00</td>
-          <td style="text-align:center;">
-            <button type="button" class="btn btn-danger btn-sm btn-icon" onclick="removeRow(this)">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+      if (data.error) { toast('error', data.error); return; }
+      if (editId) {
+        const span = document.querySelector(`.term-text[data-term-id="${editId}"]`);
+        if (span) span.textContent = data.text;
+        toast('success', 'Term updated');
+      } else {
+        const list = document.getElementById('termsList');
+        list.querySelector('.empty-state')?.remove();
+        list.insertAdjacentHTML('afterbegin', `
+        <div class="term-row">
+          <label>
+            <input type="checkbox" name="terms" value="${data.id}" checked
+              onchange="onTermCheck(this)"
+              style="width:15px; height:15px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;">
+            <span class="term-text" data-term-id="${data.id}"
+              style="font-size:13.5px;">${data.text}</span>
+          </label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="number" min="0" name="term_order_${data.id}" placeholder="Order"
+              style="width:80px; padding:6px 8px; border-radius:8px;
+              border:1px solid var(--border); font-size:13px;">
+            <button type="button" class="btn btn-ghost btn-sm"
+              onclick="openEditTerm('${data.id}',
+                this.closest('.term-row').querySelector('.term-text').textContent.trim())">
+              <svg width="12" height="12" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>Edit
             </button>
-          </td>
-        </tr>`);
-      });
-      calculate(); updateRowCount();
-      toast('success', `${data.items.length} measurements loaded`);
+          </div>
+        </div>`);
+        toast('success', 'Term added');
+      }
+      closeTermModal();
     })
-    .catch(() => toast('error', 'Could not load measurements'));
-}
+    .catch(() => toast('error', editId ? 'Could not update term' : 'Could not save term'));
+  }
 
-/* ── Term modal ── */
-function openTermModal(){
-  const m = document.getElementById('termModal');
-  delete m.dataset.editId;
-  document.getElementById('termModalTitle').textContent = 'Add New Term';
-  document.getElementById('termSaveBtn').textContent   = 'Save Term';
-  document.getElementById('newTermText').value = '';
-  m.classList.add('show');
-  setTimeout(() => document.getElementById('newTermText').focus(), 120);
-}
-
-function openEditTerm(id, text){
-  const m = document.getElementById('termModal');
-  m.dataset.editId = id;
-  document.getElementById('termModalTitle').textContent = 'Edit Term';
-  document.getElementById('termSaveBtn').textContent   = 'Update Term';
-  document.getElementById('newTermText').value = text || '';
-  m.classList.add('show');
-  setTimeout(() => document.getElementById('newTermText').focus(), 120);
-}
-
-function closeTermModal(){
-  document.getElementById('termModal').classList.remove('show');
-  document.getElementById('newTermText').value = '';
-}
-
-document.addEventListener('click', e => {
-  const m = document.getElementById('termModal');
-  if(m?.classList.contains('show') && e.target === m) closeTermModal();
-});
-
-function submitTerm(){
-  const text = document.getElementById('newTermText').value.trim();
-  if(!text){ toast('error', 'Enter term text'); return; }
-  const modal  = document.getElementById('termModal');
-  const editId = modal.dataset.editId || null;
-  const fd     = new FormData();
-  fd.append('text', text);
-
-  const endpoint = editId
-    ? (document.querySelector('[data-edit-term-url]')?.dataset.editTermUrl || '#').replace('/0/', `/${editId}/`)
-    : (document.querySelector('[data-add-term-url]')?.dataset.addTermUrl  || '#');
-
-  fetch(endpoint, {
-    method: 'POST', credentials: 'same-origin',
-    headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: fd
-  })
-  .then(r => r.json())
-  .then(data => {
-    if(data.error){ toast('error', data.error); return; }
-    if(editId){
-      const span = document.querySelector(`.term-text[data-term-id="${editId}"]`);
-      if(span) span.textContent = data.text;
-      toast('success', 'Term updated');
+  function onTermCheck(cb) {
+    const row = cb.closest('.term-row');
+    const oi  = row?.querySelector('input[type="number"]');
+    if (cb.checked) {
+      if (oi && !oi.value) {
+        const vals = [...document.querySelectorAll('.term-row input[type="number"]')]
+          .map(i => parseInt(i.value)).filter(v => !isNaN(v));
+        oi.value = vals.length ? Math.max(...vals) + 1 : 1;
+      }
     } else {
-      const list = document.getElementById('termsList');
-      list.querySelector('.empty-state')?.remove();
-      list.insertAdjacentHTML('afterbegin', `
-      <div class="term-row">
-        <label>
-          <input type="checkbox" name="terms" value="${data.id}" checked
-                 onchange="onTermCheck(this)" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">
-          <span class="term-text" data-term-id="${data.id}" style="font-size:13.5px;">${data.text}</span>
-        </label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="number" min="0" name="term_order_${data.id}" placeholder="Order"
-                 style="width:80px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);font-size:13px;">
-          <button type="button" class="btn btn-ghost btn-sm"
-                  onclick="openEditTerm('${data.id}',\`${data.text.replace(/`/g,'\\`')}\`)">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>Edit
-          </button>
-        </div>
-      </div>`);
-      toast('success', 'Term added');
+      if (oi) oi.value = '';
     }
-    closeTermModal();
-  })
-  .catch(() => toast('error', editId ? 'Could not update term' : 'Could not save term'));
-}
+  }
 
-/* ── Term order helper ── */
-function onTermCheck(cb){
-  const row = cb.closest('.term-row');
-  const oi  = row?.querySelector('input[type="number"]');
-  if(cb.checked){
-    if(oi && !oi.value){
-      const vals = [...document.querySelectorAll('.term-row input[type="number"]')]
-        .map(i => parseInt(i.value)).filter(v => !isNaN(v));
-      oi.value = vals.length ? Math.max(...vals) + 1 : 1;
+  function togglePaymentCard(show) {
+    document.getElementById('paymentCard').style.display = show ? '' : 'none';
+  }
+
+  function fillSavedPayment(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    const ds = opt.dataset || {};
+    const acctTypeEl = document.getElementById('paymentAccountType');
+    if (acctTypeEl) acctTypeEl.value = (ds.accountType || 'business');
+    const setIf = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val || '';
+    };
+    setIf('paymentAccountName',   ds.accountName);
+    setIf('paymentHolderName',    ds.holderName);
+    setIf('paymentBankName',      ds.bankName);
+    setIf('paymentAccountNumber', ds.accountNumber);
+    setIf('paymentIfsc',          ds.ifsc);
+    setIf('paymentBranch',        ds.branch);
+    setIf('paymentUpi',           ds.upi);
+    setIf('paymentPhone',         ds.phone);
+    togglePaymentFields();
+  }
+
+  function togglePaymentFields() {
+    const typeEl = document.getElementById('paymentAccountType');
+    if (!typeEl) return;
+    const type = (typeEl.value || 'business').toLowerCase();
+    const bank = document.getElementById('bankFields');
+    const upi  = document.getElementById('upiFields');
+    if (type === 'upi') {
+      if (bank) bank.style.display = 'none';
+      if (upi)  upi.style.display  = 'block';
+    } else {
+      if (bank) bank.style.display = 'block';
+      if (upi)  upi.style.display  = 'none';
     }
-  } else {
-    if(oi) oi.value = '';
   }
-}
 
-/* ── Payment ── */
-function togglePaymentCard(show){
-  document.getElementById('paymentCard').style.display = show ? '' : 'none';
-}
+  document.getElementById('paymentAccountType')
+    ?.addEventListener('change', togglePaymentFields);
 
-function fillSavedPayment(sel){
-  const opt = sel.options[sel.selectedIndex];
-  if(!opt || !opt.value) return;
-  // prefer dataset for simplicity
-  const ds = opt.dataset || {};
-  const acctTypeEl = document.getElementById('paymentAccountType');
-  if(acctTypeEl) acctTypeEl.value = (ds.accountType || 'business');
-
-  const setIf = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
-  setIf('paymentAccountName', ds.accountName);
-  setIf('paymentHolderName', ds.holderName);
-  setIf('paymentBankName', ds.bankName);
-  setIf('paymentAccountNumber', ds.accountNumber);
-  setIf('paymentIfsc', ds.ifsc);
-  setIf('paymentBranch', ds.branch);
-  setIf('paymentUpi', ds.upi);
-  setIf('paymentPhone', ds.phone);
-
-  // ensure fields visibility matches account type
-  togglePaymentFields();
-}
-
-function togglePaymentFields(){
-  const typeEl = document.getElementById('paymentAccountType');
-  if(!typeEl) return;
-  const type = (typeEl.value || 'business').toLowerCase();
-  const bank = document.getElementById('bankFields');
-  const upi = document.getElementById('upiFields');
-  if(type === 'upi'){
-    if(bank) bank.style.display = 'none';
-    if(upi) upi.style.display = 'block';
-  } else {
-    if(bank) bank.style.display = 'block';
-    if(upi) upi.style.display = 'none';
+  function setPaymentAction(action) {
+    document.getElementById('paymentAction').value = action;
+    document.getElementById('quotationForm').submit();
   }
-}
 
-// wire account type toggle
-document.getElementById('paymentAccountType')?.addEventListener('change', togglePaymentFields);
-window.addEventListener('load', togglePaymentFields);
+  (function () {
+    const prefillEl = document.getElementById('prefillPaymentId');
+    const prefillId = prefillEl?.value || null;
+    if (!prefillId) return;
+    const inc = document.getElementById('includePaymentCheckbox');
+    if (inc) inc.checked = true;
+    togglePaymentCard(true);
+    const sel = document.getElementById('savedPaymentSelect');
+    if (sel) { sel.value = prefillId; sel.dispatchEvent(new Event('change')); }
+  })();
 
-function setPaymentAction(action){
-  document.getElementById('paymentAction').value = action;
-  document.getElementById('quotationForm').submit();
-}
-
-/* ── Init ── */
-// If server provided a payment id for prefill, apply it without template tags inside JS
-(function(){
-  const prefillEl = document.getElementById('prefillPaymentId');
-  const prefillId = prefillEl?.value || null;
-  if(!prefillId) return;
-  const inc = document.getElementById('includePaymentCheckbox');
-  if(inc) inc.checked = true;
-  togglePaymentCard(true);
-  const sel = document.getElementById('savedPaymentSelect');
-  if(sel){ sel.value = prefillId; sel.dispatchEvent(new Event('change')); }
-})();
-
-window.addEventListener('load', () => {
-  calculate();
-  updateRowCount();
-  document.querySelectorAll('.desc-box').forEach(el => autoResize(el));
-});
+  window.addEventListener('load', () => {
+    calculate();
+    updateRowCount();
+    togglePaymentFields();
+    document.querySelectorAll('.desc-box').forEach(el => autoResize(el));
+  });
 </script>
 
 </body>
