@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
 from decimal import Decimal
+from django.conf import settings
 
 
 # ================= CUSTOMER =================
@@ -52,6 +53,11 @@ class Quotation(models.Model):
     custom_terms = models.TextField(blank=True, default='')
     # Store the full terms & conditions text for this quotation (editable copy)
     terms_and_conditions = models.TextField(blank=True)
+    # Payment details inclusion
+    include_payment_details = models.BooleanField(default=False)
+    payment_details = models.ForeignKey(
+        'PaymentDetails', null=True, blank=True, on_delete=models.SET_NULL, related_name='quotations'
+    )
     
     # GST Type: with_gst or without_gst
     gst_type = models.CharField(
@@ -90,6 +96,40 @@ class QuotationTerm(models.Model):
 
     def __str__(self):
         return f"Q{self.quotation_id} - T{self.term_id} ({self.order})"
+
+
+# ================= PAYMENT DETAILS =================
+class PaymentDetails(models.Model):
+    BUSINESS = 'business'
+    PERSONAL = 'personal'
+    UPI = 'upi'
+    ACCOUNT_TYPE_CHOICES = [
+        (BUSINESS, 'Business Account'),
+        (PERSONAL, 'Personal Account'),
+        (UPI, 'UPI / Wallet'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payment_details')
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, default=BUSINESS)
+    account_name = models.CharField(max_length=100, blank=True, help_text='Custom name like "Shop Account"')
+
+    holder_name = models.CharField(max_length=100, blank=True)
+    bank_name = models.CharField(max_length=100, blank=True)
+    account_number = models.CharField(max_length=50, blank=True)
+    ifsc_code = models.CharField(max_length=20, blank=True)
+    branch = models.CharField(max_length=100, blank=True)
+
+    upi_id = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-is_default', '-created_at']
+
+    def __str__(self):
+        return f"{self.account_name or self.get_account_type_display()} ({self.user})"
 
 
 # ================= SERVICE =================

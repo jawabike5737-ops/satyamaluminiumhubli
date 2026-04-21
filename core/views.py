@@ -138,228 +138,136 @@ def _make_canvas_cb(customer, measurement_date):
 
 
 # ── View ───────────────────────────────────────────────────────
+from reportlab.lib import colors
+from reportlab.platypus import *
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
 @login_required(login_url='/login/')
 def measurement_pdf(request, cust_id):
+
     customer = get_object_or_404(Customer, id=cust_id)
-    measurement = (
-        Measurement.objects
-        .filter(customer=customer)
-        .order_by('-id')
-        .first()
-    )
+    measurement = Measurement.objects.filter(customer=customer).order_by('-id').first()
+
     if not measurement:
-        return HttpResponse("No measurements found for this customer.", status=404)
+        return HttpResponse("No measurements found.", status=404)
 
-    S = _styles()
     elements = []
+    page_width = PAGE_W - 2 * MARGIN
 
-    # Spacer to clear header banner
-    elements.append(Spacer(1, 30 * mm))
+    # ── STYLES ───────────────────────────────────────
+    TITLE = ParagraphStyle("title", fontName="Helvetica-Bold", fontSize=14, alignment=TA_CENTER)
+    SUBTITLE = ParagraphStyle("subtitle", fontName="Helvetica", fontSize=8, alignment=TA_CENTER)
+    HEADER = ParagraphStyle("header", fontName="Helvetica-Bold", fontSize=10)
+    NORMAL = ParagraphStyle("normal", fontName="Helvetica", fontSize=8)
+    CENTER = ParagraphStyle("center", fontName="Helvetica", fontSize=8, alignment=TA_CENTER)
 
-    # ── Customer info card ─────────────────────────────────────
-    def section_bar(text):
-        t = Table(
-            [[Paragraph(text, S["section_head"])]],
-            colWidths=[PAGE_W - 2 * MARGIN],
-        )
-        t.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (-1, -1), HEADER_BG),
-            ("TOPPADDING",    (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ("LEFTPADDING",   (0, 0), (-1, -1), 8),
-        ]))
-        return t
+    # ── COMPANY HEADER ───────────────────────────────
+    elements.append(Paragraph("SATYAM ALUMINIUM", TITLE))
+    elements.append(Spacer(1, 8))
+
+    # ── CUSTOMER DETAILS ─────────────────────────────
+    elements.append(Paragraph("CUSTOMER DETAILS", HEADER))
 
     info_data = [
-        [
-            Paragraph("Name", S["label"]),
-            Paragraph(customer.name or "—", S["value"]),
-            Paragraph("Phone", S["label"]),
-            Paragraph(customer.phone or "—", S["value"]),
-        ],
-        [
-            Paragraph("Address", S["label"]),
-            Paragraph(customer.address or "—", S["value"]),
-            Paragraph("Measurement ID", S["label"]),
-            Paragraph(f"#{measurement.id}", S["value"]),
-        ],
+        ["Name", customer.name, "Phone", customer.phone],
+        ["Address", customer.address, "Measurement ID", f"#{measurement.id}"],
     ]
-    col_w = PAGE_W - 2 * MARGIN
+
     info_table = Table(
         info_data,
-        colWidths=[col_w * p for p in [0.18, 0.32, 0.20, 0.30]],
+        colWidths=[page_width/4]*4
     )
+
     info_table.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, -1), WHITE),
-        ("ROWBACKGROUNDS",(0, 0), (-1, -1), [WHITE, LIGHT_GREY]),
-        ("TOPPADDING",    (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
-        ("RIGHTPADDING",  (0, 0), (-1, -1), 8),
-        ("BOX",           (0, 0), (-1, -1), 0.8, BORDER_GREY),
-        ("INNERGRID",     (0, 0), (-1, -1), 0.4, BORDER_GREY),
-        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("BOX", (0,0), (-1,-1), 0.5, colors.black),
+        ("INNERGRID", (0,0), (-1,-1), 0.3, colors.black),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
     ]))
 
-    elements.append(section_bar("CUSTOMER DETAILS"))
     elements.append(info_table)
-    elements.append(Spacer(1, 6 * mm))
+    elements.append(Spacer(1, 8))
 
-    # ── Measurement section header ─────────────────────────────
-    elements.append(section_bar("MEASUREMENT DETAILS"))
-    elements.append(Spacer(1, 4 * mm))
+    # ── MEASUREMENT DETAILS ──────────────────────────
+    elements.append(Paragraph("MEASUREMENT DETAILS", HEADER))
+    elements.append(Spacer(1, 4))
 
-    # ── Per-item tables ────────────────────────────────────────
-    TH = ParagraphStyle("th", fontName="Helvetica-Bold", fontSize=8,
-                        textColor=WHITE, alignment=TA_CENTER)
-    TD = ParagraphStyle("td", fontName="Helvetica", fontSize=8,
-                        textColor=DARK_GREY, alignment=TA_CENTER)
-    TOT_LBL = ParagraphStyle("tl", fontName="Helvetica-Bold", fontSize=8,
-                              textColor=WHITE, alignment=TA_CENTER)
-    TOT_VAL = ParagraphStyle("tv", fontName="Helvetica-Bold", fontSize=8,
-                              textColor=WHITE, alignment=TA_CENTER)
+    col_widths = [page_width/5]*5  # PERFECT ALIGNMENT
 
-    widths = [col_w * p for p in [0.20, 0.20, 0.20, 0.15, 0.25]]
+    for idx, item in enumerate(measurement.items.prefetch_related('subitems').all(), start=1):
 
-    for idx, item in enumerate(
-        measurement.items.prefetch_related('subitems').all(), start=1
-    ):
         item_name = (
             item.service.name if item.service
-            else item.custom_item_name or item.description or "—"
+            else item.custom_item_name or item.description or "-"
         )
-        desc = item.description or ""
 
-        label_block = [Paragraph(f"{idx}.  {item_name}", S["item_name"])]
-        if desc and desc != item_name:
-            label_block.append(Paragraph(desc, S["item_desc"]))
+        elements.append(Paragraph(f"{idx}. {item_name}", NORMAL))
 
-        # Header row
-        table_data = [[Paragraph(h, TH) for h in
-                       ["Height", "Width", "Length", "Qty", "Area"]]]
+        data = [
+            ["Height", "Width", "Length", "Qty", "Area"]
+        ]
 
-        total_area = Decimal("0")
+        total_area = 0
+
         for sub in item.subitems.all():
-            h = float(sub.height)   if sub.height   else 0.0
-            w = float(sub.width)    if sub.width    else 0.0
-            l = float(sub.length)   if sub.length   else 0.0
-            q = float(sub.quantity)
+            h = float(sub.height or 0)
+            w = float(sub.width or 0)
+            l = float(sub.length or 0)
+            q = float(sub.quantity or 1)
 
-            if h and w:
-                area = h * w * q
-            elif l:
-                area = l * q
-            else:
-                area = q
-            total_area += Decimal(str(area))
+            area = (h*w*q) if (h and w) else (l*q if l else q)
+            total_area += area
 
-            table_data.append([
-                Paragraph(f"{h:.2f}" if h else "—", TD),
-                Paragraph(f"{w:.2f}" if w else "—", TD),
-                Paragraph(f"{l:.2f}" if l else "—", TD),
-                Paragraph(f"{q:.2f}", TD),
-                Paragraph(f"{area:.2f}", TD),
+            data.append([
+                f"{h:.2f}" if h else "-",
+                f"{w:.2f}" if w else "-",
+                f"{l:.2f}" if l else "-",
+                f"{q:.2f}",
+                f"{area:.2f}",
             ])
 
         unit = getattr(item, "unit", "") or ""
-        n = len(table_data)
 
-        # Totals row
-        table_data.append([
-            Paragraph("", TD), Paragraph("", TD), Paragraph("", TD),
-            Paragraph("TOTAL", TOT_LBL),
-            Paragraph(f"{total_area:.2f} {unit}", TOT_VAL),
+        data.append([
+            "", "", "",
+            "Total",
+            f"{total_area:.2f} {unit}"
         ])
 
-        tbl = Table(table_data, colWidths=widths, repeatRows=1)
-        tbl.setStyle(TableStyle([
-            # Column header
-            ("BACKGROUND",     (0, 0),    (-1, 0),    HEADER_BG),
-            ("TOPPADDING",     (0, 0),    (-1, 0),    5),
-            ("BOTTOMPADDING",  (0, 0),    (-1, 0),    5),
-            # Data rows — alternating white / light grey
-            ("ROWBACKGROUNDS", (0, 1),    (-1, n - 1), [WHITE, LIGHT_GREY]),
-            ("TOPPADDING",     (0, 1),    (-1, n - 1), 4),
-            ("BOTTOMPADDING",  (0, 1),    (-1, n - 1), 4),
-            # Totals row
-            ("BACKGROUND",     (0, n),    (-1, n),    ACCENT_GREY),
-            ("TOPPADDING",     (0, n),    (-1, n),    5),
-            ("BOTTOMPADDING",  (0, n),    (-1, n),    5),
-            # Borders
-            ("BOX",            (0, 0),    (-1, -1),   0.8, BORDER_GREY),
-            ("INNERGRID",      (0, 0),    (-1, -1),   0.4, BORDER_GREY),
-            ("VALIGN",         (0, 0),    (-1, -1),   "MIDDLE"),
+        table = Table(data, colWidths=col_widths)
+
+        table.setStyle(TableStyle([
+            ("BOX", (0,0), (-1,-1), 0.5, colors.black),
+            ("INNERGRID", (0,0), (-1,-1), 0.3, colors.black),
+            ("ALIGN", (0,0), (-1,-1), "CENTER"),
+            ("LEFTPADDING", (0,0), (-1,-1), 5),
+            ("RIGHTPADDING", (0,0), (-1,-1), 5),
+            ("TOPPADDING", (0,0), (-1,-1), 3),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 3),
         ]))
 
-        elements.append(KeepTogether(label_block + [tbl]))
-        elements.append(Spacer(1, 5 * mm))
+        elements.append(table)
+        elements.append(Spacer(1, 6))
 
-    # ── Document footer note ───────────────────────────────────
-    elements.append(HRFlowable(
-        width="100%", thickness=0.6,
-        color=BORDER_GREY, spaceAfter=3 * mm,
-    ))
-    elements.append(Paragraph(
-        "Thank you for your business with <b>Satyam Aluminium</b>. "
-        "This document is system-generated.",
-        S["footer"],
-    ))
-
-    # ── Build PDF ──────────────────────────────────────────────
-    measurement_date = (
-        measurement.created_at.strftime("%d %b %Y")
-        if hasattr(measurement, "created_at") and measurement.created_at
-        else "—"
-    )
-    on_first, on_later = _make_canvas_cb(customer, measurement_date)
-
+   # ── BUILD ────────────────────────────────────────
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = (
-        f'attachment; filename="Measurement_{customer.name}.pdf"'
-    )
+    response['Content-Disposition'] = f'attachment; filename="Measurement_{customer.name}.pdf"'
+
     doc = SimpleDocTemplate(
-        response, pagesize=A4,
-        leftMargin=MARGIN, rightMargin=MARGIN,
-        topMargin=MARGIN, bottomMargin=18 * mm,
-        title=f"Measurement – {customer.name}",
-        author="Satyam Aluminium",
+        response,
+        pagesize=A4,
+        leftMargin=20,
+        rightMargin=20,
+        topMargin=20,
+        bottomMargin=20,
     )
-    doc.build(elements, onFirstPage=on_first, onLaterPages=on_later)
+
+    doc.build(elements)
+
     return response
-
-# ================= CENTRALIZED SALARY CALCULATION =================
-def calculate_salary(employee):
-    """Centralized salary calculation for dashboard, PDF, API, etc."""
-    from .models import Attendance, Payment
-    attendances = Attendance.objects.filter(employee=employee)
-    payments = Payment.objects.filter(employee=employee)
-
-    total_full_day = Decimal('0')
-    total_half_day = Decimal('0')
-    total_overtime = Decimal('0')
-
-    for att in attendances:
-        if att.status == 'full':
-            total_full_day += employee.daily_salary
-        elif att.status == 'half':
-            total_half_day += employee.half_day_salary
-        if getattr(att, 'overtime', False) and employee.overtime_salary is not None:
-            total_overtime += employee.overtime_salary
-
-    total_earned = total_full_day + total_half_day + total_overtime
-    total_paid = sum((p.amount_paid for p in payments), Decimal('0'))
-    remaining = total_earned - total_paid
-
-    return {
-        'earned': total_earned,
-        'paid': total_paid,
-        'remaining': remaining,
-        'full_total': total_full_day,
-        'half_total': total_half_day,
-        'overtime_total': total_overtime,
-        'attendance': attendances,
-        'payments': payments,
-    }
 
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -367,7 +275,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import re
 import os
 from datetime import datetime
@@ -386,6 +294,8 @@ from .models import (
     Service, Quotation, QuotationItem, OrderPayment, TermCondition,
     QuotationTerm, Measurement, MeasurementItem, MeasurementSubItem,
 )
+from .models import PaymentDetails
+from .forms import PaymentDetailsForm
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -1050,11 +960,12 @@ def create_quotation(request):
         gst_type = request.POST.get('gst_type', 'with_gst')
 
         try:
-            discount_in = Decimal(request.POST.get('discount') or '0')
+            discount_in = Decimal(str(request.POST.get('discount') or '0'))
+            discount_in = discount_in.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         except Exception:
-            discount_in = Decimal('0')
+            discount_in = Decimal('0.00')
         if discount_in < 0:
-            discount_in = Decimal('0')
+            discount_in = Decimal('0.00')
 
         descriptions = request.POST.getlist('description')
         quantities = request.POST.getlist('quantity')
@@ -1064,7 +975,8 @@ def create_quotation(request):
         if not customer_id:
             return render(request, 'create_quotation.html', {
                 'customers': customers, 'quotations': quotations,
-                'terms': terms_qs, 'error': 'Select a customer'
+                'terms': terms_qs, 'error': 'Select a customer',
+                'payment_accounts': PaymentDetails.objects.filter(user=request.user)
             })
 
         customer = get_object_or_404(Customer, id=customer_id)
@@ -1083,15 +995,15 @@ def create_quotation(request):
                 continue
 
             try:
-                qty_dec = qty_dec.quantize(Decimal('0.01'))
+                qty_dec = qty_dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             except Exception:
                 pass
             try:
-                price_dec = price_dec.quantize(Decimal('0.01'))
+                price_dec = price_dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             except Exception:
                 pass
 
-            total = qty_dec * price_dec
+            total = (qty_dec * price_dec).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             subtotal += total
             QuotationItem.objects.create(
                 quotation=quotation, description=desc,
@@ -1102,14 +1014,17 @@ def create_quotation(request):
         quotation.discount = discount_in
 
         if gst_type == "with_gst":
-            quotation.cgst = subtotal * Decimal('0.09')
-            quotation.sgst = subtotal * Decimal('0.09')
+            quotation.cgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            quotation.sgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         else:
             quotation.cgst = Decimal('0.00')
             quotation.sgst = Decimal('0.00')
 
-        total_calc = subtotal + quotation.cgst + quotation.sgst if gst_type == 'with_gst' else subtotal
-        total_calc = total_calc - quotation.discount
+        if gst_type == 'with_gst':
+            total_calc = subtotal + quotation.cgst + quotation.sgst
+        else:
+            total_calc = subtotal
+        total_calc = (total_calc - quotation.discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if total_calc < 0:
             total_calc = Decimal('0.00')
         quotation.total = total_calc
@@ -1135,6 +1050,87 @@ def create_quotation(request):
         quotation.terms_and_conditions = tac if tac else default_terms_text
         quotation.save()
 
+        # --- Payment details handling ---
+        try:
+            include_payment = True if request.POST.get('include_payment_details') in ('on', 'true', '1') else False
+        except Exception:
+            include_payment = False
+
+        payment_action = request.POST.get('payment_action')
+
+        if include_payment:
+            quotation.include_payment_details = True
+            sel_id = request.POST.get('selected_payment_id')
+            pd_obj = None
+            if sel_id:
+                try:
+                    pd_obj = PaymentDetails.objects.get(id=int(sel_id), user=request.user)
+                except Exception:
+                    pd_obj = None
+
+            # prepare form data for validation
+            form_data = {
+                'account_type': request.POST.get('payment_account_type'),
+                'account_name': request.POST.get('payment_account_name'),
+                'holder_name': request.POST.get('payment_holder_name'),
+                'bank_name': request.POST.get('payment_bank_name'),
+                'account_number': request.POST.get('payment_account_number'),
+                'ifsc_code': request.POST.get('payment_ifsc_code'),
+                'branch': request.POST.get('payment_branch'),
+                'upi_id': request.POST.get('payment_upi_id'),
+                'phone_number': request.POST.get('payment_phone_number'),
+                'is_default': True if request.POST.get('make_default') == 'on' else False,
+            }
+
+            form = PaymentDetailsForm(form_data)
+
+            # Update existing
+            if payment_action == 'update' and pd_obj:
+                if form.is_valid():
+                    for k, v in form.cleaned_data.items():
+                        setattr(pd_obj, k, v)
+                    pd_obj.user = request.user
+                    pd_obj.save()
+                else:
+                    return render(request, 'create_quotation.html', {
+                        'customers': customers,
+                        'quotations': quotations,
+                        'terms': terms_qs,
+                        'terms_default': default_terms_text,
+                        'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                        'error': form.errors.as_text()
+                    })
+
+            # Save new or attach existing
+            elif payment_action == 'save' or not pd_obj:
+                if form.is_valid():
+                    try:
+                        new_pd = form.save(commit=False)
+                        new_pd.user = request.user
+                        new_pd.is_default = form.cleaned_data.get('is_default', False)
+                        new_pd.save()
+                        if new_pd.is_default:
+                            PaymentDetails.objects.filter(user=request.user).exclude(id=new_pd.id).update(is_default=False)
+                        pd_obj = new_pd
+                    except Exception:
+                        pd_obj = None
+                else:
+                    return render(request, 'create_quotation.html', {
+                        'customers': customers,
+                        'quotations': quotations,
+                        'terms': terms_qs,
+                        'terms_default': default_terms_text,
+                        'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                        'error': form.errors.as_text()
+                    })
+
+            if pd_obj:
+                quotation.payment_details = pd_obj
+        else:
+            quotation.include_payment_details = False
+
+        quotation.save()
+
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Quotation created', 'quotation_id': quotation.id})
         return redirect('view_quotation', id=quotation.id)
@@ -1143,7 +1139,8 @@ def create_quotation(request):
         'customers': customers,
         'quotations': quotations,
         'terms': terms_qs,
-        'terms_default': default_terms_text
+        'terms_default': default_terms_text,
+        'payment_accounts': PaymentDetails.objects.filter(user=request.user)
     })
 
 
@@ -1177,11 +1174,12 @@ def edit_quotation(request, id):
         gst_type = request.POST.get('gst_type', q.gst_type)
 
         try:
-            discount_in = Decimal(request.POST.get('discount') or '0')
+            discount_in = Decimal(str(request.POST.get('discount') or '0'))
+            discount_in = discount_in.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         except Exception:
-            discount_in = Decimal('0')
+            discount_in = Decimal('0.00')
         if discount_in < 0:
-            discount_in = Decimal('0')
+            discount_in = Decimal('0.00')
 
         descriptions = request.POST.getlist('description')
         quantities = request.POST.getlist('quantity')
@@ -1208,17 +1206,16 @@ def edit_quotation(request, id):
                 price_dec = Decimal(price_str)
             except (InvalidOperation, TypeError):
                 continue
-
             try:
-                qty_dec = qty_dec.quantize(Decimal('0.01'))
+                qty_dec = qty_dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             except Exception:
                 pass
             try:
-                price_dec = price_dec.quantize(Decimal('0.01'))
+                price_dec = price_dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             except Exception:
                 pass
 
-            total = qty_dec * price_dec
+            total = (qty_dec * price_dec).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             subtotal += total
             QuotationItem.objects.create(
                 quotation=q, description=desc,
@@ -1230,14 +1227,17 @@ def edit_quotation(request, id):
         q.discount = discount_in
 
         if gst_type == "with_gst":
-            q.cgst = subtotal * Decimal('0.09')
-            q.sgst = subtotal * Decimal('0.09')
+            q.cgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            q.sgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         else:
             q.cgst = Decimal('0.00')
             q.sgst = Decimal('0.00')
 
-        total_calc = subtotal + q.cgst + q.sgst if gst_type == 'with_gst' else subtotal
-        total_calc = total_calc - q.discount
+        if gst_type == 'with_gst':
+            total_calc = subtotal + q.cgst + q.sgst
+        else:
+            total_calc = subtotal
+        total_calc = (total_calc - q.discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if total_calc < 0:
             total_calc = Decimal('0.00')
         q.total = total_calc
@@ -1263,9 +1263,91 @@ def edit_quotation(request, id):
         q.terms_and_conditions = tac if tac else (q.terms_and_conditions or default_terms_text)
         q.save()
 
+        # --- Payment details handling for edit ---
+        try:
+            include_payment = True if request.POST.get('include_payment_details') in ('on', 'true', '1') else False
+        except Exception:
+            include_payment = False
+
+        if include_payment:
+            q.include_payment_details = True
+            sel_id = request.POST.get('selected_payment_id')
+            pd_obj = None
+            if sel_id:
+                try:
+                    pd_obj = PaymentDetails.objects.get(id=int(sel_id), user=request.user)
+                except Exception:
+                    pd_obj = None
+
+            if not pd_obj:
+                acct_type = request.POST.get('payment_account_type') or PaymentDetails.BUSINESS
+                acct_name = (request.POST.get('payment_account_name') or '').strip()
+                holder = (request.POST.get('payment_holder_name') or '').strip()
+                bank = (request.POST.get('payment_bank_name') or '').strip()
+                acc_no = (request.POST.get('payment_account_number') or '').strip()
+                ifsc = (request.POST.get('payment_ifsc_code') or '').strip()
+                branch = (request.POST.get('payment_branch') or '').strip()
+                upi = (request.POST.get('payment_upi_id') or '').strip()
+                phone = (request.POST.get('payment_phone_number') or '').strip()
+                save_it = True if request.POST.get('save_payment') == 'on' else False
+                if any([acct_name, holder, bank, acc_no, ifsc, branch, upi, phone]):
+                    # validate based on account type
+                    valid = True
+                    if acct_type in (PaymentDetails.BUSINESS, PaymentDetails.PERSONAL):
+                        if not acc_no or not ifsc:
+                            valid = False
+                    elif acct_type == PaymentDetails.UPI:
+                        if not upi and not phone:
+                            valid = False
+
+                    if not valid:
+                        # mark include flag off and re-render edit form with error
+                        q.include_payment_details = False
+                        q.save()
+                        return render(request, 'create_quotation.html', {
+                            'customers': Customer.objects.all(),
+                            'items': items,
+                            'edit': True,
+                            'q': q,
+                            'quotations': Quotation.objects.all().order_by('-id')[:50],
+                            'terms': terms_qs,
+                            'terms_default': default_terms_text,
+                            'term_orders': {qt.term_id: qt.order for qt in q.quotation_terms.all()},
+                            'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                            'error': 'Invalid payment details for selected Account Type. Please fill required fields.'
+                        })
+
+                    try:
+                        pd_obj = PaymentDetails.objects.create(
+                            user=request.user,
+                            account_type=acct_type,
+                            account_name=acct_name,
+                            holder_name=holder,
+                            bank_name=bank,
+                            account_number=acc_no,
+                            ifsc_code=ifsc,
+                            branch=branch,
+                            upi_id=upi,
+                            phone_number=phone,
+                            is_default=False,
+                        )
+                        if save_it and request.POST.get('make_default') == 'on':
+                            PaymentDetails.objects.filter(user=request.user).exclude(id=pd_obj.id).update(is_default=False)
+                            pd_obj.is_default = True
+                            pd_obj.save()
+                    except Exception:
+                        pd_obj = None
+
+            if pd_obj:
+                q.payment_details = pd_obj
+        else:
+            q.include_payment_details = False
+
+        q.save()
+
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Quotation updated', 'quotation_id': q.id})
-        return redirect('create_quotation')
+        return redirect('view_quotation', id=q.id)
 
     term_orders_map = {qt.term_id: qt.order for qt in q.quotation_terms.all()}
     for t in terms_qs:
@@ -1283,6 +1365,7 @@ def edit_quotation(request, id):
         'terms': terms_qs,
         'terms_default': default_terms_text,
         'term_orders': term_orders_map,
+        'payment_accounts': PaymentDetails.objects.filter(user=request.user),
     })
 
 
@@ -1642,6 +1725,71 @@ def quotation_pdf(request, id):
                     f"<font color='#2563EB'><b>{j}.</b></font>\u00A0\u00A0{line.strip()}",
                     s_terms))
 
+    # 5a. Payment details block (appended to elements list if included)
+    try:
+        if getattr(q, 'include_payment_details', False) and getattr(q, 'payment_details', None):
+            pd = q.payment_details
+
+            # Spacer + horizontal rule before the section
+            elements.append(Spacer(1, 8))
+            elements.append(HRFlowable(
+                width="100%",
+                thickness=0.6,
+                color=BORDER,
+                spaceAfter=6,
+            ))
+
+            # Section heading
+            elements.append(Paragraph(
+                "<b>PAYMENT DETAILS</b>",
+                ps('pd_h', 'Helvetica-Bold', 15, NAVY, TA_CENTER, spaceAfter=6),
+            ))
+
+            # Build label/value row pairs based on account type
+            rows = []
+
+            if pd.account_type == PaymentDetails.UPI:
+                if pd.upi_id:
+                    rows.append([P("UPI ID",  s_pill_lbl), P(pd.upi_id,       s_pill_val)])
+                if pd.phone_number:
+                    rows.append([P("Phone",   s_pill_lbl), P(pd.phone_number,  s_pill_val)])
+            else:
+                field_map = [
+                    ("Account Name",   pd.account_name),
+                    ("Account Holder", pd.holder_name),
+                    ("Bank Name",      pd.bank_name),
+                    ("A/C Number",     pd.account_number),
+                    ("IFSC Code",      pd.ifsc_code),
+                    ("Branch",         pd.branch),
+                ]
+                for label, value in field_map:
+                    if value:
+                        rows.append([P(label, s_pill_lbl), P(value, s_pill_val)])
+
+            # Render the two-column table only if there is data
+            if rows:
+                pay_tbl = Table(
+                    rows,
+                    colWidths=[page_w * 0.28, page_w * 0.72],
+                )
+                pay_tbl.setStyle(TableStyle([
+                    ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+                    ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING',  (0, 0), (-1, -1), 6),
+                    ('TOPPADDING',    (0, 0), (-1, -1), 5),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                    # Subtle row separators
+                    ('LINEBELOW',     (0, 0), (-1, -2), 0.4, colors.HexColor('#E4E7ED')),
+                    # Light shading on alternating rows for readability
+                    ('ROWBACKGROUNDS', (0, 0), (-1, -1),
+                     [colors.white, colors.HexColor('#F9FAFB')]),
+                ]))
+                elements.append(pay_tbl)
+                elements.append(Spacer(1, 12))
+
+    except Exception:
+        pass  # Never crash PDF generation for optional payment details
+
     elements.append(Spacer(1, 18))
 
     # 6. FOOTER BAND
@@ -1754,7 +1902,7 @@ def generate_reminder_pdf(request, order_id):
     )
     s_contact = ParagraphStyle(
         "Contact", fontName=SANS, fontSize=8.5, alignment=TA_CENTER,
-        textColor=_SLATE, leading=13,
+        textColor=_WHITE2, leading=13,
     )
     s_section_title = ParagraphStyle(
         "SectionTitle", fontName=TNR_BOLD, fontSize=11, alignment=TA_LEFT,
@@ -1785,8 +1933,11 @@ def generate_reminder_pdf(request, order_id):
         textColor=colors.HexColor("#94A3B8"), leading=12,
     )
 
+    # filename: use sanitized customer name followed by _reminder.pdf
+    cust_name_safe = re.sub(r'[^A-Za-z0-9]+', '_', (customer.name or 'customer')).strip('_')
+    filename = f"{cust_name_safe}_reminder.pdf"
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="reminder_order_{order.id}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     PAGE_W, PAGE_H = A4
     MARGIN_H   = 40
@@ -2151,14 +2302,16 @@ def delete_employee(request, emp_id):
 @login_required(login_url='/login/')
 def mark_attendance(request, emp_id):
     from datetime import date as _date
+
     emp = get_object_or_404(Employee, id=emp_id)
     already_marked = Attendance.objects.filter(employee=emp, date=_date.today()).exists()
 
     if request.method == "POST":
         selected_date_str = request.POST.get('date')
-        status            = request.POST.get('status')
-        overtime_flag     = request.POST.get('overtime')
-        overtime_bool     = True if overtime_flag in ('on', 'true', '1', 'yes') else False
+        status = request.POST.get('status')
+
+        # ✅ FIXED OVERTIME
+        overtime_bool = 'overtime' in request.POST
 
         try:
             selected_date = _date.fromisoformat(selected_date_str)
@@ -2173,7 +2326,10 @@ def mark_attendance(request, emp_id):
             })
 
         Attendance.objects.create(
-            employee=emp, date=selected_date, status=status, overtime=overtime_bool
+            employee=emp,
+            date=selected_date,
+            status=status,
+            overtime=overtime_bool   # ✅ WORKING
         )
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Attendance marked'})
@@ -2280,10 +2436,12 @@ def attendance_report_pdf(request, emp_id):
 
     records = list(records)
 
-    total_days   = len(records)
-    present_days = sum(1 for r in records if r.status == 'full')
-    half_days    = sum(1 for r in records if r.status == 'half')
-    absent_days  = total_days - present_days - half_days
+    total_days    = len(records)
+    present_days  = sum(1 for r in records if r.status == 'full')
+    half_days     = sum(1 for r in records if r.status == 'half')
+    # Overtime count
+    overtime_days = sum(1 for r in records if getattr(r, 'overtime', False))
+    absent_days   = total_days - present_days - half_days
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="attendance_{emp.name}.pdf"'
@@ -2303,7 +2461,6 @@ def attendance_report_pdf(request, emp_id):
     elements = []
 
     elements.append(Paragraph('Satyam Aluminium', title_style))
-    elements.append(Paragraph('Shop no 4, Ganesh Plaza, Gokul Rd, Hubballi, Karnataka', subtitle_style))
     elements.append(Spacer(1, 6))
 
     hr = Table([['']], colWidths=[doc.width])
@@ -2329,6 +2486,7 @@ def attendance_report_pdf(request, emp_id):
         ['Present Days:', str(present_days)],
         ['Absent Days:', str(absent_days)],
         ['Half Days:', str(half_days)],
+        ['Overtime Days:', str(overtime_days)],
     ]
     det_table = Table(emp_details, colWidths=[120, doc.width - 120])
     det_table.setStyle(TableStyle([
@@ -2342,17 +2500,18 @@ def attendance_report_pdf(request, emp_id):
     elements.append(Spacer(1, 12))
 
     elements.append(Paragraph('Attendance Details', sect_style))
-    table_data = [['Date', 'Day', 'Status']]
+    table_data = [['Date', 'Day', 'Status', 'Overtime']]
     for r in records:
         date_str = r.date.strftime('%d-%m-%Y') if hasattr(r.date, 'strftime') else str(r.date)
         day      = r.date.strftime('%A') if hasattr(r.date, 'strftime') else ''
         status   = 'Full' if r.status == 'full' else ('Half' if r.status == 'half' else 'Absent')
-        table_data.append([date_str, day, status])
+        overtime_text = "Yes" if getattr(r, 'overtime', False) else "No"
+        table_data.append([date_str, day, status, overtime_text])
 
-    att_table = Table(table_data, colWidths=[100, 200, doc.width - 300])
+    att_table = Table(table_data, colWidths=[90, 150, 100, doc.width - 340])
     tbl_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2E86C1")),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -2374,6 +2533,7 @@ def attendance_report_pdf(request, emp_id):
         ['Total Present', str(present_days)],
         ['Total Absent', str(absent_days)],
         ['Total Half Days', str(half_days)],
+        ['Overtime Days', str(overtime_days)],
     ]
     sum_table = Table(summary, colWidths=[200, doc.width - 200])
     sum_table.setStyle(TableStyle([

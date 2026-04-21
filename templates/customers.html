@@ -552,6 +552,7 @@ body::before {
         <div id="tableBody">
             {% for c in data %}
               <div class="customer-row"
+                  data-id="{{ c.id }}"
                   data-name="{{ c.name|lower }}"
                   data-phone="{{ c.phone }}"
                   data-address="{{ c.address|lower }}"
@@ -669,18 +670,48 @@ function filterRows() {
     updateCount(shown, rows.length);
 }
 
-function confirmDelete(btn) {
+function getCSRFToken() {
+    const kv = document.cookie.split('; ').find(function (row) { return row.startsWith('csrftoken='); });
+    return kv ? kv.split('=')[1] : null;
+}
+
+function confirmDelete(btn, id) {
     const row = btn.closest('.customer-row');
     const name = row.querySelector('.customer-name').textContent;
-    if (confirm(`Delete "${name}"? This cannot be undone.`)) {
-        row.style.transition = 'all 0.35s ease';
-        row.style.opacity = '0';
-        row.style.transform = 'translateX(30px) scale(0.97)';
-        setTimeout(() => {
-            row.remove();
-            const remaining = document.querySelectorAll('.customer-row').length;
-            updateCount(remaining, remaining);
-        }, 350);
+    // derive id from argument or DOM attribute
+    if (!id) {
+        id = row.getAttribute('data-id') || (row.dataset ? row.dataset.id : null);
+    }
+
+    if (confirm('Delete "' + name + '"? This cannot be undone.')) {
+
+        fetch('/delete-customer/' + id + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.status === 'success') {
+
+                // Animation (keep your UI)
+                row.style.transition = 'all 0.35s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(30px) scale(0.97)';
+
+                setTimeout(function () {
+                    row.remove();
+                    var remaining = document.querySelectorAll('.customer-row').length;
+                    updateCount(remaining, remaining);
+                }, 300);
+
+            } else {
+                alert('Delete failed');
+            }
+        })
+        .catch(function () { alert('Delete failed'); });
     }
 }
 </script>

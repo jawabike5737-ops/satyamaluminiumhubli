@@ -379,6 +379,31 @@
         </a>
     </div>
 
+    {% if q.include_payment_details and q.payment_details %}
+    <div style="margin-top:28px;">
+        <div class="terms-section" style="border-left-color:var(--primary);">
+            <h3>
+                Payment Details
+            </h3>
+            <div style="padding-top:8px; color:var(--text-main);">
+                {% with pd=q.payment_details %}
+                    {% if pd.account_type == 'upi' %}
+                        <p><strong>UPI ID :</strong> {{ pd.upi_id }}</p>
+                        {% if pd.phone_number %}<p><strong>Phone :</strong> {{ pd.phone_number }}</p>{% endif %}
+                    {% else %}
+                        {% if pd.account_name %}<p><strong>Account Name :</strong> {{ pd.account_name }}</p>{% endif %}
+                        {% if pd.holder_name %}<p><strong>Account Holder :</strong> {{ pd.holder_name }}</p>{% endif %}
+                        {% if pd.bank_name %}<p><strong>Bank Name :</strong> {{ pd.bank_name }}</p>{% endif %}
+                        {% if pd.account_number %}<p><strong>A/C Number :</strong> {{ pd.account_number }}</p>{% endif %}
+                        {% if pd.ifsc_code %}<p><strong>IFSC Code :</strong> {{ pd.ifsc_code }}</p>{% endif %}
+                        {% if pd.branch %}<p><strong>Branch :</strong> {{ pd.branch }}</p>{% endif %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 
 </body>
