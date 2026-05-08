@@ -211,18 +211,19 @@ class MeasurementSubItem(models.Model):
     quantity = models.DecimalField(max_digits=10, decimal_places=3, default=1)
 
     def area(self):
+        from decimal import Decimal, InvalidOperation
         try:
-            q = float(self.quantity)
+            q = Decimal(str(self.quantity)) if self.quantity is not None else Decimal('0')
             # size-based
             if self.height is not None and self.width is not None:
-                return float(self.height) * float(self.width) * q
+                return Decimal(str(self.height)) * Decimal(str(self.width)) * q
             # length-based: use length * quantity
             if self.length is not None:
-                return float(self.length) * q
+                return Decimal(str(self.length)) * q
             # nos: area not applicable, return quantity
             return q
-        except Exception:
-            return None
+        except (InvalidOperation, Exception):
+            return Decimal('0')
 
     def __str__(self):
         return f"Subitem {self.id} of Item {self.item_id}"

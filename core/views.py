@@ -7,7 +7,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 from io import BytesIO
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
@@ -197,7 +197,7 @@ def measurement_pdf(request, cust_id):
 
     col_widths = [page_width/5]*5  # PERFECT ALIGNMENT
 
-    for idx, item in enumerate(measurement.items.prefetch_related('subitems').all(), start=1):
+    for idx, item in enumerate(measurement.items.select_related('service').prefetch_related('subitems').all(), start=1):
 
         item_name = (
             item.service.name if item.service
@@ -210,15 +210,25 @@ def measurement_pdf(request, cust_id):
             ["Height", "Width", "Length", "Qty", "Area"]
         ]
 
-        total_area = 0
+        total_area = Decimal('0')
 
         for sub in item.subitems.all():
-            h = float(sub.height or 0)
-            w = float(sub.width or 0)
-            l = float(sub.length or 0)
-            q = float(sub.quantity or 1)
+            try:
+                h = sub.height if sub.height is not None else Decimal('0')
+                w = sub.width if sub.width is not None else Decimal('0')
+                l = sub.length if sub.length is not None else Decimal('0')
+                q = sub.quantity if sub.quantity is not None else Decimal('1')
+            except Exception:
+                h = w = l = Decimal('0')
+                q = Decimal('1')
 
-            area = (h*w*q) if (h and w) else (l*q if l else q)
+            if h and w:
+                area = (h * w * q)
+            elif l:
+                area = (l * q)
+            else:
+                area = q
+
             total_area += area
 
             data.append([
@@ -271,11 +281,9 @@ def measurement_pdf(request, cust_id):
 
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import re
 import os
 from datetime import datetime
@@ -288,7 +296,8 @@ from django.db import transaction
 import psutil
 import os
 
-from .utils import generate_advance_acknowledgement_pdf, get_ram_usage
+from .utils import generate_advance_acknowledgement_pdf, get_ram_usage, to_decimal
+from .services import calculate_salary
 from .models import (
     Customer, Order, Employee, Attendance, Payment,
     Service, Quotation, QuotationItem, OrderPayment, TermCondition,
@@ -313,8 +322,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 # ================= CURRENCY FORMATTING =================
 def format_inr(number):
     """Format number in Indian numbering system (e.g., 1,01,745.00)"""
-    number = float(number)
-    s = f"{number:.2f}"
+    s = f"{to_decimal(number):.2f}"
     parts = s.split(".")
     integer = parts[0]
     decimal = parts[1]
@@ -469,17 +477,40 @@ _FONTS_REGISTERED = False
 
 def _register_fonts():
     global _FONTS_REGISTERED
+
     if _FONTS_REGISTERED:
         return
+
     try:
-        pdfmetrics.registerFont(
-            TTFont('DejaVuSans',
-                   '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
-        pdfmetrics.registerFont(
-            TTFont('DejaVuSans-Bold',
-                   '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
-    except Exception:
-        pass
+        font_path = os.path.join(
+            settings.BASE_DIR,
+            'static',
+            'fonts',
+            'DejaVuSans.ttf'
+        )
+
+        bold_path = os.path.join(
+            settings.BASE_DIR,
+            'static',
+            'fonts',
+            'DejaVuSans.ttf'
+        )
+
+        if 'DejaVuSans' not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(
+                TTFont('DejaVuSans', font_path)
+            )
+
+        if 'DejaVuSans-Bold' not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(
+                TTFont('DejaVuSans-Bold', bold_path)
+            )
+
+        print("✅ DejaVu font loaded successfully")
+
+    except Exception as e:
+        print("❌ FONT ERROR:", e)
+
     _FONTS_REGISTERED = True
 
 
@@ -505,8 +536,8 @@ def _ps(name, font, size, align=TA_LEFT, color=None, leading=None):
 
 def _section_heading(text, page_w):
     heading = Paragraph(
-        f"<font name='Times-Bold' size='12' color='#0D1B2A'>{text}</font>",
-        _ps('_sh', 'Times-Bold', 12, TA_LEFT, DARK),
+        f"<font name='DejaVuSans-Bold' size='12' color='#0D1B2A'>{text}</font>",
+        _ps('_sh', 'DejaVuSans-Bold', 12, TA_LEFT, DARK),
     )
     return [heading, Spacer(1, 3),
             HRFlowable(width=page_w, thickness=1.2, color=GOLD, spaceAfter=9)]
@@ -523,7 +554,7 @@ def _info_cell(label, value, data_font, data_bold):
 def _fmt(amount, rupee):
     """Return '₹ 1,23,456.00' style string."""
     try:
-        val = Decimal(str(amount)).quantize(Decimal('0.01'))
+        val = to_decimal(amount).quantize(Decimal('0.01'))
         s = f"{val:,.2f}"
         return f"{rupee} {s}"
     except Exception:
@@ -565,22 +596,7 @@ def login_user(request):
     return render(request, 'login.html')
 
 
-def register_user(request):
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-
-    if request.method == "POST":
-        username = request.POST.get('username')
-        if User.objects.filter(username=username).exists():
-            return render(request, 'register.html', {
-                'error': 'User already exists'
-            })
-        User.objects.create_user(
-            username=username,
-            password=request.POST.get('password')
-        )
-        return redirect('login')
-    return render(request, 'register.html')
+# Registration has been removed. Former register_user view deleted.
 
 
 def logout_user(request):
@@ -700,10 +716,7 @@ def save_measurements(request, cust_id):
 
             custom_name = item.get('custom_item_name') or ''
 
-            try:
-                ppu = Decimal(str(item.get('price_per_unit') or '0'))
-            except Exception:
-                ppu = Decimal('0')
+            ppu = to_decimal(item.get('price_per_unit') or '0')
 
             mi = MeasurementItem.objects.create(
                 measurement=m,
@@ -719,20 +732,20 @@ def save_measurements(request, cust_id):
 
             for sub in item.get('subs', []):
                 try:
-                    h_val = float(sub.get('height')) if sub.get('height') not in (None, '') else None
+                    h_val = to_decimal(sub.get('height')) if sub.get('height') not in (None, '') else None
                 except Exception:
                     h_val = None
                 try:
-                    w_val = float(sub.get('width')) if sub.get('width') not in (None, '') else None
+                    w_val = to_decimal(sub.get('width')) if sub.get('width') not in (None, '') else None
                 except Exception:
                     w_val = None
                 try:
-                    l_val = float(sub.get('length')) if sub.get('length') not in (None, '') else None
+                    l_val = to_decimal(sub.get('length')) if sub.get('length') not in (None, '') else None
                 except Exception:
                     l_val = None
                 qty_in = sub.get('quantity') or sub.get('qty') or 1
                 try:
-                    qty_dec = Decimal(str(qty_in)).quantize(Decimal('0.001'))
+                    qty_dec = to_decimal(qty_in).quantize(Decimal('0.001'))
                 except Exception:
                     try:
                         qty_dec = Decimal(int(qty_in))
@@ -740,15 +753,15 @@ def save_measurements(request, cust_id):
                         qty_dec = Decimal('1')
 
                 try:
-                    h_dec = Decimal(str(h_val)) if h_val is not None else None
+                    h_dec = to_decimal(h_val) if h_val is not None else None
                 except Exception:
                     h_dec = None
                 try:
-                    w_dec = Decimal(str(w_val)) if w_val is not None else None
+                    w_dec = to_decimal(w_val) if w_val is not None else None
                 except Exception:
                     w_dec = None
                 try:
-                    l_dec = Decimal(str(l_val)) if l_val is not None else None
+                    l_dec = to_decimal(l_val) if l_val is not None else None
                 except Exception:
                     l_dec = None
 
@@ -758,11 +771,11 @@ def save_measurements(request, cust_id):
 
                 try:
                     if si.height is not None and si.width is not None:
-                        area_val = si.height * si.width * Decimal(si.quantity)
+                        area_val = si.height * si.width * si.quantity
                     elif si.length is not None:
-                        area_val = si.length * Decimal(si.quantity)
+                        area_val = si.length * si.quantity
                     else:
-                        area_val = Decimal(si.quantity)
+                        area_val = si.quantity
                 except Exception:
                     area_val = Decimal('0')
 
@@ -786,36 +799,39 @@ def get_measurements_json(request, cust_id):
         return JsonResponse({'items': []})
 
     out = []
-    for mi in m.items.prefetch_related('subitems').all():
+    for mi in m.items.select_related('service').prefetch_related('subitems').all():
         subs_qs = list(mi.subitems.all())
 
         subs = []
         for s in subs_qs:
             subs.append({
-                'height': float(s.height) if s.height is not None else None,
-                'width': float(s.width) if s.width is not None else None,
-                'length': float(s.length) if s.length is not None else None,
-                'quantity': float(s.quantity)
+                'height': str(s.height) if s.height is not None else None,
+                'width': str(s.width) if s.width is not None else None,
+                'length': str(s.length) if s.length is not None else None,
+                'quantity': str(s.quantity) if s.quantity is not None else '0',
             })
 
-        qty_val = 0.0
-        raw_qty = 0.0
+        qty_val = Decimal('0')
+        raw_qty = Decimal('0')
         for s in subs_qs:
             try:
-                qf = float(s.quantity)
+                qd = to_decimal(s.quantity) if s.quantity is not None else Decimal('0')
                 if mi.item_type == MeasurementItem.SIZE:
                     if s.height is None or s.width is None:
                         continue
-                    qty_val += float(s.height) * float(s.width) * qf
-                    raw_qty += qf
+                    h = to_decimal(s.height)
+                    w = to_decimal(s.width)
+                    qty_val += (h * w * qd)
+                    raw_qty += qd
                 elif mi.item_type == MeasurementItem.LENGTH:
                     if s.length is None:
                         continue
-                    qty_val += float(s.length) * qf
-                    raw_qty += qf
+                    l = to_decimal(s.length)
+                    qty_val += (l * qd)
+                    raw_qty += qd
                 else:
-                    raw_qty += qf
-                    qty_val += qf
+                    raw_qty += qd
+                    qty_val += qd
             except Exception:
                 continue
 
@@ -825,11 +841,11 @@ def get_measurements_json(request, cust_id):
             'service_name': mi.service.name if mi.service else None,
             'custom_item_name': mi.custom_item_name,
             'description': mi.description,
-            'quantity': round(qty_val, 3) if isinstance(qty_val, float) else qty_val,
+            'quantity': str(qty_val),
             'unit': mi.unit,
-            'raw_quantity': raw_qty,
-            'price_per_unit': float(mi.price_per_unit or 0),
-            'total_price': float(mi.total_price or 0),
+            'raw_quantity': str(raw_qty),
+            'price_per_unit': str(mi.price_per_unit or 0),
+            'total_price': str(mi.total_price or 0),
             'subs': subs
         })
 
@@ -850,7 +866,7 @@ def services_api(request):
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
     qs = Service.objects.all().order_by('name').values('id', 'name', 'price')[:50]
-    out = [{'id': s['id'], 'name': s['name'], 'description': s['name'], 'price': float(s['price'])} for s in qs]
+    out = [{'id': s['id'], 'name': s['name'], 'description': s['name'], 'price': str(s['price'])} for s in qs]
     return JsonResponse(out, safe=False)
 
 
@@ -878,16 +894,13 @@ def create_service_api(request):
     if existing:
         return JsonResponse({
             'id': existing.id, 'name': existing.name,
-            'description': existing.name, 'price': float(existing.price)
+            'description': existing.name, 'price': str(existing.price)
         })
 
-    try:
-        price = Decimal(str(price_in or '0'))
-    except Exception:
-        price = Decimal('0')
+    price = to_decimal(price_in or '0')
 
     s = Service.objects.create(name=name, description=description, price=price)
-    return JsonResponse({'id': s.id, 'name': s.name, 'description': s.name, 'price': float(s.price)})
+    return JsonResponse({'id': s.id, 'name': s.name, 'description': s.name, 'price': str(s.price)})
 
 
 @login_required(login_url='/login/')
@@ -960,7 +973,7 @@ def create_quotation(request):
         gst_type = request.POST.get('gst_type', 'with_gst')
 
         try:
-            discount_in = Decimal(str(request.POST.get('discount') or '0'))
+            discount_in = to_decimal(request.POST.get('discount') or '0')
             discount_in = discount_in.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         except Exception:
             discount_in = Decimal('0.00')
@@ -1174,7 +1187,7 @@ def edit_quotation(request, id):
         gst_type = request.POST.get('gst_type', q.gst_type)
 
         try:
-            discount_in = Decimal(str(request.POST.get('discount') or '0'))
+            discount_in = to_decimal(request.POST.get('discount') or '0')
             discount_in = discount_in.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         except Exception:
             discount_in = Decimal('0.00')
@@ -1473,8 +1486,7 @@ def quotation_pdf(request, id):
         return Paragraph(text, style)
 
     def format_inr_local(n):
-        n = float(n)
-        s = f"{n:.2f}"
+        s = f"{to_decimal(n):.2f}"
         integer, dec = s.split(".")
         if len(integer) > 3:
             last3 = integer[-3:]
@@ -1809,6 +1821,32 @@ def quotation_pdf(request, id):
 
     doc.build(elements)
     return response
+
+
+# ──────────────────────────────────────────────
+# Small paragraph helpers (used by salary_pdf)
+# ──────────────────────────────────────────────
+def _plain(text, align=TA_LEFT, size=10, color=colors.black):
+    """Plain text cell using DejaVuSans (supports all Unicode)."""
+    return Paragraph(str(text), _ps(f'plain_{str(text)}', 'DejaVuSans', size, align, color))
+
+
+def _header(text):
+    """White bold header cell."""
+    return Paragraph(str(text), _ps(f'hdr_{str(text)}', 'DejaVuSans-Bold', 10, TA_LEFT, colors.white))
+
+
+def _rupee(amount, align=TA_RIGHT, size=10, color=colors.black):
+    """
+    ₹ amount cell. Uses HTML entity &#8377; (= ₹ U+20B9).
+    DejaVuSans contains this glyph — guaranteed visible.
+    """
+    style = _ps(f'rp_{str(amount)}', 'DejaVuSans', size, align, color)
+    try:
+        val = to_decimal(amount).quantize(Decimal('0.01'))
+        return Paragraph(f'&#8377; {val:,.2f}', style)
+    except Exception:
+        return Paragraph(f'&#8377; {amount}', style)
 
 
 # ================= ORDERS =================
@@ -2310,14 +2348,22 @@ def mark_attendance(request, emp_id):
         selected_date_str = request.POST.get('date')
         status = request.POST.get('status')
 
-        # ✅ FIXED OVERTIME
-        overtime_bool = 'overtime' in request.POST
+        # parse overtime checkbox safely
+        overtime_bool = bool(request.POST.get('overtime'))
 
+        # validate date
         try:
             selected_date = _date.fromisoformat(selected_date_str)
         except Exception:
             return render(request, 'mark_attendance.html', {
                 'emp': emp, 'error': 'Invalid date format', 'already_marked': already_marked
+            })
+
+        # validate status against model choices
+        allowed_statuses = [c[0] for c in Attendance.STATUS_CHOICES]
+        if status not in allowed_statuses:
+            return render(request, 'mark_attendance.html', {
+                'emp': emp, 'error': 'Invalid status selected', 'already_marked': already_marked
             })
 
         if Attendance.objects.filter(employee=emp, date=selected_date).exists():
@@ -2329,13 +2375,16 @@ def mark_attendance(request, emp_id):
             employee=emp,
             date=selected_date,
             status=status,
-            overtime=overtime_bool   # ✅ WORKING
+            overtime=overtime_bool
         )
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Attendance marked'})
         return redirect('employees')
 
     return render(request, 'mark_attendance.html', {'emp': emp, 'already_marked': already_marked})
+
+
+
 
 
 @login_required(login_url='/login/')
@@ -2561,22 +2610,21 @@ def attendance_report_pdf(request, emp_id):
 def salary_pdf(request, emp_id):
     emp = get_object_or_404(Employee, id=emp_id)
 
-    # ✅ ALWAYS use centralized function (single source of truth)
+    # Single source of truth for salary calculation
     result = calculate_salary(emp)
 
     total_earned = result['earned']
     total_paid   = result['paid']
     remaining    = result['remaining']
+    attendance   = result['attendance'].order_by('date')
+    payments     = result['payments'].order_by('date')
 
-    attendance = result['attendance'].order_by('date')
-    payments   = result['payments'].order_by('date')
-
+    # Ensure fonts are available and get rupee char (fallback handled by _get_fonts)
     DATA, BOLD, RUPEE = _get_fonts()
 
     PAGE_W, _ = A4
     USABLE_W  = PAGE_W - 80
 
-    # ✅ Create response FIRST
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="salary_{emp.name}.pdf"'
 
@@ -2589,108 +2637,121 @@ def salary_pdf(request, emp_id):
 
     elements = []
 
-    # ================= HEADER =================
-    s_co      = _ps('co',  'Times-Bold',  26, TA_CENTER, DARK,  32)
-    s_tag     = _ps('tag', 'Times-Roman', 10, TA_CENTER, colors.HexColor('#555555'))
-    s_contact = _ps('ct',  DATA,           8, TA_CENTER, GREY)
-    s_small   = _ps('sm',  DATA,           8, TA_CENTER, LGREY)
-
-    elements.append(Paragraph('SATYAM ALUMINIUM', s_co))
+    # HEADER
+    elements.append(Paragraph(
+        'SATYAM ALUMINIUM',
+        _ps('co', 'Times-Bold', 26, TA_CENTER, DARK, 32)
+    ))
     elements.append(Spacer(1, 6))
     elements.append(Paragraph(
-        'Shop No. 4, Ganesh Plaza, Gokul Road, Hubballi', s_tag))
+        'Shop No. 4, Ganesh Plaza, Gokul Road, Hubballi',
+        _ps('tag', 'Times-Roman', 10, TA_CENTER, colors.HexColor('#555555'))
+    ))
     elements.append(Paragraph(
-        '+91-8073709478 | satyamaluminiumhubli@gmail.com', s_contact))
+        '+91-8073709478 | satyamaluminiumhubli@gmail.com',
+        _ps('ct', DATA, 8, TA_CENTER, GREY)
+    ))
     elements.append(Spacer(1, 20))
 
-    # ================= TITLE =================
+    # TITLE
     elements.append(Paragraph(
         "<font name='Times-Bold' size='15'>EMPLOYEE SALARY REPORT</font>",
         _ps('title', 'Times-Bold', 15, TA_CENTER)
     ))
     elements.append(Spacer(1, 20))
 
-    # ================= EMPLOYEE INFO =================
+    # EMPLOYEE INFO
     gen_date = datetime.now().strftime('%d %B, %Y')
 
-    info_tbl = Table([
-        ["Employee Name", emp.name],
-        ["Employee ID", f"#EMP-{emp.id}"],
-        ["Role", getattr(emp, 'role', 'N/A')],
-        ["Daily Salary", _fmt(emp.daily_salary, RUPEE)],
-        ["Report Date", gen_date],
-    ], colWidths=[150, USABLE_W - 150])
+    info_data = [
+        [_plain('Employee Name'), _plain(emp.name)],
+        [_plain('Employee ID'),   _plain(f'#EMP-{emp.id}')],
+        [_plain('Role'),          _plain(getattr(emp, 'role', 'N/A'))],
+        [_plain('Daily Salary'),  _rupee(emp.daily_salary)],
+        [_plain('Report Date'),   _plain(gen_date)],
+    ]
 
+    info_tbl = Table(info_data, colWidths=[150, USABLE_W - 150])
     info_tbl.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('BACKGROUND', (0, 0), (0, -1), colors.whitesmoke),
-        ('PADDING', (0, 0), (-1, -1), 8),
+        ('GRID',       (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0,  -1), colors.whitesmoke),
+        ('VALIGN',     (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 8),
     ]))
 
     elements.append(info_tbl)
     elements.append(Spacer(1, 20))
 
-    # ================= LEDGER =================
-    elements.append(Paragraph("ATTENDANCE & PAYMENT LEDGER",
-        _ps('sec', 'Times-Bold', 12, TA_LEFT)))
+    # LEDGER
+    elements.append(Paragraph(
+        'ATTENDANCE & PAYMENT LEDGER',
+        _ps('sec', 'Times-Bold', 12, TA_LEFT)
+    ))
     elements.append(Spacer(1, 10))
 
-    ledger = [["Date", "Day", "Type", "Description", "Amount"]]
+    ledger = [[
+        _header('Date'), _header('Day'), _header('Type'), _header('Description'), _header('Amount')
+    ]]
 
     for att in attendance:
-        date = att.date.strftime('%d %b %Y')
-        day  = att.date.strftime('%A')
+        date_str = att.date.strftime('%d %b %Y')
+        day_str  = att.date.strftime('%A')
 
         if att.status == 'full':
-            ledger.append([date, day, "Earned", "Full Day", f"{emp.daily_salary:.2f}"])
+            ledger.append([_plain(date_str), _plain(day_str), _plain('Earned'), _plain('Full Day'), _rupee(emp.daily_salary)])
 
         elif att.status == 'half':
-            ledger.append([date, day, "Earned", "Half Day", f"{emp.half_day_salary:.2f}"])
+            ledger.append([_plain(date_str), _plain(day_str), _plain('Earned'), _plain('Half Day'), _rupee(emp.half_day_salary)])
 
-        # ✅ FIX: OVERTIME INCLUDED (MAIN BUG FIX)
         if getattr(att, 'overtime', False):
-            ledger.append([date, day, "Earned", "Overtime", f"{emp.overtime_salary:.2f}"])
+            ledger.append([_plain(date_str), _plain(day_str), _plain('Earned'), _plain('Overtime'), _rupee(emp.overtime_salary)])
 
     for p in payments:
-        date = p.date.strftime('%d %b %Y')
-        day  = p.date.strftime('%A')
-        ledger.append([date, day, "Paid", "Salary Paid", f"{p.amount_paid:.2f}"])
+        date_str = p.date.strftime('%d %b %Y')
+        day_str  = p.date.strftime('%A')
+        ledger.append([_plain(date_str), _plain(day_str), _plain('Paid'), _plain('Salary Paid'), _rupee(p.amount_paid)])
 
-    table = Table(ledger, colWidths=[80, 80, 70, USABLE_W - 330, 80])
-    table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.3, colors.grey),
-        ('BACKGROUND', (0,0), (-1,0), colors.black),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('ALIGN', (4,0), (-1,-1), 'RIGHT'),
+    col_w = [80, 80, 70, USABLE_W - 330, 80]
+    ledger_tbl = Table(ledger, colWidths=col_w)
+    ledger_tbl.setStyle(TableStyle([
+        ('GRID',            (0, 0), (-1, -1), 0.3, colors.grey),
+        ('BACKGROUND',      (0, 0), (-1,  0), colors.black),
+        ('TEXTCOLOR',       (0, 0), (-1,  0), colors.white),
+        ('VALIGN',          (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',      (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING',   (0, 0), (-1, -1), 6),
+        ('LEFTPADDING',     (0, 0), (-1, -1), 6),
     ]))
 
-    elements.append(table)
+    elements.append(ledger_tbl)
     elements.append(Spacer(1, 20))
 
-    # ================= SUMMARY =================
-    elements.append(Paragraph("FINANCIAL SUMMARY",
-        _ps('sec2', 'Times-Bold', 12)))
+    # SUMMARY
+    elements.append(Paragraph('FINANCIAL SUMMARY', _ps('sec2', 'Times-Bold', 12)))
+    elements.append(Spacer(1, 6))
 
-    summary = Table([
-        ["Total Earned", _fmt(total_earned, RUPEE)],
-        ["Total Paid", _fmt(total_paid, RUPEE)],
-        ["Remaining", _fmt(remaining, RUPEE)],
-    ], colWidths=[USABLE_W - 150, 150])
+    summary_data = [
+        [_plain('Total Earned'), _rupee(total_earned)],
+        [_plain('Total Paid'),   _rupee(total_paid)],
+        [_plain('Remaining'),    _rupee(remaining)],
+    ]
 
+    summary = Table(summary_data, colWidths=[USABLE_W - 150, 150])
     summary.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('BACKGROUND', (0,2), (-1,2), colors.red),
-        ('TEXTCOLOR', (0,2), (-1,2), colors.white),
-        ('PADDING', (0,0), (-1,-1), 8),
+        ('GRID',            (0, 0), (-1, -1), 0.5, colors.black),
+        ('BACKGROUND',      (0, 2), (-1,  2), colors.red),
+        ('TOPPADDING',      (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING',   (0, 0), (-1, -1), 8),
+        ('LEFTPADDING',     (0, 0), (-1, -1), 8),
+        ('VALIGN',          (0, 0), (-1, -1), 'MIDDLE'),
     ]))
 
     elements.append(summary)
 
-    # ================= BUILD =================
     doc.build(elements)
-
     return response
-
 
 @login_required(login_url='/login/')
 def export_excel(request, emp_id):

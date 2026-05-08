@@ -16,6 +16,20 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 
+def to_decimal(value):
+    """Safely convert a value to Decimal.
+
+    - Converts None/'' to Decimal('0').
+    - Uses Decimal(str(value)) to avoid float artifacts.
+    - Catches InvalidOperation/TypeError and returns Decimal('0').
+    """
+    from decimal import Decimal, InvalidOperation
+    try:
+        return Decimal(str(value)) if value is not None and value != '' else Decimal('0')
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal('0')
+
+
 # ─────────────────────────────────────────────
 # CLEAN TEXT
 # ─────────────────────────────────────────────
@@ -62,11 +76,12 @@ def _load_fonts(base_dir):
 # INR FORMATTER  (Indian comma style)
 # ─────────────────────────────────────────────
 def format_inr(number):
+    from decimal import Decimal, InvalidOperation
     try:
-        number = float(number)
-    except Exception:
-        number = 0.0
-    s = f"{number:.2f}"
+        num = Decimal(str(number))
+    except (InvalidOperation, Exception):
+        num = Decimal('0')
+    s = f"{num:.2f}"
     integer, decimal = s.split('.')
     if len(integer) > 3:
         last3 = integer[-3:]
