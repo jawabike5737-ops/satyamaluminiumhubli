@@ -18,3 +18,6 @@ dj-database-url
 psycopg2-binary
 psutil
 pypdf
+python-dotenv
+cloudinary
+django-cloudinary-storage

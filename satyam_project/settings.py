@@ -2,8 +2,11 @@ from pathlib import Path
 import os
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
-from dotenv import load_dotenv
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ========================
 # Default to DEBUG=True for local development; production should set DEBUG='False'
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # SECRET_KEY: prefer env var, fallback to a safe dev key locally
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
