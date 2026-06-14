@@ -1,909 +1,939 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
 
 <style>
-/* ==========================================================================
-   ULTRA-PREMIUM MEASUREMENTS UI
-   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-    --bg-page: #f0f4f8;
-    --card-bg: #ffffff;
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --primary-glow: rgba(79, 70, 229, 0.25);
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --input-bg: #f8fafc;
-    --danger: #ef4444;
-    --danger-light: #fef2f2;
-    --radius-lg: 20px;
-    --radius-md: 12px;
-    --radius-sm: 8px;
-    --shadow-soft: 0 4px 20px rgba(15, 23, 42, 0.04);
-    --shadow-hover: 0 12px 30px rgba(15, 23, 42, 0.08);
+  --bg:          #F5F0E8;
+  --surface:     #FDFAF5;
+  --surface2:    #F0E9DC;
+  --brown-dark:  #3B2A1A;
+  --brown-mid:   #6B4C2A;
+  --brown-light: #C8A96E;
+  --ink:         #1C1008;
+  --muted:       #6B5B45;
+  --border:      #D6C9B0;
+  --border-dark: #B09A7A;
+  --danger:      #9B2C2C;
+  --success:     #2D6A35;
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   14px;
+  --shadow-sm:   0 1px 4px rgba(59,42,26,.08);
+  --shadow:      0 2px 12px rgba(59,42,26,.10);
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --transition:   160ms ease;
 }
 
-html, body { height: 100%; }
-body {
-    margin: 0;
-    background: radial-gradient(circle at top center, #ffffff, var(--bg-page));
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-    color: var(--text-main);
+#mpage-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - 60px);
+  background: var(--bg);
+  font-family: var(--font-body);
+  color: var(--ink);
+  overflow: visible;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 20px;
+.m-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--brown-dark);
+  padding: 0 20px;
+  height: 52px;
+  flex: 0 0 52px;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  width: 100%;
+  box-shadow: var(--shadow);
+  gap: 12px;
+}
+.m-topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.m-topbar-title {
+  font-family: var(--font-display); font-size: 17px;
+  color: #fff; font-weight: 600; white-space: nowrap;
+}
+.m-topbar-customer {
+  font-size: 12px; color: var(--brown-light); font-weight: 500;
+  padding: 3px 10px; background: rgba(200,169,110,.15);
+  border-radius: 20px; border: 1px solid rgba(200,169,110,.3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+}
+.m-topbar-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all var(--transition);
+  white-space: nowrap; text-decoration: none;
+}
+.btn-primary { background: var(--brown-light); color: var(--brown-dark); }
+.btn-primary:hover { background: #d4b87a; transform: translateY(-1px); }
+.btn-dark    { background: var(--brown-dark); color: #fff; }
+.btn-dark:hover { background: #4a3520; transform: translateY(-1px); }
+.btn-ghost   { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.25); }
+.btn-ghost:hover { background: rgba(255,255,255,.1); }
+.btn-outline { background: transparent; color: var(--brown-mid); border: 1px solid var(--border-dark); }
+.btn-outline:hover { background: var(--surface2); }
+.btn-danger  { background: transparent; color: var(--danger); border: 1px solid rgba(155,44,44,.25); padding: 5px 10px; font-size: 12px; }
+.btn-danger:hover { background: rgba(155,44,44,.07); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+
+
+.m-workspace {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
 }
 
-/* ===== TOOLBAR ===== */
-.toolbar {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-    background: var(--card-bg);
-    padding: 16px 24px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-soft);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+.m-cards {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: visible;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg);
 }
 
-.customer-name-badge {
-    margin-left: auto;
-    font-size: 14px;
-    color: var(--text-muted);
-    background: var(--input-bg);
-    padding: 8px 16px;
-    border-radius: 30px;
-    border: 1px solid var(--border);
+.m-sidebar {
+  flex: 0 0 300px;
+  position: sticky;
+  top: 56px;
+  height: fit-content;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
 
-.customer-name-badge strong {
-    color: var(--primary);
+.sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.sidebar-section:last-child { border-bottom: none; }
+
+.s-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--brown-mid);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.s-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.item-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  overflow: hidden; width: 100%;
+  transition: box-shadow var(--transition);
 }
 
-/* ===== BUTTONS ===== */
-button {
-    font-family: 'Poppins', sans-serif;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.card-highlight{
+  border:2px solid #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
 }
-
-.primary {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 4px 15px var(--primary-glow);
-}
-
-.primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px var(--primary-glow);
-    filter: brightness(1.05);
-}
-
-.secondary {
-    background: #ffffff;
-    border: 1px solid var(--border);
-    padding: 11px 18px;
-    border-radius: var(--radius-md);
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-    color: var(--text-main);
-    text-decoration: none;
-}
-
-.secondary:hover {
-    background: var(--input-bg);
-    border-color: #cbd5e1;
-    transform: translateY(-1px);
-}
-
-.icon-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--text-muted);
-    font-size: 18px;
-}
-
-.icon-btn:hover {
-    background: var(--danger-light);
-    color: var(--danger);
-    border-color: #fca5a5;
-    transform: scale(1.05);
-}
-
-.action-btn {
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    color: var(--text-muted);
-    padding: 8px;
-    font-size: 18px;
-    border-radius: var(--radius-sm);
-}
-
-.action-btn:hover {
-    background: var(--input-bg);
-    color: var(--primary);
-}
-
-/* ===== ITEM CARDS ===== */
-.card {
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-soft);
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: linear-gradient(to bottom, #6366f1, #a855f7);
-    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-}
-
-.card:hover {
-    box-shadow: var(--shadow-hover);
-}
-
-.card.fade-out {
-    opacity: 0;
-    transform: scale(0.95);
-    transition: all 0.3s ease;
-}
+.item-card:hover { box-shadow: var(--shadow); }
 
 .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; background: var(--surface2);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.card-num {
+  width: 24px; height: 24px; background: var(--brown-dark); color: #fff;
+  border-radius: 50%; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.card-header-fields { display: flex; gap: 10px; flex: 1; align-items: flex-end; flex-wrap: wrap; min-width: 0; }
+.field-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field-group.grow { flex: 1; min-width: 140px; }
+.field-group.w120 { width: 110px; flex-shrink: 0; }
+.field-group.w100 { width: 90px; flex-shrink: 0; }
+.field-label { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--brown-mid); }
+
+.inp {
+  width: 100%; padding: 7px 10px; background: #fff;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 13px; color: var(--ink);
+  outline: none; transition: border-color var(--transition), box-shadow var(--transition);
+}
+.inp:focus { border-color: var(--brown-mid); box-shadow: 0 0 0 3px rgba(107,76,42,.1); }
+textarea.inp { resize: vertical; min-height: 50px; }
+select.inp { appearance: none; }
+
+.type-tabs { display: flex; gap: 4px; }
+.type-btn {
+  padding: 5px 9px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-dark); background: transparent;
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: all var(--transition);
+}
+.type-btn:hover { background: var(--surface2); color: var(--ink); }
+.type-btn.active { background: var(--brown-dark); color: #fff; border-color: var(--brown-dark); }
+
+.card-body { padding: 12px 14px; }
+.rows-wrap { overflow-x: auto; margin-bottom: 10px; }
+.rows-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.rows-table thead tr { background: var(--brown-dark); }
+.rows-table th {
+  padding: 7px 10px; color: #fff; font-weight: 600; font-size: 11px;
+  letter-spacing: .05em; text-transform: uppercase; text-align: center; white-space: nowrap;
+}
+.rows-table th:first-child { text-align: left; border-radius: var(--radius-sm) 0 0 0; }
+.rows-table th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
+.rows-table tbody tr { border-bottom: 1px solid var(--border); }
+.rows-table tbody tr:nth-child(even) { background: var(--surface2); }
+.rows-table tbody tr:last-child { border-bottom: none; }
+.rows-table td { padding: 5px 8px; text-align: center; }
+.rows-table td:first-child { text-align: left; }
+.rows-table td input {
+  width: 80px; padding: 5px 8px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 12px;
+  color: var(--ink); background: #fff; outline: none; text-align: center;
+  transition: border-color var(--transition);
+}
+.rows-table td input:focus { border-color: var(--brown-mid); }
+.rows-table .cell-val    { font-weight: 500; color: var(--brown-mid); }
+.rows-table .cell-amount { font-weight: 600; color: var(--success); }
+
+.card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--surface2);
+  border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+}
+.card-summary { display: flex; gap: 16px; }
+.card-summary-item { display: flex; flex-direction: column; align-items: flex-end; }
+.card-summary-item .cs-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.card-summary-item .cs-val   { font-size: 13px; font-weight: 700; color: var(--ink); }
+.card-summary-item .cs-val.amount { color: var(--success); font-size: 14px; }
+
+/* ── UPDATE 3: Per-card action row below footer ── */
+.card-footer-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  justify-content: flex-end;
 }
 
-.card-title {
-    font-weight: 600;
-    color: var(--text-main);
-    font-size: 15px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 60px 20px; text-align: center;
+  color: var(--muted); gap: 10px;
+  border: 2px dashed var(--border); border-radius: var(--radius-lg);
+  background: var(--surface);
 }
+.empty-state svg { opacity: .35; }
+.empty-state p   { font-size: 14px; }
+.empty-state span { font-size: 12px; opacity: .7; }
 
-/* ===== INPUTS & SELECTS ===== */
-input, select {
-    padding: 12px 14px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--input-bg);
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    color: var(--text-main);
-    transition: all 0.25s ease;
-    box-sizing: border-box;
-}
+.global-summary { display: flex; flex-direction: column; }
+.gs-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.gs-row:last-child { border-bottom: none; }
+.gs-label { color: var(--muted); font-weight: 500; }
+.gs-val   { font-weight: 700; color: var(--ink); }
+.gs-val.total-amount { font-size: 16px; color: var(--success); font-family: var(--font-display); }
 
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: #ffffff;
-    box-shadow: 0 0 0 4px var(--primary-glow);
-}
-
-/* TomSelect Custom Overrides */
+.ts-wrapper { width: 100%; }
 .ts-control {
-    border: 2px solid var(--border) !important;
-    border-radius: var(--radius-md) !important;
-    background: var(--input-bg) !important;
-    padding: 10px 14px !important;
-    font-family: 'Poppins', sans-serif;
-    min-width: 250px;
+  background: #fff !important; border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important; font-family: var(--font-body) !important;
+  font-size: 13px !important; padding: 5px 10px !important;
+  box-shadow: none !important; min-height: 34px !important;
 }
-.ts-control.focus {
-    border-color: var(--primary) !important;
-    background: #ffffff !important;
-    box-shadow: 0 0 0 4px var(--primary-glow) !important;
-}
+.ts-control:focus-within { border-color: var(--brown-mid) !important; box-shadow: 0 0 0 3px rgba(107,76,42,.1) !important; }
+.ts-dropdown { border: 1px solid var(--border) !important; border-radius: var(--radius) !important; font-family: var(--font-body) !important; font-size: 13px !important; }
+.ts-dropdown .active   { background: var(--surface2) !important; color: var(--ink) !important; }
+.ts-dropdown .selected { background: var(--brown-dark) !important; color: #fff !important; }
 
-/* ===== TABLE LAYOUT ===== */
-.subtable {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 8px;
-    margin-top: 10px;
-}
-
-.subtable th {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0 12px 8px 12px;
-    text-align: left;
-}
-
-.subtable td {
-    padding: 8px 12px;
-    vertical-align: middle;
-}
-
-.subtable input {
-    width: 100%;
-    text-align: center;
-}
-
-/* Custom Area Column Styling */
-.area {
-    font-weight: 700;
-    color: var(--primary);
-    background: #eef2ff;
-    padding: 8px 16px !important;
-    border-radius: var(--radius-sm);
-    text-align: center;
-    display: inline-block;
-    min-width: 60px;
-}
-
-/* ===== QUANTITY CONTROL ===== */
-.qty-control {
-    display: inline-flex;
-    align-items: center;
-    background: var(--input-bg);
-    border: 2px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    height: 44px;
-}
-
-.qty-control button {
-    width: 40px;
-    height: 100%;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    color: var(--text-main);
-    font-size: 20px;
-    font-weight: 500;
-}
-
-.qty-control button:hover {
-    background: #e2e8f0;
-    color: var(--primary);
-}
-
-.qty-control input {
-    width: 50px;
-    height: 100%;
-    border: none;
-    border-left: 2px solid var(--border);
-    border-right: 2px solid var(--border);
-    border-radius: 0;
-    text-align: center;
-    font-weight: 700;
-    font-size: 15px;
-    padding: 0;
-}
-
-/* ===== SUMMARY BAR ===== */
-.summary {
-    display: flex;
-    gap: 16px;
-    justify-content: flex-end;
-    margin-top: 30px;
-    padding: 20px;
-    background: var(--card-bg);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-hover);
-    border: 1px solid var(--border);
-    animation: slideUpFade 0.6s ease forwards;
-}
-
-.summary .box {
-    background: var(--input-bg);
-    padding: 16px 24px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--text-muted);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-}
-
-.summary .box span:first-of-type {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-#totalPrice {
-    color: var(--primary) !important;
-}
-
-/* ===== ITEM TOTAL BOTTOM ===== */
-.item-footer-controls {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px dashed var(--border);
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.price-container {
-    margin-left: auto;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    background: var(--input-bg);
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-}
-
-.price-container input.price {
-    width: 90px;
-    padding: 8px;
-    text-align: right;
-    border-color: #cbd5e1;
-}
-
-.item-total-badge {
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--primary);
-}
-
-.error-msg {
-    background: var(--danger-light);
-    color: var(--danger);
-    padding: 14px 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 20px;
-    font-weight: 600;
-    border: 1px solid #fca5a5;
-    animation: shake 0.4s ease-in-out;
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
-    .card-header { flex-direction: column; align-items: stretch; }
-    .card-title { flex-direction: column; align-items: flex-start; }
-    .card-title .ts-wrapper { width: 100%; }
-    .summary { flex-direction: column; align-items: stretch; }
-    .price-container { flex-direction: column; align-items: stretch; margin-left: 0; width: 100%; }
-    .item-footer-controls { flex-direction: column; align-items: stretch; }
-}
-
-/* ===== ANIMATIONS ===== */
-.fade-in { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-@keyframes slideUpFade {
-    from { transform: translateY(40px) scale(0.98); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-@keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+@media (max-width: 860px) {
+  .m-workspace { flex-direction: column; }
+  .m-sidebar   { position: static; flex: 0 0 auto; border-left: none; border-top: 1px solid var(--border); }
 }
 </style>
 
-<div class="container" data-customer-id="{{ customer.id }}">
+<div id="mpage-root" data-customer-id="{{ customer.id }}">
 
-    <div class="toolbar">
-        <button class="primary" id="addItemBtn">
-            <span style="font-size:16px; margin-right:4px;">+</span> Add Item
+  <div class="m-topbar">
+    <div class="m-topbar-left">
+      <div class="m-topbar-title">Measurement Entry</div>
+      <div class="m-topbar-customer">{{ customer.name }}</div>
+    </div>
+    <div class="m-topbar-actions">
+      <button id="addCardBtn" class="btn btn-primary">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Add Service
+      </button>
+      <button id="saveBtn" class="btn btn-dark">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z" stroke="currentColor" stroke-width="1.4"/><rect x="4" y="8" width="6" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="4" y="2" width="5" height="3" rx=".5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Save Measurements
+      </button>
+      <a href="{% url 'customers' %}" class="btn btn-ghost">← Back</a>
+    </div>
+  </div>
+
+  <div class="m-workspace">
+
+    <div class="m-cards" id="cardsPane">
+      <div class="empty-state" id="emptyState">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="8" y="10" width="32" height="36" rx="3" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M16 20h16M16 27h10M16 34h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <p>No services added yet</p>
+        <span>Use "+ Add Service" or the Quick Add panel to get started</span>
+      </div>
+    </div>
+
+    <div class="m-sidebar">
+      <div class="sidebar-section">
+        <div class="s-label">Quick Add Service</div>
+        <select id="quickService" placeholder="Select or type a service…"></select>
+        <button id="quickAddBtn" class="btn btn-dark" style="width:100%;margin-top:10px;justify-content:center">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Add Card
         </button>
-        <button class="primary" id="saveBtn">Save Measurements</button>
-        <a class="secondary" href="{% url 'customers' %}">Back</a>
-        
-        <div class="customer-name-badge">
-            Client: <strong>{{ customer.name }}</strong>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="s-label">Session Totals</div>
+        <div class="global-summary">
+          <div class="gs-row"><span class="gs-label">Total Qty</span><span class="gs-val" id="gTotalQty">0</span></div>
+          <div class="gs-row"><span class="gs-label">Total Area / Length</span><span class="gs-val" id="gTotalArea">0.000</span></div>
+          <div class="gs-row"><span class="gs-label">Total Amount</span><span class="gs-val total-amount" id="gTotalAmount">&#8377;0.00</span></div>
         </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="s-label">How It Works</div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.7;display:flex;flex-direction:column;gap:8px">
+          <div><strong style="color:var(--ink)">Area</strong> — enter Height &times; Width &times; Qty</div>
+          <div><strong style="color:var(--ink)">Length</strong> — enter Length &times; Qty</div>
+          <div><strong style="color:var(--ink)">Nos</strong> — enter Qty only</div>
+          <div style="margin-top:4px;padding-top:8px;border-top:1px solid var(--border)">Rate is per card. Each row computes its own area/amount automatically.</div>
+        </div>
+      </div>
     </div>
 
-    <div id="items"></div>
+  </div>
 
-    <div id="formError" class="error-msg" style="display:none"></div>
-
-    <div class="summary" id="summary" style="display:none">
-        <div class="box">
-            Total Quantity
-            <span id="totalQty">0</span>
-        </div>
-        <div class="box">
-            Total Area (Sq Ft)
-            <span id="totalArea">0</span> 
-        </div>
-        <div class="box" style="background: #eef2ff; border-color: #c7d2fe;">
-            Total Amount (₹)
-            <span id="totalPrice">0.00</span>
-        </div>
-    </div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
-
-<template id="itemTpl">
-<div class="card item-card fade-in">
+<template id="cardTpl">
+  <div class="item-card">
     <div class="card-header">
-        <div style="flex: 1;">
-            <div class="card-title">
-                <span style="color:var(--text-muted); font-size: 13px; text-transform:uppercase;">Item Selection:</span>
-                <select class="service-select" placeholder="Search or type a new item..." style="min-width:300px"></select>
-            </div>
-            <div style="font-size:13px; color:var(--text-muted); margin-top:12px; display:flex; align-items:center; gap:8px;">
-                Description: 
-                <input class="desc" placeholder="Add optional details..." style="border:none; background:transparent; border-bottom:2px dashed var(--border); border-radius:0; width:60%; padding:4px;">
-            </div>
+      <div class="card-num card-num-display">1</div>
+      <div class="card-header-fields">
+        <div class="field-group grow">
+          <div class="field-label">Service</div>
+          <select class="service-select"></select>
         </div>
-        
-        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <select class="itype" title="Measurement Type">
-                <option value="size">Height × Width</option>
-                <option value="length">Length / RFT</option>
-                <option value="nos">Nos (Count)</option>
-            </select>
-            <select class="unit" title="Unit">
-                <option>Sq Ft</option>
-                <option>Feet</option>
-                <option>Inch</option>
-                <option>Nos</option>
-                <option>RFT</option>
-            </select>
-            <button class="icon-btn" title="Remove entire item" onclick="confirmRemoveItem(this)">🗑️</button>
+        <div class="field-group w120">
+          <div class="field-label">Rate (&#8377;)</div>
+          <input class="inp rate" type="number" inputmode="decimal" value="0.00" placeholder="0.00">
         </div>
+        <div class="field-group w100">
+          <div class="field-label">Unit</div>
+          <select class="inp unit">
+            <optgroup label="Area">
+              <option value="Sq Ft">Sq Ft</option>
+              <option value="Sq Mtr">Sq Mtr</option>
+            </optgroup>
+            <optgroup label="Length">
+              <option value="Feet">Feet</option>
+              <option value="Metre">Metre</option>
+              <option value="RFT">RFT</option>
+              <option value="inch">inch</option>
+            </optgroup>
+            <optgroup label="Count">
+              <option value="Nos">Nos</option>
+              <option value="Sets">Sets</option>
+              <option value="Kg">Kg</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Type</div>
+          <div class="type-tabs">
+            <button class="type-btn" data-type="area">Area</button>
+            <button class="type-btn" data-type="length">Length</button>
+            <button class="type-btn" data-type="nos">Nos</button>
+          </div>
+        </div>
+        <div class="field-group" style="align-self:flex-end">
+          <button class="btn btn-danger btn-remove-card">&#10005; Remove</button>
+        </div>
+      </div>
     </div>
-
-    <table class="subtable">
-        <thead>
-            <tr class="size-headers">
-                <th style="width:22%">Height</th>
-                <th style="width:22%">Width</th>
-                <th style="width:20%; text-align:center;">Quantity</th>
-                <th style="width:18%; text-align:center;">Area</th>
-                <th style="width:18%; text-align:right;">Actions</th>
-            </tr>
-            <tr class="length-headers" style="display:none">
-                <th>Length</th>
-                <th style="text-align:center;">Qty</th>
-                <th colspan="3"></th>
-            </tr>
-            <tr class="nos-headers" style="display:none">
-                <th style="text-align:center;">Qty</th>
-                <th colspan="4"></th>
-            </tr>
-        </thead>
-        <tbody class="subbody"></tbody>
-    </table>
-
-    <div class="item-footer-controls">
-        <button class="secondary" onclick="addSub(this)">+ Add Row</button>
-        <button class="secondary" onclick="duplicateRow(this)">Duplicate Last Row</button>
-        
-        <div class="price-container">
-            <span style="font-size:13px; font-weight:600; color:var(--text-muted)">Price/Unit: ₹</span>
-            <input class="price" inputmode="decimal" value="0">
-            
-            <div style="width:1px; height:30px; background:var(--border); margin:0 10px;"></div>
-            
-            <div style="font-size:13px; font-weight:600; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
-                Total: 
-                <span class="item-total-badge">₹ <span class="item-total">0.00</span></span>
-            </div>
-        </div>
+    <div class="card-body">
+      <div class="field-group" style="margin-bottom:10px">
+        <div class="field-label">Description (optional)</div>
+        <textarea class="inp desc" rows="2" placeholder="Notes about this item&hellip;"></textarea>
+      </div>
+      <div class="rows-wrap">
+        <table class="rows-table">
+          <thead><tr class="thead-tr"></tr></thead>
+          <tbody class="rows-body"></tbody>
+        </table>
+      </div>
     </div>
-
-</div>
+    <div class="card-footer">
+      <button class="btn btn-outline btn-sm btn-add-row">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Add Row
+      </button>
+      <div class="card-summary">
+        <div class="card-summary-item"><span class="cs-label">Qty</span><span class="cs-val card-qty">0</span></div>
+        <div class="card-summary-item"><span class="cs-label">Area / Length</span><span class="cs-val card-area">0.000</span></div>
+        <div class="card-summary-item"><span class="cs-label">Amount</span><span class="cs-val amount card-total">&#8377;0.00</span></div>
+      </div>
+    </div>
+    <!-- UPDATE 3: Per-card action buttons below footer -->
+    <div class="card-footer-actions">
+      <button class="btn btn-primary card-add-service">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Add Service
+      </button>
+      <button class="btn btn-dark card-save">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2h8l2 2v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z" stroke="currentColor" stroke-width="1.4"/><rect x="4" y="8" width="6" height="4" rx=".5" stroke="currentColor" stroke-width="1.2"/><rect x="4" y="2" width="5" height="3" rx=".5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Save Measurements
+      </button>
+    </div>
+  </div>
 </template>
 
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 <script>
-// =======================================================
-// JS remains UNCHANGED (Exactly as provided to preserve logic)
-// =======================================================
-function $(sel, root=document){return root.querySelector(sel)}
-function $all(sel, root=document){return Array.from(root.querySelectorAll(sel))}
+(function () {
+  'use strict';
 
-const itemsContainer = document.getElementById('items');
-const addItemBtn = document.getElementById('addItemBtn');
-const saveBtn = document.getElementById('saveBtn');
-const summaryBox = document.getElementById('summary');
-const totalQtyEl = document.getElementById('totalQty');
-const totalAreaEl = document.getElementById('totalArea');
-const totalPriceEl = document.getElementById('totalPrice');
-const formError = document.getElementById('formError');
-const CUSTOMER_ID = document.querySelector('.container')?.dataset?.customerId || null;
+  var root        = document.getElementById('mpage-root');
+  var cardsPane   = document.getElementById('cardsPane');
+  var emptyState  = document.getElementById('emptyState');
+  var addCardBtn  = document.getElementById('addCardBtn');
+  var quickAddBtn = document.getElementById('quickAddBtn');
+  var saveBtn     = document.getElementById('saveBtn');
 
-let SERVICES = [];
 
-addItemBtn.addEventListener('click', addItem);
-saveBtn.addEventListener('click', saveMeasurements);
+  var quickTS  = null;
 
-function loadServices(){
-    return fetch('/api/services/', { credentials: 'same-origin' })
-        .then(r => {
-            if (r.status === 401) {
-                formError.innerText = 'Session expired. Please log in again.';
-                formError.style.display = 'block';
-                setTimeout(() => { window.location.href = '/login/'; }, 1200);
-                throw new Error('Unauthorized');
-            }
-            if (!r.ok) throw new Error('Network response was not ok');
-            return r.json();
-        })
-        .then(data => {
-            SERVICES = data.map(s => ({ id: String(s.id), name: s.name, description: s.description, price: s.price }));
-            document.querySelectorAll('.service-select').forEach(sel => {
-                if (sel.tom) {
-                    try { sel.tom.clearOptions(); sel.tom.addOptions(SERVICES); } catch(e){ }
-                } else {
-                    const card = sel.closest('.item-card') || document;
-                    initServiceSelect(sel, card);
-                }
-            });
-            return SERVICES;
-        })
-        .catch(err => {
-            console.error('Could not load services', err);
-            SERVICES = [];
-            formError.innerText = 'Could not load services. Check your network or login status.';
-            formError.style.display = 'block';
-            setTimeout(()=> formError.style.display='none', 4000);
-            return Promise.resolve(SERVICES);
-        });
-}
+  // Simple toast helper
+  function showToast(msg) {
+    try {
+      var t = document.createElement('div');
+      t.textContent = msg;
+      t.style.position = 'fixed';
+      t.style.right = '20px';
+      t.style.top = '20px';
+      t.style.background = 'rgba(0,0,0,0.8)';
+      t.style.color = '#fff';
+      t.style.padding = '10px 14px';
+      t.style.borderRadius = '8px';
+      t.style.zIndex = 9999;
+      t.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+      document.body.appendChild(t);
+      setTimeout(function() { t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }, 2400);
+    } catch (e) { console.warn('toast failed', e); }
+  }
 
-function initServiceSelect(selectEl, card){
-    if(selectEl.tom){
-        try{ selectEl.tom.clearOptions(); selectEl.tom.addOptions(SERVICES); selectEl.tom.refreshOptions(false); return; }catch(e){ }
-    }
-    const ts = new TomSelect(selectEl, {
-        valueField: 'id',
-        labelField: 'name',
-        searchField: ['name','description'],
-        options: [],
-        maxOptions: 50,
-        create: function(input, callback) {
-            const csrftoken = getCookie('csrftoken');
-            fetch('/api/create-service/', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
-                body: JSON.stringify({ name: input })
-            }).then(r => {
-                if (r.status === 401) {
-                    formError.innerText = 'Session expired. Please log in.';
-                    formError.style.display = 'block';
-                    setTimeout(() => window.location.href = '/login/', 1000);
-                    throw new Error('Unauthorized');
-                }
-                if (!r.ok) throw new Error('Failed to create service');
-                return r.json();
-            }).then(data => {
-                const opt = { id: String(data.id), name: data.name, description: data.description, price: data.price };
-                SERVICES.push(opt);
-                try { this.addOption(opt); this.addItem(String(data.id)); } catch(e){ }
-                try {
-                    const desc = card.querySelector('.desc');
-                    const priceInput = card.querySelector('.price');
-                    if(desc) desc.value = data.description || data.name;
-                    if(priceInput) priceInput.value = Number(data.price||0).toFixed(2);
-                    computeTotals();
-                } catch(e){}
-                callback(opt);
-            }).catch(err => {
-                formError.innerText = 'Could not create service. Try again.';
-                formError.style.display = 'block';
-                setTimeout(()=> formError.style.display='none', 3000);
-                callback();
-            });
-        },
-        onChange: function(value){
-            const desc = card.querySelector('.desc');
-            const priceInput = card.querySelector('.price');
-            if(!value) return;
-            if(/^[\d]+$/.test(String(value))){
-                const s = SERVICES.find(x=>String(x.id)===String(value));
-                if(s){
-                    if(desc) desc.value = s.description || s.name;
-                    if(priceInput) priceInput.value = Number(s.price).toFixed(2);
-                }
-            } else {
-                if(desc) desc.value = value;
-            }
-            computeTotals();
-        }
+  function formatServiceOption(s) {
+    return {
+      id: String(s.id),
+      name: (s.service_code ? s.service_code + ' — ' : '') + (s.service_name || ''),
+      raw_name: s.service_name || '',
+      price: parseFloat(s.rate || s.price || 0) || 0
+    };
+  }
+
+
+  function initQuickSelect() {
+    if (quickTS) quickTS.destroy();
+    quickTS = new TomSelect('#quickService', {
+      valueField: 'id', labelField: 'name',
+      searchField: ['name'],
+      create: function(input) {
+        return { id: '__new__:' + input, name: '+ Create Service "' + input + '"', raw_name: input, is_new: true };
+      },
+      preload: false,
+      maxOptions: 50,
+      loadThrottle: 300,
+      plugins: ['dropdown_input'],
+      placeholder: 'Select or type a service…',
+      load: function(query, callback) {
+        if (!query.length) return callback();
+        fetch('/api/service-search/?q=' + encodeURIComponent(query), { credentials: 'same-origin' })
+          .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+          .then(function(data) { callback((data || []).map(formatServiceOption)); })
+          .catch(function() { callback(); });
+      }
     });
-    if (SERVICES.length > 0) {
-        try{ ts.addOptions(SERVICES); ts.refreshOptions(false); }catch(e){}
-    }
-    selectEl.tom = ts;
-}
+  }
 
-async function addItem(){
-    const tpl = document.getElementById('itemTpl');
-    const node = tpl.content.cloneNode(true);
-    const card = node.querySelector('.item-card');
-    const itype = card.querySelector('.itype');
-    itype.addEventListener('change', ()=>{ toggleType(card, itype.value); card.querySelector('.subbody').innerHTML=''; computeTotals(); });
-    itemsContainer.appendChild(card);
-    const sel = card.querySelector('.service-select');
-    if(SERVICES.length===0){ await loadServices(); }
-    initServiceSelect(sel, card);
-    card.querySelector('.price').addEventListener('input', ()=> computeTotals());
-    addSub(card);
-    return card;
-}
+  // Create service on server and return created object
+  async function createServiceOnServer(name) {
+    try {
+      var resp = await fetch('/api/create-service/', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ service_name: name })
+      });
+      if (!resp.ok) throw new Error('create failed');
+      return await resp.json();
+    } catch (e) { console.error(e); return null; }
+  }
 
-async function loadSavedMeasurements(customerId){
-    try{
-            const measurementsUrl = customerId ? `/api/get-measurements/${customerId}/` : "{% url 'get_measurements_json' customer.id %}";
-            const r = await fetch(measurementsUrl, { credentials: 'same-origin' });
-        if(r.status===401){ formError.innerText='Session expired. Please log in.'; formError.style.display='block'; setTimeout(()=> window.location.href='/login/',1000); return; }
-        if(!r.ok) throw new Error('Network error');
-        const data = await r.json();
-        const items = data.items || [];
-        if(items.length===0){ await addItem(); return; }
+  function updateEmptyState() {
+    emptyState.style.display = cardsPane.querySelectorAll('.item-card').length ? 'none' : 'flex';
+  }
 
-        itemsContainer.innerHTML = '';
+  function renumberCards() {
+    cardsPane.querySelectorAll('.item-card').forEach(function(c, i) {
+      var el = c.querySelector('.card-num-display');
+      if (el) el.textContent = i + 1;
+    });
+  }
 
-        for(const it of items){
-            const card = await addItem();
-            const desc = card.querySelector('.desc');
-            const priceInput = card.querySelector('.price');
-            const itype = card.querySelector('.itype');
-            const unit = card.querySelector('.unit');
-            if(itype && it.item_type) { itype.value = it.item_type; toggleType(card, it.item_type); }
-            if(unit && it.unit) unit.value = it.unit;
-            if(desc) desc.value = it.description || '';
-            if(priceInput) priceInput.value = Number(it.price_per_unit||0).toFixed(2);
+  function createCard(initial) {
+    var tpl  = document.getElementById('cardTpl');
+    var node = tpl.content.cloneNode(true);
+    var card = node.querySelector('.item-card');
 
-            card.querySelector('.subbody').innerHTML = '';
-            if(Array.isArray(it.subs) && it.subs.length){
-                for(const s of it.subs){
-                    addSub(card);
-                    const last = card.querySelector('.subbody tr:last-child');
-                    if(!last) continue;
-                    if(s.height !== null && last.querySelector('.h')) last.querySelector('.h').value = s.height;
-                    if(s.width !== null && last.querySelector('.w')) last.querySelector('.w').value = s.width;
-                    if(s.length !== null && last.querySelector('.length')) last.querySelector('.length').value = s.length;
-                    if(last.querySelector('.q')) last.querySelector('.q').value = (s.quantity||1);
-                    onRowChange(last);
-                }
-            } else { addSub(card); }
+    var selEl      = card.querySelector('.service-select');
+    var desc       = card.querySelector('.desc');
+    var rateInp    = card.querySelector('.rate');
+    var unitSel    = card.querySelector('.unit');
+    var typeBtns   = card.querySelectorAll('.type-btn');
+    var rowsBody   = card.querySelector('.rows-body');
+    var addRowBtn  = card.querySelector('.btn-add-row');
+    var removeBtn  = card.querySelector('.btn-remove-card');
+    var cardQtyEl  = card.querySelector('.card-qty');
+    var cardAreaEl = card.querySelector('.card-area');
+    var cardTotEl  = card.querySelector('.card-total');
 
-            const sel = card.querySelector('.service-select');
-            try{
-                if(it.service_id){
-                    if(sel && sel.tom) sel.tom.setValue(String(it.service_id));
-                } else if(it.custom_item_name){
-                    const custom = String(it.custom_item_name);
-                    if(sel && sel.tom){
-                        try{ sel.tom.addOption({ id: custom, name: custom }); }catch(e){}
-                        try{ sel.tom.setValue(custom); }catch(e){}
-                    }
-                }
-            }catch(e){}
+    // Unit → type mapping: changing unit auto-switches the measurement type
+    var UNIT_TYPE_MAP = {
+      'Sq Ft':  'area',  'Sq Mtr': 'area',
+      'Feet':   'length','Metre':  'length','RFT': 'length','inch': 'length',
+      'Nos':    'nos',   'Sets':   'nos',   'Kg':  'nos'
+    };
+    unitSel.addEventListener('change', function() {
+      var mapped = UNIT_TYPE_MAP[unitSel.value];
+      if (mapped) {
+        var currentType = activeType();
+        if (mapped !== currentType) {
+          // Different measurement category: switch type (clears rows intentionally)
+          setType(mapped);
+        } else {
+          // Same type, just refresh column headers to show new unit name
+          refreshHeaders(mapped);
         }
-        computeTotals();
-    }catch(err){ await addItem(); }
-}
+      }
+    });
 
-function toggleType(card, val){
-    card.querySelector('.size-headers').style.display = val==='size' ? '' : 'none';
-    card.querySelector('.length-headers').style.display = val==='length' ? '' : 'none';
-    card.querySelector('.nos-headers').style.display = val==='nos' ? '' : 'none';
-}
+    function refreshHeaders(t) {
+      var theadTr = card.querySelector('.thead-tr');
+      theadTr.innerHTML = '';
+      var u = unitSel.value || 'Sq Ft';
+      var cols = t === 'area'   ? ['#','Height','Width','Qty', u ,'Amount',''] :
+                 t === 'length' ? ['#','Length','Qty','Total (' + u + ')','Amount',''] :
+                                  ['#','Qty (' + u + ')','Amount',''];
+      cols.forEach(function(h) {
+        var th = document.createElement('th'); th.textContent = h; theadTr.appendChild(th);
+      });
+    }
 
-function confirmRemoveItem(btn){
-    const card = btn.closest('.item-card');
-    if(!confirm('Remove this entire item card?')) return;
-    card.classList.add('fade-out');
-    card.addEventListener('transitionend', ()=>card.remove(), {once:true});
-    setTimeout(computeTotals, 350);
-}
+    var ts = new TomSelect(selEl, {
+      valueField: 'id', labelField: 'name',
+      searchField: ['name'],
+      create: function(input) { return { id: '__new__:' + input, name: '+ Create Service "' + input + '"', raw_name: input, is_new: true }; },
+      preload: false,
+      maxOptions: 50,
+      loadThrottle: 300,
+      plugins: ['dropdown_input'],
+      placeholder: 'Choose service…',
+      load: function(query, callback) {
+        if (!query.length) return callback();
+        fetch('/api/service-search/?q=' + encodeURIComponent(query), { credentials: 'same-origin' })
+          .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+          .then(function(data) { callback((data || []).map(formatServiceOption)); })
+          .catch(function() { callback(); });
+      }
+    });
 
-function addSub(btnOrCard){
-    const card = btnOrCard.closest ? btnOrCard.closest('.item-card') : btnOrCard;
-    const type = card.querySelector('.itype').value;
-    const tbody = card.querySelector('.subbody');
-    const tr = document.createElement('tr');
+    // when service is selected in this card, prevent duplicate cards for same service
+    ts.on && ts.on('change', function(val) {
+      try {
+        // handle create-new option pattern
+        if (String(val || '').indexOf('__new__:') === 0) {
+          (async function() {
+            try {
+              var raw = String(val).split(':')[1] || '';
+              if (!raw) return;
+              var created = await createServiceOnServer(raw);
+              if (!created || !created.id) { showToast('Service create failed'); ts.clear(); return; }
+              var realId = String(created.id);
+              ts.addOption({ id: realId, name: created.service_name || created.name || raw, raw_name: raw });
+              ts.setValue(realId);
+              card.dataset.serviceId = realId;
+              try { var p = parseFloat(created.price || created.rate || created.price_per_unit || 0) || 0; card.querySelector('.rate').value = p.toFixed(2); card.querySelector('.rate').dispatchEvent(new Event('input')); } catch(e){}
+            } catch (e) { console.error(e); }
+          })();
+          return;
+        }
+        if (!val) {
+          delete card.dataset.serviceId; delete card.dataset.customName; return;
+        }
+        var isNum = /^\d+$/.test(String(val));
+        var existing = null;
+        if (isNum) {
+          existing = cardsPane.querySelector('[data-service-id="' + String(val) + '"]');
+        } else {
+          var all = cardsPane.querySelectorAll('.item-card');
+          for (var i=0;i<all.length;i++){
+            var c = all[i]; if (c===card) continue;
+            if ((c.dataset.customName || '').trim() === String(val).trim()) { existing = c; break; }
+          }
+        }
+        if (existing && existing !== card) {
+          showToast((isNum? 'Service' : 'Item') + ' already exists. Add a row inside the existing card.');
+          existing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          existing.classList.add('card-highlight');
+          setTimeout(function(){ existing.classList.remove('card-highlight'); }, 2000);
+          var addBtn = existing.querySelector('.btn-add-row'); if (addBtn) try{ addBtn.focus(); }catch(e){}
+          try { ts.clear(); } catch(e){}
+          return;
+        }
 
-    if(type==='size'){
-        tr.innerHTML = `
-            <td><input class="h" inputmode="decimal" placeholder="H"></td>
-            <td><input class="w" inputmode="decimal" placeholder="W"></td>
-            <td style="text-align:center;"><div class="qty-control"><button class="decr">−</button><input class="q" value="1"><button class="incr">+</button></div></td>
-            <td style="text-align:center;"><span class="area">0</span></td>
-            <td style="text-align:right;"><button class="action-btn" onclick="dupSub(this)">⎘</button> <button class="action-btn" onclick="confirmRemoveRow(this)">✖</button></td>
-        `;
-        tbody.appendChild(tr);
-        const h = tr.querySelector('.h'), w = tr.querySelector('.w'), q = tr.querySelector('.q');
-        tr.querySelector('.incr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) + 1); onRowChange(tr); });
-        tr.querySelector('.decr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(tr); });
-        [h,w,q].forEach(el=> el.addEventListener('input', ()=> onRowChange(tr)));
-    } else if(type==='length'){
-        tr.innerHTML = `
-            <td><input class="length" inputmode="decimal" placeholder="L"></td>
-            <td style="text-align:center;"><div class="qty-control"><button class="decr">−</button><input class="q" value="1"><button class="incr">+</button></div></td>
-            <td colspan="3" style="text-align:right;"><button class="action-btn" onclick="dupSub(this)">⎘</button> <button class="action-btn" onclick="confirmRemoveRow(this)">✖</button></td>
-        `;
-        tbody.appendChild(tr);
-        const l = tr.querySelector('.length'), q = tr.querySelector('.q');
-        tr.querySelector('.incr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) + 1); onRowChange(tr); });
-        tr.querySelector('.decr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(tr); });
-        [l,q].forEach(el=> el && el.addEventListener('input', ()=> onRowChange(tr)));
+        if (isNum) {
+          card.dataset.serviceId = String(val);
+          delete card.dataset.customName;
+          fetch('/api/service-details/' + String(val) + '/', { credentials: 'same-origin' })
+            .then(function(r){ if (!r.ok) throw new Error(); return r.json(); })
+            .then(function(data){ try { var p = parseFloat(data.price || data.rate || data.price_per_unit || data.default_rate || 0) || 0; card.querySelector('.rate').value = p.toFixed(2); card.querySelector('.rate').dispatchEvent(new Event('input')); } catch(e){} })
+            .catch(function(){});
+        } else {
+          card.dataset.customName = String(val).trim();
+          delete card.dataset.serviceId;
+        }
+      } catch (e) { console.error(e); }
+    });
+
+    if (initial) {
+      if (initial.measurement_item_id) {
+        try { card.dataset.itemId = initial.measurement_item_id; } catch (e) {}
+      }
+      if (initial.service_id) {
+        try {
+          fetch('/api/service-details/' + String(initial.service_id) + '/', { credentials: 'same-origin' })
+            .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+            .then(function(data) {
+              ts.addOption(formatServiceOption(data));
+              ts.setValue(String(data.id));
+              try { card.dataset.serviceId = String(initial.service_id); } catch(e) {}
+            })
+            .catch(function() { try { ts.setValue(String(initial.service_id)); card.dataset.serviceId = String(initial.service_id); } catch(e) {} });
+        } catch(e) {}
+      }
+      if (initial.custom_item_name) {
+        try { ts.addOption({ id: initial.custom_item_name, name: initial.custom_item_name }); ts.setValue(initial.custom_item_name); card.dataset.customName = initial.custom_item_name; } catch(e) {}
+      }
+      desc.value    = initial.description || '';
+      rateInp.value = (parseFloat(initial.price_per_unit || initial.rate || 0) || 0).toFixed(2);
+      unitSel.value = initial.unit || 'Sq Ft';
+      setType(initial.item_type || 'area');
+      (initial.subs || []).forEach(function(s) { addRow({ sub: s }); });
     } else {
-        tr.innerHTML = `
-            <td style="text-align:center;"><div class="qty-control"><button class="decr">−</button><input class="q" value="1"><button class="incr">+</button></div></td>
-            <td colspan="4" style="text-align:right;"><button class="action-btn" onclick="dupSub(this)">⎘</button> <button class="action-btn" onclick="confirmRemoveRow(this)">✖</button></td>
-        `;
-        tbody.appendChild(tr);
-        const q = tr.querySelector('.q');
-        tr.querySelector('.incr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) + 1); onRowChange(tr); });
-        tr.querySelector('.decr').addEventListener('click', ()=>{ const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(tr); });
-        q.addEventListener('input', ()=> onRowChange(tr));
+      setType('area');
     }
-    computeTotals();
-}
 
-function confirmRemoveRow(btn){ if(!confirm('Remove this dimension row?')) return; btn.closest('tr').remove(); computeTotals(); }
+    function activeType() {
+      var active = Array.from(typeBtns).find(function(b) { return b.classList.contains('active'); });
+      return active ? active.dataset.type : 'area';
+    }
 
-function dupSub(btn){ 
-    const tr = btn.closest('tr'); const card = btn.closest('.item-card'); const tbody = card.querySelector('.subbody'); const clone = tr.cloneNode(true); tbody.insertBefore(clone, tr.nextSibling); 
-    clone.querySelectorAll('input').forEach(i=> i.addEventListener('input', ()=> onRowChange(clone)));
-    clone.querySelectorAll('.incr').forEach(b=> b.addEventListener('click', ()=> { const q=clone.querySelector('.q'); const cur = parseFloat(q.value||0); q.value = (isNaN(cur)?0:cur) + 1; onRowChange(clone); }));
-    clone.querySelectorAll('.decr').forEach(b=> b.addEventListener('click', ()=> { const q=clone.querySelector('.q'); const cur = parseFloat(q.value||0); q.value = Math.max(1, (isNaN(cur)?0:cur) - 1); onRowChange(clone); }));
-    computeTotals(); 
-}
+    function setType(t) {
+      typeBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.type === t); });
+      var theadTr = card.querySelector('.thead-tr');
+      theadTr.innerHTML = '';
+      var u = unitSel.value || 'Sq Ft';
+      // Column order: Height → Width → Qty for area; Length → Qty for length; Qty only for nos
+      var cols = t === 'area'   ? ['#','Height','Width','Qty', u ,'Amount',''] :
+                 t === 'length' ? ['#','Length','Qty','Total (' + u + ')','Amount',''] :
+                                  ['#','Qty (' + u + ')','Amount',''];
+      cols.forEach(function(h) {
+        var th = document.createElement('th'); th.textContent = h; theadTr.appendChild(th);
+      });
+      rowsBody.innerHTML = '';
+    }
 
-function duplicateRow(btn){ const card = btn.closest('.item-card'); const last = card.querySelector('.subbody tr:last-child'); if(last) dupSub(last); }
+    typeBtns.forEach(function(b) { b.addEventListener('click', function() { setType(b.dataset.type); }); });
 
-function onRowChange(tr){
-    const card = tr.closest('.item-card');
-    const type = card.querySelector('.itype').value;
-    const qEl = tr.querySelector('.q'); let q = 1; if(qEl){ const qp = parseFloat(qEl.value||0); q = Math.max(1, isNaN(qp)?1:qp); qEl.value = q; }
+    function addRow(opts) {
+      var t   = activeType();
+      var sub = (opts && opts.sub) ? opts.sub : {};
+      var tr  = document.createElement('tr');
+      var n   = rowsBody.querySelectorAll('tr').length + 1;
+      if (t === 'area') {
+        // UPDATE 1: Height input first, then Width (matches PDF format: H | W | Qty | Area | Amount)
+        tr.innerHTML = '<td style="color:var(--muted);font-size:11px">' + n + '</td>' +
+          '<td><input class="h" type="number" inputmode="decimal" value="' + (sub.height||'') + '" placeholder="H"></td>' +
+          '<td><input class="w" type="number" inputmode="decimal" value="' + (sub.width||'') + '" placeholder="W"></td>' +
+          '<td><input class="q" type="number" inputmode="decimal" value="' + (sub.quantity||1) + '" placeholder="1"></td>' +
+          '<td class="cell-val area-val">0.000</td>' +
+          '<td class="cell-amount amount-val">0.00</td>' +
+          '<td><button class="btn btn-danger btn-sm del">&#10005;</button></td>';
+      } else if (t === 'length') {
+        tr.innerHTML = '<td style="color:var(--muted);font-size:11px">' + n + '</td>' +
+          '<td><input class="len" type="number" inputmode="decimal" value="' + (sub.length||'') + '" placeholder="L"></td>' +
+          '<td><input class="q" type="number" inputmode="decimal" value="' + (sub.quantity||1) + '" placeholder="1"></td>' +
+          '<td class="cell-val len-val">0.000</td>' +
+          '<td class="cell-amount amount-val">0.00</td>' +
+          '<td><button class="btn btn-danger btn-sm del">&#10005;</button></td>';
+      } else {
+        tr.innerHTML = '<td style="color:var(--muted);font-size:11px">' + n + '</td>' +
+          '<td><input class="q" type="number" inputmode="decimal" value="' + (sub.quantity||1) + '" placeholder="1"></td>' +
+          '<td class="cell-amount amount-val">0.00</td>' +
+          '<td><button class="btn btn-danger btn-sm del">&#10005;</button></td>';
+      }
+      rowsBody.appendChild(tr);
+      tr.querySelectorAll('input').forEach(function(i) { i.addEventListener('input', recompute); });
+      tr.querySelector('.del').addEventListener('click', function() { tr.remove(); recomputeRowNums(); recompute(); });
+      recompute();
+    }
 
-    if(type==='size'){
-        const h = parseFloat(tr.querySelector('.h').value)||0; const w = parseFloat(tr.querySelector('.w').value)||0;
-        if(h>0 && w>0){
-            const tbody = tr.parentElement; const key = h.toFixed(3)+'x'+w.toFixed(3);
-            for(const r of tbody.querySelectorAll('tr')){
-                if(r===tr) continue;
-                const hh = r.querySelector('.h') ? parseFloat(r.querySelector('.h').value||0) : null;
-                const ww = r.querySelector('.w') ? parseFloat(r.querySelector('.w').value||0) : null;
-                if(hh!==null && ww!==null && hh.toFixed(3)+ 'x' + ww.toFixed(3) === key){ const qf = r.querySelector('.q'); const qfp = parseFloat(qf.value||0); qf.value = Math.max(1, (isNaN(qfp)?0:qfp) + q); tr.remove(); updateArea(r); computeTotals(); return; }
-            }
+    function recomputeRowNums() {
+      rowsBody.querySelectorAll('tr').forEach(function(tr, i) {
+        var c = tr.querySelector('td:first-child'); if (c) c.textContent = i + 1;
+      });
+    }
+
+    addRowBtn.addEventListener('click', function() { addRow(); });
+    rateInp.addEventListener('input', recompute);
+    removeBtn.addEventListener('click', async function() {
+      var itemId = card.dataset.itemId;
+      if (itemId) {
+        if (!confirm('Delete this service permanently?')) { return; }
+        try {
+          var resp = await fetch('/measurement-item/delete/', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ item_id: itemId })
+          });
+          var data = await resp.json();
+          if (data && data.success) {
+            card.remove();
+            renumberCards();
+            recomputeGlobal();
+            updateEmptyState();
+          } else {
+            alert('Delete failed. Please try again.');
+          }
+        } catch (e) {
+          console.error(e);
+          alert('Delete failed. Please try again.');
         }
-        updateArea(tr);
-    } else if(type==='length'){
-        const l = parseFloat(tr.querySelector('.length')?.value||0);
-        tr.querySelector('.area') ? tr.querySelector('.area').innerText = (l*q).toFixed(3) : null;
-    }
-    computeTotals();
-}
-
-function updateArea(tr){ const h = parseFloat(tr.querySelector('.h').value||0); const w = parseFloat(tr.querySelector('.w').value||0); const qv = parseFloat(tr.querySelector('.q').value||0); const q = (isNaN(qv)||qv<1) ? 1 : qv; if(h<=0||w<=0){ tr.querySelector('.area').innerText = '0'; return; } tr.querySelector('.area').innerText = (h*w*q).toFixed(3); }
-
-function computeTotals(){ 
-    let totalQty=0, totalArea=0, grandTotal=0; 
-    $all('.item-card').forEach(card=>{ 
-        const type = card.querySelector('.itype').value; 
-        const price = parseFloat((card.querySelector('.price')||{value:0}).value)||0; 
-        let itemTotal = 0; 
-        card.querySelectorAll('.subbody tr').forEach(tr=>{ 
-            const qv = parseFloat((tr.querySelector('.q')||{value:1}).value||0); const q = (isNaN(qv)?0:qv);
-            totalQty += q; 
-            if(type==='size'){ 
-                const a = parseFloat((tr.querySelector('.area')||{innerText:0}).innerText)||0; 
-                totalArea += a; itemTotal += a * price; 
-            } else if(type==='length'){ 
-                const l = parseFloat((tr.querySelector('.length')||{value:0}).value)||0; 
-                const val = l * q; totalArea += val; itemTotal += val * price; 
-            } else { itemTotal += q * price; } 
-        }); 
-        card.querySelector('.item-total').innerText = Number(itemTotal||0).toFixed(2); 
-        grandTotal += itemTotal; 
-    }); 
-    totalQtyEl.innerText = totalQty; 
-    totalAreaEl.innerText = Number(totalArea).toFixed(3); 
-    totalPriceEl.innerText = Number(grandTotal||0).toFixed(2); 
-    summaryBox.style.display = totalQty>0 ? 'flex' : 'none'; 
-}
-
-function getCookie(name){ let v=null; if(document.cookie){ document.cookie.split(';').forEach(c=>{ let [k,val]=c.trim().split('='); if(k===name) v=decodeURIComponent(val); }); } return v; }
-
-function saveMeasurements(){
-    formError.style.display='none';
-    const payload = { items: [] };
-    let valid=true;
-    $all('.item-card').forEach(card=>{
-        const desc = (card.querySelector('.desc').value||'').trim();
-        const serviceSel = card.querySelector('.service-select');
-        const serviceVal = serviceSel ? serviceSel.value : null;
-        const custom_name = (!serviceVal || !/^\d+$/.test(String(serviceVal))) ? serviceVal : null;
-        const item_type = card.querySelector('.itype').value;
-        const unit = card.querySelector('.unit').value;
-        const price_per_unit = parseFloat((card.querySelector('.price')||{value:0}).value)||0;
-        const subs = [];
-        card.querySelectorAll('.subbody tr').forEach(tr=>{
-            const qv = parseFloat((tr.querySelector('.q')||{value:1}).value||0); const q = (isNaN(qv)?1:qv);
-            if(item_type==='size'){
-                const h = tr.querySelector('.h').value; const w = tr.querySelector('.w').value;
-                if(!h||!w||parseFloat(h)<=0||parseFloat(w)<=0) valid=false;
-                subs.push({ height: h||null, width: w||null, quantity: q });
-            } else if(item_type==='length'){
-                const l = tr.querySelector('.length').value;
-                if(!l||parseFloat(l)<=0) valid=false;
-                subs.push({ length: l||null, quantity: q });
-            } else { subs.push({ quantity: q }); }
-        });
-        if(subs.length>0) payload.items.push({ description: desc||'Item', service_id: (/^\d+$/.test(String(serviceVal)) ? serviceVal : null), custom_item_name: custom_name, item_type, unit, price_per_unit, subs });
+        return;
+      }
+      card.remove(); renumberCards(); recomputeGlobal(); updateEmptyState();
     });
 
-    if(!valid){ formError.innerText='Please enter valid (non-zero) dimensions'; formError.style.display='block'; return; }
-    if(payload.items.length===0){ formError.innerText='Add at least one row before saving'; formError.style.display='block'; return; }
+    // UPDATE 4: Wire per-card action buttons
+    card.querySelector('.card-add-service').addEventListener('click', function() {
+      createCard();
+    });
+    card.querySelector('.card-save').addEventListener('click', function() {
+      saveBtn.click();
+    });
 
-    const csrftoken = getCookie('csrftoken');
-    saveBtn.disabled=true; const prev = saveBtn.innerText; saveBtn.innerText='Saving...';
+    function recompute() {
+      var t = activeType(), r = parseFloat(rateInp.value) || 0;
+      var qty = 0, area = 0, total = 0;
+      rowsBody.querySelectorAll('tr').forEach(function(tr) {
+        if (t === 'area') {
+          // Calculation unchanged: w * h * q
+          var w = parseFloat((tr.querySelector('.w') && tr.querySelector('.w').value) || 0) || 0;
+          var h = parseFloat((tr.querySelector('.h') && tr.querySelector('.h').value) || 0) || 0;
+          var q = parseFloat((tr.querySelector('.q') && tr.querySelector('.q').value) || 0) || 0;
+          var a = w*h*q, amt = a*r;
+          if (tr.querySelector('.area-val'))   tr.querySelector('.area-val').textContent   = a.toFixed(3);
+          if (tr.querySelector('.amount-val')) tr.querySelector('.amount-val').textContent = amt.toFixed(2);
+          qty+=q; area+=a; total+=amt;
+        } else if (t === 'length') {
+          var l = parseFloat((tr.querySelector('.len') && tr.querySelector('.len').value) || 0) || 0;
+          var q = parseFloat((tr.querySelector('.q') && tr.querySelector('.q').value) || 0) || 0;
+          var tl=l*q, amt=tl*r;
+          if (tr.querySelector('.len-val'))    tr.querySelector('.len-val').textContent    = tl.toFixed(3);
+          if (tr.querySelector('.amount-val')) tr.querySelector('.amount-val').textContent = amt.toFixed(2);
+          qty+=q; area+=tl; total+=amt;
+        } else {
+          var q = parseFloat((tr.querySelector('.q') && tr.querySelector('.q').value) || 0) || 0;
+          var amt = q*r;
+          if (tr.querySelector('.amount-val')) tr.querySelector('.amount-val').textContent = amt.toFixed(2);
+          qty+=q; total+=amt;
+        }
+      });
+      cardQtyEl.textContent  = qty;
+      cardAreaEl.textContent = (t==='nos') ? '\u2014' : area.toFixed(3);
+      cardTotEl.textContent  = '\u20B9' + total.toFixed(2);
+      recomputeGlobal();
+    }
 
-    const saveUrl = CUSTOMER_ID ? `/customer/${CUSTOMER_ID}/measurements/save/` : "{% url 'save_measurements' customer.id %}";
-    fetch(saveUrl, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-CSRFToken': csrftoken }, credentials:'same-origin', body: JSON.stringify(payload) })
-        .then(r=>r.json())
-        .then(data=>{
-            if(data.error){ formError.innerText = data.error || 'Could not save'; formError.style.display='block'; saveBtn.disabled=false; saveBtn.innerText=prev; return; }
-            saveBtn.innerText='Saved Successfully';
-            // Open the measurement PDF in a new tab if pdf_url is present
-            if(data.pdf_url){
-                window.open(data.pdf_url, '_blank');
-            }
-            setTimeout(()=>{ saveBtn.innerText=prev; saveBtn.disabled=false; window.location.href='{% url "customers" %}'; },700);
-        }).catch(err=>{ formError.innerText='Could not save'; formError.style.display='block'; saveBtn.disabled=false; saveBtn.innerText=prev; });
-}
+    function getPayload() {
+      var svcVal = selEl.value || null;
+      var isNum  = /^\d+$/.test(String(svcVal));
+      var item_type = activeType();
+      var subs = [];
+      rowsBody.querySelectorAll('tr').forEach(function(tr) {
+        if (item_type==='area') {
+          subs.push({ width: (tr.querySelector('.w') && tr.querySelector('.w').value) || null, height: (tr.querySelector('.h') && tr.querySelector('.h').value) || null, quantity: (tr.querySelector('.q') && tr.querySelector('.q').value) || 1 });
+        } else if (item_type==='length') {
+          subs.push({ length: (tr.querySelector('.len') && tr.querySelector('.len').value) || null, quantity: (tr.querySelector('.q') && tr.querySelector('.q').value) || 1 });
+        } else {
+          subs.push({ quantity: (tr.querySelector('.q') && tr.querySelector('.q').value) || 1 });
+        }
+      });
+      return { description: desc.value||'', service_id: isNum?svcVal:null, custom_item_name: isNum?null:svcVal, item_type: item_type, unit: unitSel.value||'Sq Ft', price_per_unit: parseFloat(rateInp.value||0)||0, subs: subs };
+    }
 
-loadServices().then(()=> loadSavedMeasurements(CUSTOMER_ID));
+    card.getPayload = getPayload;
+    cardsPane.insertBefore(card, emptyState);
+    renumberCards();
+    updateEmptyState();
+    return card;
+  }
+
+  function recomputeGlobal() {
+    var gQty=0, gArea=0, gAmt=0;
+    cardsPane.querySelectorAll('.item-card').forEach(function(c) {
+      gQty += parseFloat(c.querySelector('.card-qty').textContent||0)||0;
+      var aText = c.querySelector('.card-area').textContent;
+      gArea += (aText==='\u2014') ? 0 : (parseFloat(aText)||0);
+      gAmt  += parseFloat((c.querySelector('.card-total').textContent||'\u20B90').replace('\u20B9',''))||0;
+    });
+    document.getElementById('gTotalQty').textContent    = gQty;
+    document.getElementById('gTotalArea').textContent   = gArea.toFixed(3);
+    document.getElementById('gTotalAmount').textContent = '\u20B9' + gAmt.toFixed(2);
+  }
+
+  addCardBtn.addEventListener('click', function() { createCard(); });
+
+  quickAddBtn.addEventListener('click', async function() {
+    var val = quickTS && quickTS.getValue();
+    if (!val) { alert('Please select a service first.'); return; }
+    if (String(val || '').indexOf('__new__:') === 0) {
+      var raw = String(val).split(':')[1] || '';
+      if (!raw) { alert('Invalid service name'); return; }
+      var created = await createServiceOnServer(raw);
+      if (!created || !created.id) { alert('Service creation failed'); return; }
+      val = String(created.id);
+      if (quickTS) try { quickTS.addOption({ id: val, name: created.service_name || created.name || raw }); quickTS.setValue(val); } catch(e){}
+    }
+
+    var existing = cardsPane.querySelector('[data-service-id="' + String(val) + '"]');
+    if (existing) {
+      showToast('Service already exists. Add a row inside the existing card.');
+      existing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      existing.classList.add('card-highlight');
+      setTimeout(function(){ existing.classList.remove('card-highlight'); }, 2000);
+      var addBtn = existing.querySelector('.btn-add-row'); if (addBtn) try{ addBtn.focus(); }catch(e){}
+      return;
+    }
+    var card = createCard();
+    try { var ts = card.querySelector('.service-select').tomselect; } catch(e) { var ts = null; }
+    fetch('/api/service-details/' + String(val) + '/', { credentials: 'same-origin' })
+      .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function(data) {
+        try {
+          if (ts) {
+            try { ts.addOption(formatServiceOption(data)); ts.setValue(String(data.id)); } catch(e) {}
+          }
+          var p = parseFloat(data.price || data.rate || data.price_per_unit || data.default_rate || 0) || 0;
+          card.querySelector('.rate').value = p.toFixed(2);
+          card.querySelector('.rate').dispatchEvent(new Event('input'));
+        } catch (e) {}
+      })
+      .catch(function() {});
+    if (quickTS) quickTS.clear();
+  });
+
+  saveBtn.addEventListener('click', function() {
+    var items = Array.from(cardsPane.querySelectorAll('.item-card')).map(function(c) { return c.getPayload(); });
+    if (!items.length) { alert('Please add at least one service.'); return; }
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving\u2026';
+    var custId = root.dataset.customerId;
+    fetch('/customer/' + custId + '/measurements/save/', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify({ items: items })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      saveBtn.disabled = false; saveBtn.textContent = 'Save Measurements';
+      if (data.error) { alert(data.error); return; }
+      if (data.pdf_url) window.open(data.pdf_url, '_blank');
+      setTimeout(function() { window.location.href = '{% url "customers" %}'; }, 300);
+    })
+    .catch(function(err) {
+      console.error(err); saveBtn.disabled = false; saveBtn.textContent = 'Save Measurements';
+      alert('Save failed. Please try again.');
+    });
+  });
+
+  function getCookie(name) {
+    var pair = document.cookie.split(';').map(function(c) { return c.trim().split('='); }).find(function(p) { return p[0] === name; });
+    return pair ? pair[1] : null;
+  }
+
+  initQuickSelect();
+  updateEmptyState();
+
+  // Load existing measurements for this customer
+  (function loadExistingMeasurements() {
+    var custId = root.dataset.customerId;
+    fetch('/api/get-measurements/' + custId + '/', { credentials: 'same-origin' })
+      .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function(data) {
+        var items = data.items || [];
+        if (!items.length) {
+          updateEmptyState();
+          return;
+        }
+        items.forEach(function(it) {
+          try {
+            createCard({
+              measurement_item_id: it.measurement_item_id,
+              service_id: it.service_id,
+              custom_item_name: it.custom_item_name,
+              description: it.description,
+              price_per_unit: parseFloat(it.price_per_unit || it.price || 0) || 0,
+              unit: it.unit || 'Sq Ft',
+              item_type: it.item_type || 'area',
+              subs: it.subs || []
+            });
+          } catch (e) {
+            console.error('Existing measurement item load failed:', e);
+          }
+        });
+        updateEmptyState();
+        renumberCards();
+        recomputeGlobal();
+      })
+      .catch(function() {
+        updateEmptyState();
+      });
+  })();
+
+})();
 </script>
 
 {% endblock %}

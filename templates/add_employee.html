@@ -1,344 +1,357 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@500;600&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --cream: #faf8f4;
+    --white: #ffffff;
+    --surface: #f5f3ef;
+    --surface-2: #faf9f6;
+    --ink: #1a1714;
+    --muted: #6b6560;
+    --faint: #c4bfba;
+    --accent: #c8602a;
+    --accent-glow: rgba(200,96,42,0.12);
+    --border: #e8e3de;
+    --border-soft: #f0ece5;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--cream); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
 
-  /* page-level body styles removed - keep body controlled by base.html */
+/* ── PAGE LAYOUT ── */
+.page-wrapper {
+    padding: 1.5rem 2rem 3rem;
+}
 
-  /* Center page content within the main .content area (use in base) */
-  .content {
-    display: flex;
-    justify-content: center;
-    align-items: center; /* vertically center the card within content area */
-    padding: 40px 16px; /* preserve spacing originally on body */
-  }
-
-  .card {
-    background: #ffffff;
-    border-radius: 24px;
-    width: 100%;
-    max-width: 420px;
-    box-shadow:
-      0 1px 2px rgba(0,0,0,0.04),
-      0 4px 16px rgba(0,0,0,0.06),
-      0 20px 48px rgba(0,0,0,0.08);
-    overflow: hidden;
-    animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both;
-  }
-
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .card-header {
-    padding: 32px 36px 24px;
-    border-bottom: 1px solid #f0ede8;
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-  }
-
-  .icon-wrap {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #2c5282, #3182ce);
+/* ── PAGE HEADER ── */
+.page-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(49,130,206,0.28);
-  }
+    justify-content: space-between;
+    max-width: 980px;
+    margin: 0 auto 1rem;
+    animation: fadeDown 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
 
-  .icon-wrap svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: #fff;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
 
-  .header-text h2 {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-size: 22px;
-    font-weight: 600;
-    color: #1a202c;
-    letter-spacing: -0.3px;
-    line-height: 1.2;
-  }
+.eyebrow-pill {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    padding: 3px 9px;
+    background: var(--surface);
+    border-radius: 100px;
+    border: 1px solid var(--border);
+}
 
-  .header-text p {
-    margin-top: 3px;
+.page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+}
+.page-title em { color: var(--accent); font-style: italic; }
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.48rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-back:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── CARD ── */
+.card {
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+}
+
+.card-bar { height: 3px; background: var(--accent); }
+
+.card-body {
+    padding: 1.75rem 2rem 2rem;
+}
+
+.card-sub {
     font-size: 13px;
-    color: #718096;
-    font-weight: 400;
-  }
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+}
 
-  .form-body {
-    padding: 28px 36px 32px;
+/* ── FORM GRID ── */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 2rem;
+}
+
+/* ── FIELD ── */
+.field {
     display: flex;
     flex-direction: column;
-    gap: 0;
-  }
+    gap: 6px;
+}
 
-  .field {
-    position: relative;
-    margin-bottom: 16px;
-    animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
-  }
-
-  .field:nth-child(1) { animation-delay: 0.08s; }
-  .field:nth-child(2) { animation-delay: 0.14s; }
-  .field:nth-child(3) { animation-delay: 0.20s; }
-  .field:nth-child(4) { animation-delay: 0.26s; }
-  .field:nth-child(5) { animation-delay: 0.32s; }
-  .field:nth-child(6) { animation-delay: 0.38s; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .field label {
-    display: block;
+.field label {
     font-size: 11.5px;
     font-weight: 600;
-    color: #4a5568;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    letter-spacing: 0.7px;
-    margin-bottom: 6px;
-  }
+    color: var(--muted);
+}
 
-  .field .optional-tag {
-    font-size: 10px;
+.field label .opt {
     font-weight: 400;
-    color: #a0aec0;
+    opacity: 0.65;
     text-transform: none;
     letter-spacing: 0;
-    margin-left: 6px;
-  }
+    font-size: 11px;
+}
 
-  .input-wrap {
-    position: relative;
-  }
+/* ── INPUT ── */
+.field-wrap { position: relative; }
 
-  .input-wrap .input-icon {
+.field-prefix {
     position: absolute;
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #a0aec0;
-    display: flex;
-    align-items: center;
+    font-size: 13px;
+    color: var(--muted);
     pointer-events: none;
-    transition: color 0.2s;
-  }
-
-  .input-wrap .input-icon svg {
-    width: 15px;
-    height: 15px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .input-wrap input {
-    width: 100%;
-    padding: 10px 12px 10px 36px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    background: #fafafa;
-    color: #1a202c;
+    user-select: none;
     font-family: 'DM Sans', sans-serif;
+}
+
+.f-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
     font-size: 14px;
-    font-weight: 400;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-    outline: none;
-  }
-
-  .input-wrap input::placeholder {
-    color: #c0cad6;
-  }
-
-  .input-wrap input:focus {
-    border-color: #3182ce;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(49,130,206,0.1);
-  }
-
-  .input-wrap input:focus + .input-icon,
-  .input-wrap:focus-within .input-icon {
-    color: #3182ce;
-  }
-
-  .divider {
-    height: 1px;
-    background: #f0ede8;
-    margin: 4px 0 16px;
-  }
-
-  .form-footer {
-    animation: fadeUp 0.5s 0.44s cubic-bezier(0.22,1,0.36,1) both;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #2c5282, #3182ce);
-    color: #fff;
     font-family: 'DM Sans', sans-serif;
-    font-size: 14.5px;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 14px rgba(49,130,206,0.3);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.f-input::placeholder { color: #b5b0ab; }
+.f-input:focus {
+    border-color: var(--accent);
+    background: var(--white);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.f-input.has-prefix { padding-left: 28px; }
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
+    gap: 10px;
+    margin: 0.25rem 0;
+}
+.section-divider span {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--faint);
+    white-space: nowrap;
+}
+.section-divider::before,
+.section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-soft);
+}
+.section-divider::before { display: none; }
 
-  .submit-btn svg {
-    width: 16px;
-    height: 16px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
+/* ── FOOTER ── */
+.svc-divider { height: 1px; background: var(--border-soft); margin: 1.5rem 0 0; }
 
-  .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(49,130,206,0.38);
-  }
-
-  .submit-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(49,130,206,0.2);
-  }
-
-  /* GRID LAYOUT */
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-
-  .form-col {
+.form-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-2);
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
 
-  .field input {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    background: #fafafa;
-    color: #1a202c;
+.btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    padding: 11px 22px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
     font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 400;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-    outline: none;
-  }
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-cancel:hover { border-color: var(--ink); color: var(--ink); background: var(--white); }
 
-  @media (max-width: 768px) {
+.btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 26px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+}
+.btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-submit:active { transform: scale(0.99); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
     .form-grid { grid-template-columns: 1fr; }
-    .card { max-width: 420px; }
-  }
-
-  /* Larger card + centered spacing */
-  .card {
-    max-width: 900px;
-    margin: 48px auto;
-  }
-
-  .form-footer {
-    display: flex;
-    justify-content: center;
-    margin-top: 18px;
-  }
-
-  .submit-btn {
-    padding: 14px 18px;
-    font-size: 15px;
-    border-radius: 14px;
-    min-width: 240px;
-  }
+}
 </style>
 
-<div class="card">
-  <div class="card-header">
-    <div class="icon-wrap">
-      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-    </div>
-    <div class="header-text">
-      <h2>Add Employee</h2>
-      <p>Fill in the details to register a new team member</p>
-    </div>
-  </div>
+<div class="page-wrapper">
 
-  <form method="POST" class="form-body ajax-form" data-reset-on-success="true">
-
-    <div class="form-grid">
-
-      <!-- LEFT COLUMN -->
-      <div class="form-col">
-        <div class="field">
-          <label>Employee Name</label>
-          <input type="text" name="name" placeholder="e.g. Rahul Sharma" required>
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <span class="eyebrow-pill">Team</span>
+            <h1 class="page-title">Add <em>Employee</em></h1>
         </div>
-
-        <div class="field">
-          <label>Phone</label>
-          <input type="text" name="phone" placeholder="+91 98765 43210" required>
-        </div>
-
-        <div class="field">
-          <label>Role</label>
-          <input type="text" name="role" placeholder="Site Supervisor" required>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN -->
-      <div class="form-col">
-        <div class="field">
-          <label>Daily Salary</label>
-          <input type="number" step="0.01" name="salary" placeholder="0.00" required>
-        </div>
-
-        <div class="field">
-          <label>Half Day Salary</label>
-          <input type="number" step="0.01" name="half_salary" placeholder="0.00" required>
-        </div>
-
-        <div class="field">
-          <label>Overtime Salary</label>
-          <input type="number" step="0.01" name="overtime_salary" placeholder="0.00">
-        </div>
-      </div>
-
+        <a href="{% url 'employees' %}" class="btn-back">
+            <i class="ti ti-arrow-left" style="font-size:13px;"></i> Back
+        </a>
     </div>
 
-    <div class="form-footer" style="margin-top:18px;">
-      <button type="submit" class="submit-btn">Add Employee</button>
-    </div>
+    <!-- Card -->
+    <div class="card">
+        <div class="card-bar"></div>
 
-  </form>
+        <form method="POST" class="ajax-form" data-reset-on-success="true">
+            {% csrf_token %}
+
+            <div class="card-body">
+                <p class="card-sub">Fill in the details below to register a new team member.</p>
+
+                <div class="form-grid">
+
+                    <!-- ── Personal Details ── -->
+                    <div class="section-divider"><span>Personal Details</span></div>
+
+                    <div class="field">
+                        <label>Employee Name</label>
+                        <div class="field-wrap">
+                            <input type="text" name="name" class="f-input" placeholder="e.g. Rahul Sharma" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Phone</label>
+                        <div class="field-wrap">
+                            <input type="text" name="phone" class="f-input" placeholder="+91 98765 43210" required>
+                        </div>
+                    </div>
+
+                    <div class="field" style="grid-column: 1 / -1;">
+                        <label>Role</label>
+                        <div class="field-wrap">
+                            <input type="text" name="role" class="f-input" placeholder="e.g. Site Supervisor" required>
+                        </div>
+                    </div>
+
+                    <!-- ── Salary Details ── -->
+                    <div class="section-divider"><span>Salary Details</span></div>
+
+                    <div class="field">
+                        <label>Daily Salary</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">₹</span>
+                            <input type="number" step="0.01" name="salary" class="f-input has-prefix" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Half Day Salary</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">₹</span>
+                            <input type="number" step="0.01" name="half_salary" class="f-input has-prefix" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>Overtime Salary <span class="opt">(optional)</span></label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">₹</span>
+                            <input type="number" step="0.01" name="overtime_salary" class="f-input has-prefix" placeholder="0.00">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="form-footer">
+                <a href="{% url 'employees' %}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-submit">
+                    <i class="ti ti-user-plus" style="font-size:14px;"></i>
+                    Add Employee
+                </button>
+            </div>
+
+        </form>
+    </div>
 </div>
 
 {% endblock %}

@@ -398,7 +398,9 @@ textarea {
     flex: 1;
     overflow-y: auto;
     padding: 30px;
-}
+
+/* Server RAM widget CSS moved into sidebar-specific styles in base.html; global floating
+   styles removed to avoid duplication. */
 
 /* Center form card */
 .form-card {

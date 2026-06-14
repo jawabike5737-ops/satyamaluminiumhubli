@@ -1,5 +1,10 @@
 # Add this import at the top for login_required
 from django.contrib.auth.decorators import login_required
+import logging
+logger = logging.getLogger(__name__)
+
+
+
 # ================= MEASUREMENT PDF =================
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.pagesizes import A4
@@ -11,19 +16,65 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.db.models import Q
+from django.views.decorators.http import require_POST
+from django.urls import reverse
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT, TA_JUSTIFY
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table,
     TableStyle, HRFlowable, KeepTogether
 )
 
+from django.utils.text import get_valid_filename
+
 from .models import Customer, Measurement
+from .models import Service, Quotation, QuotationItem
+from .utils import to_decimal, format_quantity
+import re
+
+
+def _q_tax_type(q):
+    """Return unified tax_type for a quotation instance.
+
+    Prioritise the new `tax_type` field; fall back to legacy `gst_type`.
+    Returns one of: 'none', 'gst', 'igst'.
+    """
+    try:
+        tt = getattr(q, 'tax_type', None)
+        if tt:
+            return tt
+    except Exception:
+        pass
+    # fallback: legacy boolean-like field
+    try:
+        legacy = getattr(q, 'gst_type', None)
+        if legacy == 'with_gst':
+            return 'gst'
+    except Exception:
+        pass
+    return 'none'
+
+
+def strip_dimensions(text):
+    """Remove dimension patterns like (6x6), (6 × 6), (6.000 × 5.000) from text."""
+    if not text:
+        return text
+    # Remove anything in parentheses that looks like NxM or N x M with numbers
+    try:
+        cleaned = re.sub(r"\s*\(\s*\d+(?:\.\d+)?\s*[×xX]\s*\d+(?:\.\d+)?\s*\)\s*", ' ', str(text))
+        # also remove stray multiple spaces
+        cleaned = re.sub(r'\s{2,}', ' ', cleaned).strip()
+        return cleaned
+    except Exception:
+        return text
 
 # ── Colour palette (white & grey) ──────────────────────────────
 DARK_GREY    = colors.HexColor("#2C2C2C")   # headings, strong text
@@ -106,7 +157,7 @@ def _make_canvas_cb(customer, measurement_date):
         # Company name
         canvas.setFillColor(DARK_GREY)
         canvas.setFont("Helvetica-Bold", 18)
-        canvas.drawCentredString(PAGE_W / 2, PAGE_H - 13 * mm, "SATYAM ALUMINIUM")
+        canvas.drawCentredString(PAGE_W / 2, PAGE_H - 13 * mm, "SATYAM PARAS JAYSHREE ASSOCIATES")
 
         # Tagline
         canvas.setFont("Helvetica", 8)
@@ -142,141 +193,304 @@ from reportlab.lib import colors
 from reportlab.platypus import *
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
-
 @login_required(login_url='/login/')
 def measurement_pdf(request, cust_id):
 
-    customer = get_object_or_404(Customer, id=cust_id)
+    customer    = get_object_or_404(Customer, id=cust_id)
     measurement = Measurement.objects.filter(customer=customer).order_by('-id').first()
 
     if not measurement:
         return HttpResponse("No measurements found.", status=404)
 
-    elements = []
-    page_width = PAGE_W - 2 * MARGIN
+    # ── Palette: clean light blue theme ──────────────────────────────────────
+    C_HDR_DARK   = colors.HexColor("#1A5FA8")   # deep blue  — header band
+    C_HDR_MID    = colors.HexColor("#2B7FD4")   # medium blue — accent
+    C_BLUE_LIGHT = colors.HexColor("#E8F4FD")   # light blue  — info bg / title
+    C_BLUE_PALE  = colors.HexColor("#F0F8FF")   # faintest blue — alt rows
+    C_TBL_HDR    = colors.HexColor("#1A5FA8")   # table header bg
+    C_BORDER     = colors.HexColor("#B3D4F0")   # soft blue border
+    C_TEXT       = colors.HexColor("#0A0A0A")   # near-black text
+    C_MUTED      = colors.HexColor("#3A3A3A")   # dark grey
+    C_LABEL      = colors.HexColor("#1A5FA8")   # blue labels
+    C_WHITE      = colors.white
+    C_HDR_TXT    = colors.HexColor("#FFFFFF")
+    C_TOTAL_BG   = colors.HexColor("#D6ECFA")   # light blue total row
 
-    # ── STYLES ───────────────────────────────────────
-    TITLE = ParagraphStyle("title", fontName="Helvetica-Bold", fontSize=14, alignment=TA_CENTER)
-    SUBTITLE = ParagraphStyle("subtitle", fontName="Helvetica", fontSize=8, alignment=TA_CENTER)
-    HEADER = ParagraphStyle("header", fontName="Helvetica-Bold", fontSize=10)
-    NORMAL = ParagraphStyle("normal", fontName="Helvetica", fontSize=8)
-    CENTER = ParagraphStyle("center", fontName="Helvetica", fontSize=8, alignment=TA_CENTER)
+    TNR      = "Times-Roman"
+    TNR_BOLD = "Times-Bold"
+    TNR_ITAL = "Times-Italic"
+    SANS     = "Helvetica"
+    SANS_B   = "Helvetica-Bold"
 
-    # ── COMPANY HEADER ───────────────────────────────
-    elements.append(Paragraph("SATYAM ALUMINIUM", TITLE))
-    elements.append(Spacer(1, 8))
+    # ── Page geometry ─────────────────────────────────────────────────────────
+    PAGE_W, PAGE_H = A4
+    MARGIN    = 36
+    CONTENT_W = PAGE_W - 2 * MARGIN
+    HDR_H     = 90   # canvas-drawn header height
 
-    # ── CUSTOMER DETAILS ─────────────────────────────
-    elements.append(Paragraph("CUSTOMER DETAILS", HEADER))
+    # ── Canvas callback ───────────────────────────────────────────────────────
+    def draw_page(canv, doc):
+        canv.saveState()
 
-    info_data = [
-        ["Name", customer.name, "Phone", customer.phone],
-        ["Address", customer.address, "Measurement ID", f"#{measurement.id}"],
-    ]
+        # White background
+        canv.setFillColor(C_WHITE)
+        canv.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
 
-    info_table = Table(
-        info_data,
-        colWidths=[page_width/4]*4
-    )
+        # Header band
+        canv.setFillColor(C_HDR_DARK)
+        canv.rect(0, PAGE_H - HDR_H, PAGE_W, HDR_H, fill=1, stroke=0)
 
-    info_table.setStyle(TableStyle([
-        ("BOX", (0,0), (-1,-1), 0.5, colors.black),
-        ("INNERGRID", (0,0), (-1,-1), 0.3, colors.black),
-        ("LEFTPADDING", (0,0), (-1,-1), 6),
-        ("RIGHTPADDING", (0,0), (-1,-1), 6),
-        ("TOPPADDING", (0,0), (-1,-1), 4),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
-    ]))
+        # Angled lighter accent on right
+        p = canv.beginPath()
+        p.moveTo(PAGE_W * 0.55, PAGE_H - HDR_H)
+        p.lineTo(PAGE_W,        PAGE_H - HDR_H)
+        p.lineTo(PAGE_W,        PAGE_H)
+        p.lineTo(PAGE_W * 0.70, PAGE_H)
+        p.close()
+        canv.setFillColor(C_HDR_MID)
+        canv.drawPath(p, fill=1, stroke=0)
 
-    elements.append(info_table)
-    elements.append(Spacer(1, 8))
+        # Thin stripe below header
+        canv.setFillColor(colors.HexColor("#5BB3F0"))
+        canv.rect(0, PAGE_H - HDR_H - 3, PAGE_W, 3, fill=1, stroke=0)
 
-    # ── MEASUREMENT DETAILS ──────────────────────────
-    elements.append(Paragraph("MEASUREMENT DETAILS", HEADER))
-    elements.append(Spacer(1, 4))
+        # Company name
+        canv.setFont(TNR_BOLD, 22)
+        canv.setFillColor(C_HDR_TXT)
+        canv.drawCentredString(PAGE_W / 2, PAGE_H - 34, "SATYAM PARAS JAYSHREE ASSOCIATES")
 
-    col_widths = [page_width/5]*5  # PERFECT ALIGNMENT
+        # Tagline / subtitle
+        canv.setFont(TNR_ITAL, 9)
+        canv.setFillColor(colors.HexColor("#A8D8F8"))
+        canv.drawCentredString(PAGE_W / 2, PAGE_H - 50, "Precision Measurements & Fabrication")
 
-    for idx, item in enumerate(measurement.items.select_related('service').prefetch_related('subitems').all(), start=1):
+        # Thin divider inside header
+        canv.setStrokeColor(colors.HexColor("#4A9FD8"))
+        canv.setLineWidth(0.5)
+        canv.line(MARGIN, PAGE_H - 58, PAGE_W - MARGIN, PAGE_H - 58)
 
-        item_name = (
-            item.service.name if item.service
-            else item.custom_item_name or item.description or "-"
+        # "MEASUREMENT REPORT" label
+        canv.setFont(SANS_B, 8.5)
+        canv.setFillColor(colors.HexColor("#C8E8FA"))
+        canv.drawCentredString(PAGE_W / 2, PAGE_H - 72,
+                               f"MEASUREMENT REPORT  —  Customer: {customer.name.upper()}")
+
+        # Left accent bar (content area)
+        canv.setFillColor(C_HDR_DARK)
+        canv.rect(6, 6, 3.5, PAGE_H - HDR_H - 9, fill=1, stroke=0)
+
+        # Outer border
+        canv.setStrokeColor(C_BORDER)
+        canv.setLineWidth(0.8)
+        canv.rect(6, 6, PAGE_W - 12, PAGE_H - 12, fill=0, stroke=1)
+
+        canv.restoreState()
+
+    # ── Paragraph styles ─────────────────────────────────────────────────────
+    def PS(name, **kw):
+        return ParagraphStyle(name, **kw)
+
+    s_sec    = PS("Sec",   fontName=SANS_B,  fontSize=8.5,  alignment=TA_LEFT,
+                  textColor=C_HDR_DARK, leading=12, spaceBefore=4, spaceAfter=3)
+    s_item   = PS("Item",  fontName=SANS_B,  fontSize=9,    alignment=TA_LEFT,
+                  textColor=C_TEXT,    leading=13, spaceBefore=6, spaceAfter=2)
+    s_label  = PS("Lbl",   fontName=SANS_B,  fontSize=7,    alignment=TA_LEFT,
+                  textColor=C_LABEL,   leading=10)
+    s_val    = PS("Val",   fontName=SANS,    fontSize=9,    alignment=TA_LEFT,
+                  textColor=C_TEXT,    leading=13)
+    s_val_r  = PS("ValR",  fontName=SANS,    fontSize=9,    alignment=TA_RIGHT,
+                  textColor=C_TEXT,    leading=13)
+    s_name   = PS("Name",  fontName=TNR_BOLD, fontSize=11,  alignment=TA_LEFT,
+                  textColor=C_TEXT,    leading=14)
+    s_footer = PS("Ftr",   fontName=SANS,    fontSize=7,    alignment=TA_CENTER,
+                  textColor=C_MUTED,   leading=11)
+
+    def th(txt, align=TA_CENTER):
+        return Paragraph(
+            f"<font name='{SANS_B}' size='8' color='#FFFFFF'>{txt}</font>",
+            PS("TH", alignment=align, leading=11),
         )
 
-        elements.append(Paragraph(f"{idx}. {item_name}", NORMAL))
+    def td(txt, align=TA_CENTER, color="#0A0A0A", bold=False):
+        fn = SANS_B if bold else SANS
+        return Paragraph(
+            f"<font name='{fn}' size='8.5' color='{color}'>{txt}</font>",
+            PS("TD", alignment=align, leading=12),
+        )
 
-        data = [
-            ["Height", "Width", "Length", "Qty", "Area"]
-        ]
+    class ThinRule(Flowable):
+        def __init__(self, width, color=C_BORDER, thickness=0.7,
+                     space_before=3, space_after=3):
+            super().__init__()
+            self.width        = width
+            self.color        = color
+            self.thickness    = thickness
+            self.space_before = space_before
+            self.space_after  = space_after
+
+        def draw(self):
+            self.canv.setStrokeColor(self.color)
+            self.canv.setLineWidth(self.thickness)
+            self.canv.line(0, self.space_after, self.width, self.space_after)
+
+        def wrap(self, *args):
+            return self.width, self.space_before + self.space_after + self.thickness
+
+    # ── Build document ────────────────────────────────────────────────────────
+    response = HttpResponse(content_type='application/pdf')
+    safe_name = re.sub(r'[^A-Za-z0-9]+', '_', customer.name or 'customer').strip('_')
+    response['Content-Disposition'] = f'attachment; filename="Measurement_{safe_name}.pdf"'
+
+    doc = SimpleDocTemplate(
+        response, pagesize=A4,
+        leftMargin=MARGIN + 4,   # +4 clears the left accent bar
+        rightMargin=MARGIN,
+        topMargin=HDR_H + 14,
+        bottomMargin=34,
+    )
+
+    elems = []
+
+    # ── CUSTOMER DETAILS CARD ─────────────────────────────────────────────────
+    elems.append(Paragraph("CUSTOMER DETAILS", s_sec))
+    elems.append(ThinRule(CONTENT_W, color=C_HDR_DARK, thickness=1.4,
+                          space_before=2, space_after=4))
+
+    info_data = [
+        [
+            [Paragraph("NAME",           s_label), Paragraph(clean_text(customer.name),    s_name)],
+            [Paragraph("PHONE",          s_label), Paragraph(clean_text(customer.phone) or "\u2014", s_val)],
+        ],
+        [
+            [Paragraph("ADDRESS",        s_label), Paragraph(clean_text(customer.address) or "\u2014", s_val)],
+            [Paragraph("MEASUREMENT ID", s_label), Paragraph(f"# {measurement.id}",        s_val)],
+        ],
+    ]
+    info_tbl = Table(info_data, colWidths=[CONTENT_W * 0.55, CONTENT_W * 0.45])
+    info_tbl.setStyle(TableStyle([
+        ("BOX",           (0, 0), (-1, -1), 0.8, C_BORDER),
+        ("INNERGRID",     (0, 0), (-1, -1), 0.6, C_BORDER),
+        ("BACKGROUND",    (0, 0), (0,  -1), C_WHITE),
+        ("BACKGROUND",    (1, 0), (1,  -1), C_BLUE_LIGHT),
+        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 10),
+    ]))
+    elems.append(info_tbl)
+    elems.append(Spacer(1, 10))
+
+    # ── MEASUREMENT DETAILS ───────────────────────────────────────────────────
+    elems.append(Paragraph("MEASUREMENT DETAILS", s_sec))
+    elems.append(ThinRule(CONTENT_W, color=C_HDR_DARK, thickness=1.4,
+                          space_before=2, space_after=4))
+
+    col_w = [CONTENT_W * f for f in (0.18, 0.18, 0.18, 0.14, 0.18, 0.14)]
+    # Columns: Height | Width | Length | Qty | Area | Unit
+
+    items_qs = (
+        measurement.items
+        .select_related('service')
+        .prefetch_related('subitems')
+        .all()
+    )
+
+    for idx, item in enumerate(items_qs, start=1):
+        item_name = (
+            item.service.name if item.service
+            else (getattr(item, 'custom_item_name', None) or item.description or "—")
+        )
+
+        elems.append(Paragraph(f"{idx}.  {item_name}", s_item))
+
+        # Table header row
+        rows = [[
+            th("Height"), th("Width"), th("Length"),
+            th("Qty"),    th("Area"),  th("Unit"),
+        ]]
 
         total_area = Decimal('0')
+        unit = getattr(item, 'unit', '') or ''
 
         for sub in item.subitems.all():
-            try:
-                h = sub.height if sub.height is not None else Decimal('0')
-                w = sub.width if sub.width is not None else Decimal('0')
-                l = sub.length if sub.length is not None else Decimal('0')
-                q = sub.quantity if sub.quantity is not None else Decimal('1')
-            except Exception:
-                h = w = l = Decimal('0')
-                q = Decimal('1')
+            # Safe value extraction
+            h = sub.height   if sub.height   is not None else Decimal('0')
+            w = sub.width    if sub.width    is not None else Decimal('0')
+            l = sub.length   if sub.length   is not None else Decimal('0')
+            q = sub.quantity if sub.quantity is not None else Decimal('1')
 
+            # Area logic: h×w×q  OR  l×q  OR  q
             if h and w:
-                area = (h * w * q)
+                area = h * w * q
             elif l:
-                area = (l * q)
+                area = l * q
             else:
                 area = q
 
             total_area += area
 
-            data.append([
-                f"{h:.2f}" if h else "-",
-                f"{w:.2f}" if w else "-",
-                f"{l:.2f}" if l else "-",
-                f"{q:.2f}",
-                f"{area:.2f}",
+            rows.append([
+                td(f"{h:.2f}" if h else "—"),
+                td(f"{w:.2f}" if w else "—"),
+                td(f"{l:.2f}" if l else "—"),
+                td(f"{q:.2f}"),
+                td(f"{area:.2f}"),
+                td(unit or "—"),
             ])
 
-        unit = getattr(item, "unit", "") or ""
-
-        data.append([
-            "", "", "",
-            "Total",
-            f"{total_area:.2f} {unit}"
+        # Total row
+        rows.append([
+            td("", bold=False), td("", bold=False), td("", bold=False),
+            td("Total", bold=True, color="#0D3E7A"),
+            td(f"{total_area:.2f}", bold=True, color="#0D3E7A"),
+            td(unit or "—", color="#0D3E7A"),
         ])
 
-        table = Table(data, colWidths=col_widths)
+        tbl = Table(rows, colWidths=col_w)
 
-        table.setStyle(TableStyle([
-            ("BOX", (0,0), (-1,-1), 0.5, colors.black),
-            ("INNERGRID", (0,0), (-1,-1), 0.3, colors.black),
-            ("ALIGN", (0,0), (-1,-1), "CENTER"),
-            ("LEFTPADDING", (0,0), (-1,-1), 5),
-            ("RIGHTPADDING", (0,0), (-1,-1), 5),
-            ("TOPPADDING", (0,0), (-1,-1), 3),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 3),
-        ]))
+        # Build row-level alternating style commands
+        row_styles = [
+            # Header
+            ("BACKGROUND",    (0, 0), (-1, 0),  C_TBL_HDR),
+            ("TOPPADDING",    (0, 0), (-1, 0),  6),
+            ("BOTTOMPADDING", (0, 0), (-1, 0),  6),
+            # Data rows padding
+            ("TOPPADDING",    (0, 1), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 1), (-1, -1), 5),
+            # Total row
+            ("BACKGROUND",    (0, -1), (-1, -1), C_TOTAL_BG),
+            ("LINEABOVE",     (0, -1), (-1, -1), 0.8, C_HDR_DARK),
+            # Borders
+            ("BOX",           (0, 0), (-1, -1),  0.8, C_BORDER),
+            ("INNERGRID",     (0, 0), (-1, -1),  0.4, C_BORDER),
+            ("ALIGN",         (0, 0), (-1, -1),  "CENTER"),
+            ("VALIGN",        (0, 0), (-1, -1),  "MIDDLE"),
+            ("LEFTPADDING",   (0, 0), (-1, -1),  6),
+            ("RIGHTPADDING",  (0, 0), (-1, -1),  6),
+        ]
 
-        elements.append(table)
-        elements.append(Spacer(1, 6))
+        # Alternating row backgrounds for data rows
+        for r in range(1, len(rows) - 1):
+            bg = C_WHITE if r % 2 == 1 else C_BLUE_PALE
+            row_styles.append(("BACKGROUND", (0, r), (-1, r), bg))
 
-   # ── BUILD ────────────────────────────────────────
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Measurement_{customer.name}.pdf"'
+        tbl.setStyle(TableStyle(row_styles))
+        elems.append(tbl)
+        elems.append(Spacer(1, 8))
 
-    doc = SimpleDocTemplate(
-        response,
-        pagesize=A4,
-        leftMargin=20,
-        rightMargin=20,
-        topMargin=20,
-        bottomMargin=20,
-    )
+    # ── FOOTER ────────────────────────────────────────────────────────────────
+    elems.append(Spacer(1, 4))
+    elems.append(ThinRule(CONTENT_W, color=C_BORDER, thickness=0.5,
+                          space_before=0, space_after=4))
+    elems.append(Paragraph(
+        f"<font color='#1A5FA8'>This document is system-generated and does not "
+        f"require a physical signature.</font>  &nbsp;|&nbsp;  "
+        f"Measurement ID: #{measurement.id}",
+        s_footer,
+    ))
 
-    doc.build(elements)
-
+    doc.build(elems, onFirstPage=draw_page, onLaterPages=draw_page)
     return response
 
 
@@ -300,11 +514,35 @@ from .utils import generate_advance_acknowledgement_pdf, get_ram_usage, to_decim
 from .services import calculate_salary
 from .models import (
     Customer, Order, Employee, Attendance, Payment,
-    Service, Quotation, QuotationItem, OrderPayment, TermCondition,
+    Service, Company, Quotation, QuotationItem, OrderPayment, TermCondition,
     QuotationTerm, Measurement, MeasurementItem, MeasurementSubItem,
 )
 from .models import PaymentDetails
 from .forms import PaymentDetailsForm
+
+
+def get_service_by_code(request, service_code):
+    """Return service data as JSON for AJAX lookups by service_code."""
+    try:
+        svc = Service.objects.filter(service_code__iexact=service_code).first()
+        if not svc:
+            return JsonResponse({'success': False, 'error': 'Not found'}, status=404)
+
+        data = {
+            'success': True,
+            'id': svc.id,
+            'service_code': svc.service_code,
+            'name': svc.name,
+            'description': svc.description,
+            'rate': str(svc.default_rate or 0),
+            'unit': svc.unit,
+            'category': svc.category,
+            'image_url': svc.image.url if svc.image else '',
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        logger.exception('get_service_by_code error: %s', e)
+        return JsonResponse({'success': False, 'error': 'Server error'}, status=500)
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -349,8 +587,8 @@ def check_memory():
         process = psutil.Process(os.getpid())
         mem = process.memory_info().rss / 1024 / 1024
         print(f"RAM Used: {mem:.2f} MB")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
 
 
 # ================= FONT / LOGO HELPERS =================
@@ -360,8 +598,8 @@ def _load_unicode_font():
     candidates = []
     try:
         candidates.append(os.path.join(settings.BASE_DIR, 'fonts', 'DejaVuSans.ttf'))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
     candidates += [
         '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
@@ -382,8 +620,8 @@ def _load_unicode_font():
             if font_name not in registered:
                 pdfmetrics.registerFont(TTFont(font_name, font_path))
             return font_name, '₹'
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
 
     return 'Helvetica', 'Rs.'
 
@@ -412,21 +650,32 @@ def _register_times_new_roman():
                 if name not in pdfmetrics.getRegisteredFontNames():
                     pdfmetrics.registerFont(TTFont(name, p))
                 return name
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             continue
     return None
 
 
-def _load_logo_image(width=100, height=100, circular=False):
+def _load_logo_image(logo_name='logo.png', width=100, height=100, circular=False):
     """Locate logo.png and return a ReportLab Image object."""
     from reportlab.platypus import Image as RLImage, Spacer as RLSpacer
+    def _find_logo(logo_name='logo.png'):
+        lp = None
+        try:
+            lp = finders.find(logo_name) if finders else None
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
+            lp = None
+        if not lp:
+            candidate = settings.BASE_DIR / 'static' / logo_name
+            if candidate.exists():
+                lp = str(candidate)
+        return lp
 
-    logo_name = 'logo.png'
-    logo_path = finders.find(logo_name) if finders else None
+    logo_path = _find_logo(logo_name)
     if not logo_path:
-        candidate = settings.BASE_DIR / 'static' / logo_name
-        if candidate.exists():
-            logo_path = str(candidate)
+        # fallback: try common static filenames
+        logo_path = None
 
     if not logo_path or not os.path.exists(logo_path):
         return RLSpacer(width, height)
@@ -446,12 +695,13 @@ def _load_logo_image(width=100, height=100, circular=False):
             square.save(buf, format='PNG')
             buf.seek(0)
             return RLImage(buf, width=width, height=height)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
 
     try:
         return RLImage(str(logo_path), width=width, height=height)
-    except Exception:
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
         return RLSpacer(width, height)
 
 
@@ -482,34 +732,66 @@ def _register_fonts():
         return
 
     try:
-        font_path = os.path.join(
-            settings.BASE_DIR,
-            'static',
-            'fonts',
-            'DejaVuSans.ttf'
-        )
+        candidates = []
+        windir = os.environ.get('WINDIR')
+        if windir:
+            candidates += [os.path.join(windir, 'Fonts', x) for x in (
+                'DejaVuSans.ttf', 'DejaVuSans-Bold.ttf')]
 
-        bold_path = os.path.join(
-            settings.BASE_DIR,
-            'static',
-            'fonts',
-            'DejaVuSans.ttf'
-        )
+        # project-local fonts folder
+        try:
+            candidates.append(str(settings.BASE_DIR / 'fonts' / 'DejaVuSans.ttf'))
+            candidates.append(str(settings.BASE_DIR / 'fonts' / 'DejaVuSans-Bold.ttf'))
+            candidates.append(str(settings.BASE_DIR / 'static' / 'fonts' / 'DejaVuSans.ttf'))
+            candidates.append(str(settings.BASE_DIR / 'static' / 'fonts' / 'DejaVuSans-Bold.ttf'))
+        except Exception:
+            pass
 
-        if 'DejaVuSans' not in pdfmetrics.getRegisteredFontNames():
-            pdfmetrics.registerFont(
-                TTFont('DejaVuSans', font_path)
-            )
+        # common Unix locations
+        candidates += [
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        ]
 
-        if 'DejaVuSans-Bold' not in pdfmetrics.getRegisteredFontNames():
-            pdfmetrics.registerFont(
-                TTFont('DejaVuSans-Bold', bold_path)
-            )
+        regular_path = None
+        bold_path = None
+        for p in candidates:
+            try:
+                if not p:
+                    continue
+                if os.path.exists(p):
+                    if 'Bold' in os.path.basename(p) or 'bold' in os.path.basename(p):
+                        if not bold_path:
+                            bold_path = p
+                    else:
+                        if not regular_path:
+                            regular_path = p
+            except Exception:
+                continue
 
-        print("✅ DejaVu font loaded successfully")
+        # Fallback: try to find any DejaVu file in Windows fonts directory
+        if not (regular_path or bold_path):
+            try:
+                if windir:
+                    font_dir = os.path.join(windir, 'Fonts')
+                    for fname in ('DejaVuSans.ttf', 'DejaVuSans-Bold.ttf'):
+                        fp = os.path.join(font_dir, fname)
+                        if os.path.exists(fp):
+                            if 'Bold' in fname:
+                                bold_path = bold_path or fp
+                            else:
+                                regular_path = regular_path or fp
+            except Exception:
+                pass
+
+        if regular_path and 'DejaVuSans' not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont('DejaVuSans', regular_path))
+
+        if bold_path and 'DejaVuSans-Bold' not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', bold_path))
 
     except Exception as e:
-        print("❌ FONT ERROR:", e)
+        logger.exception('Unhandled exception while registering fonts: %s', e)
 
     _FONTS_REGISTERED = True
 
@@ -520,7 +802,8 @@ def _get_fonts():
     try:
         pdfmetrics.getFont('DejaVuSans')
         return 'DejaVuSans', 'DejaVuSans-Bold', '₹'
-    except Exception:
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
         return 'Helvetica', 'Helvetica-Bold', 'Rs.'
 
 
@@ -557,11 +840,13 @@ def _fmt(amount, rupee):
         val = to_decimal(amount).quantize(Decimal('0.01'))
         s = f"{val:,.2f}"
         return f"{rupee} {s}"
-    except Exception:
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
         return f"{rupee} {amount}"
 
 
 # ================= DASHBOARD =================
+
 def dashboard(request):
     ram = get_ram_usage()
     check_memory()
@@ -595,10 +880,6 @@ def login_user(request):
             })
     return render(request, 'login.html')
 
-
-# Registration has been removed. Former register_user view deleted.
-
-
 def logout_user(request):
     logout(request)
     return redirect('login')
@@ -607,8 +888,15 @@ def logout_user(request):
 # ================= CUSTOMERS =================
 @login_required(login_url='/login/')
 def customers(request):
+    # paginate customers to reduce memory usage
+    customer_qs = Customer.objects.only('id', 'name', 'phone', 'address').order_by('-id')
+    paginator = Paginator(customer_qs, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, 'customers.html', {
-        'data': Customer.objects.all().order_by('-id')[:50]
+        'data': page_obj.object_list,
+        'page_obj': page_obj,
+        'total_customers': paginator.count
     })
 
 
@@ -629,7 +917,8 @@ def add_customer(request):
             return JsonResponse({
                 'status': 'success',
                 'message': 'Customer added successfully',
-                'customer': {'id': customer.id, 'name': customer.name, 'phone': customer.phone}
+                'customer': {'id': customer.id, 'name': customer.name, 'phone': customer.phone},
+                'redirect': reverse('customers')
             })
         return redirect('customers')
     return render(request, 'add_customer.html')
@@ -674,7 +963,6 @@ def take_measurements(request, cust_id):
     customer = get_object_or_404(Customer, id=cust_id)
     return render(request, 'take_measurements.html', {'customer': customer})
 
-
 @login_required(login_url='/login/')
 def save_measurements(request, cust_id):
     if request.method != 'POST':
@@ -683,26 +971,21 @@ def save_measurements(request, cust_id):
     import json
     try:
         payload = json.loads(request.body.decode('utf-8'))
-    except Exception:
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
     customer = get_object_or_404(Customer, id=cust_id)
 
     with transaction.atomic():
-        existing_qs = Measurement.objects.filter(customer=customer).order_by('-id')
-        if existing_qs.exists():
-            m = existing_qs.first()
-            try:
-                existing_qs.exclude(id=m.id).delete()
-            except Exception:
-                pass
-        else:
+        m = Measurement.objects.filter(customer=customer).order_by('id').first()
+        if not m:
             m = Measurement.objects.create(customer=customer)
 
-        m.items.all().delete()
+        # BUG 4 FIX: Removed unused `existing_items` dead code that was here.
 
         for item in payload.get('items', []):
-            desc = item.get('description') or 'Item'
+            desc = (item.get('description') or 'Item').strip()
             item_type = item.get('item_type') or MeasurementItem.SIZE
             unit = item.get('unit') or 'Sq Ft'
 
@@ -714,79 +997,195 @@ def save_measurements(request, cust_id):
                 except Exception:
                     service = None
 
-            custom_name = item.get('custom_item_name') or ''
-
+            custom_name = (item.get('custom_item_name') or '').strip()
             ppu = to_decimal(item.get('price_per_unit') or '0')
 
-            mi = MeasurementItem.objects.create(
-                measurement=m,
-                description=desc,
-                item_type=item_type,
-                unit=unit,
-                service=service,
-                custom_item_name=custom_name,
-                price_per_unit=ppu
-            )
+            existing_item = None
+            try:
+                if service:
+                    existing_item = m.items.filter(service=service).first()
+                else:
+                    existing_item = m.items.filter(service__isnull=True, custom_item_name=custom_name).first()
+            except Exception:
+                existing_item = None
 
-            total_price = Decimal('0')
+            if existing_item:
+                # BUG 1 + 2 FIX: Delete all old subitems and recreate from payload.
+                # This replaces the broken append+weak-dedup logic. No more duplicates,
+                # no more "6" vs "6.0" false-distinct strings.
+                existing_item.subitems.all().delete()
 
-            for sub in item.get('subs', []):
-                try:
-                    h_val = to_decimal(sub.get('height')) if sub.get('height') not in (None, '') else None
-                except Exception:
-                    h_val = None
-                try:
-                    w_val = to_decimal(sub.get('width')) if sub.get('width') not in (None, '') else None
-                except Exception:
-                    w_val = None
-                try:
-                    l_val = to_decimal(sub.get('length')) if sub.get('length') not in (None, '') else None
-                except Exception:
-                    l_val = None
-                qty_in = sub.get('quantity') or sub.get('qty') or 1
-                try:
-                    qty_dec = to_decimal(qty_in).quantize(Decimal('0.001'))
-                except Exception:
+                if ppu and ppu != Decimal('0'):
+                    existing_item.rate = ppu
+                existing_item.description = desc
+                existing_item.item_type = item_type
+                existing_item.unit = unit
+
+                total_price = Decimal('0')
+                for sub in item.get('subs', []):
+                    h_val = sub.get('height') if sub.get('height') not in (None, '') else None
+                    w_val = sub.get('width') if sub.get('width') not in (None, '') else None
+                    l_val = sub.get('length') if sub.get('length') not in (None, '') else None
+                    qty_in = sub.get('quantity') or sub.get('qty') or 1
+
                     try:
-                        qty_dec = Decimal(int(qty_in))
+                        qty_dec = to_decimal(qty_in).quantize(Decimal('0.001'))
                     except Exception:
-                        qty_dec = Decimal('1')
+                        try:
+                            qty_dec = Decimal(int(qty_in))
+                        except Exception:
+                            qty_dec = Decimal('1')
+
+                    try:
+                        h_dec = to_decimal(h_val) if h_val is not None else None
+                    except Exception:
+                        h_dec = None
+                    try:
+                        w_dec = to_decimal(w_val) if w_val is not None else None
+                    except Exception:
+                        w_dec = None
+                    try:
+                        l_dec = to_decimal(l_val) if l_val is not None else None
+                    except Exception:
+                        l_dec = None
+
+                    si = MeasurementSubItem.objects.create(
+                        item=existing_item,
+                        height=h_dec,
+                        width=w_dec,
+                        length=l_dec,
+                        quantity=qty_dec
+                    )
+
+                    try:
+                        if si.height is not None and si.width is not None:
+                            area_val = si.height * si.width * si.quantity
+                        elif si.length is not None:
+                            area_val = si.length * si.quantity
+                        else:
+                            area_val = si.quantity
+                    except Exception:
+                        area_val = Decimal('0')
+
+                    total_price += (area_val * ppu)
 
                 try:
-                    h_dec = to_decimal(h_val) if h_val is not None else None
+                    MeasurementItem.objects.filter(id=existing_item.id).update(total=total_price)
+                    existing_item.total = total_price
                 except Exception:
-                    h_dec = None
-                try:
-                    w_dec = to_decimal(w_val) if w_val is not None else None
-                except Exception:
-                    w_dec = None
-                try:
-                    l_dec = to_decimal(l_val) if l_val is not None else None
-                except Exception:
-                    l_dec = None
+                    existing_item.total_price = total_price
 
-                si = MeasurementSubItem.objects.create(
-                    item=mi, height=h_dec, width=w_dec, length=l_dec, quantity=qty_dec
+                existing_item.save()
+
+            else:
+                mi = MeasurementItem.objects.create(
+                    measurement=m,
+                    description=desc,
+                    item_type=item_type,
+                    unit=unit,
+                    service=service,
+                    rate=ppu
                 )
+                if custom_name:
+                    mi.custom_item_name = custom_name
+                    mi.save()
+
+                total_price = Decimal('0')
+                for sub in item.get('subs', []):
+                    h_val = sub.get('height') if sub.get('height') not in (None, '') else None
+                    w_val = sub.get('width') if sub.get('width') not in (None, '') else None
+                    l_val = sub.get('length') if sub.get('length') not in (None, '') else None
+                    qty_in = sub.get('quantity') or sub.get('qty') or 1
+
+                    try:
+                        qty_dec = to_decimal(qty_in).quantize(Decimal('0.001'))
+                    except Exception:
+                        try:
+                            qty_dec = Decimal(int(qty_in))
+                        except Exception:
+                            qty_dec = Decimal('1')
+
+                    try:
+                        h_dec = to_decimal(h_val) if h_val is not None else None
+                    except Exception:
+                        h_dec = None
+                    try:
+                        w_dec = to_decimal(w_val) if w_val is not None else None
+                    except Exception:
+                        w_dec = None
+                    try:
+                        l_dec = to_decimal(l_val) if l_val is not None else None
+                    except Exception:
+                        l_dec = None
+
+                    si = MeasurementSubItem.objects.create(
+                        item=mi,
+                        height=h_dec,
+                        width=w_dec,
+                        length=l_dec,
+                        quantity=qty_dec
+                    )
+
+                    try:
+                        if si.height is not None and si.width is not None:
+                            area_val = si.height * si.width * si.quantity
+                        elif si.length is not None:
+                            area_val = si.length * si.quantity
+                        else:
+                            area_val = si.quantity
+                    except Exception:
+                        area_val = Decimal('0')
+
+                    total_price += (area_val * ppu)
 
                 try:
-                    if si.height is not None and si.width is not None:
-                        area_val = si.height * si.width * si.quantity
-                    elif si.length is not None:
-                        area_val = si.length * si.quantity
-                    else:
-                        area_val = si.quantity
+                    MeasurementItem.objects.filter(id=mi.id).update(total=total_price)
+                    mi.total = total_price
                 except Exception:
-                    area_val = Decimal('0')
+                    mi.total_price = total_price
+                    mi.save()
 
-                total_price += (area_val * ppu)
+    # BUG 3 FIX: items_out.append(...) was inside the subitems loop, causing the same
+    # measurement item to be appended once per subitem. Moved outside the inner loop.
+    items_out = []
+    for mi in m.items.select_related('service').prefetch_related('subitems').all():
+        subs = []
+        for s in mi.subitems.all():
+            subs.append({
+                'height': str(s.height) if s.height is not None else None,
+                'width': str(s.width) if s.width is not None else None,
+                'length': str(s.length) if s.length is not None else None,
+                'quantity': format_quantity(s.quantity) if s.quantity is not None else '0',
+            })
 
-            mi.total_price = total_price
-            mi.save()
+        # Prefer service.description if available; otherwise strip dimension tokens.
+        if mi.service and mi.service.description:
+            item_description = mi.service.description
+        else:
+            item_description = strip_dimensions(getattr(mi, 'description', '') or '')
+
+        # items_out.append is now correctly OUTSIDE the subitems loop.
+        items_out.append({
+            'measurement_item_id': mi.id,
+            'service_id': mi.service.id if mi.service else None,
+            'service_name': mi.service.name if mi.service else None,
+            'service_code': mi.service.service_code if mi.service else None,
+            'image_url': mi.service.image.url if mi.service and mi.service.image else '',
+            'custom_item_name': getattr(mi, 'custom_item_name', ''),
+            'description': item_description,
+            'item_type': mi.item_type,
+            'quantity': format_quantity(mi.total) if hasattr(mi, 'total') and mi.total else format_quantity(mi.quantity),
+            'unit': mi.unit,
+            'raw_quantity': format_quantity(mi.quantity),
+            'price_per_unit': str(mi.price_per_unit or 0),
+            'total_price': str(mi.total_price or 0),
+            'subs': subs
+        })
 
     return JsonResponse({
         'ok': True,
         'measurement_id': m.id,
+        'measurement': {'id': m.id, 'items': items_out},
         'pdf_url': f'/measurement-pdf/{customer.id}/'
     })
 
@@ -794,7 +1193,8 @@ def save_measurements(request, cust_id):
 @login_required(login_url='/login/')
 def get_measurements_json(request, cust_id):
     customer = get_object_or_404(Customer, id=cust_id)
-    m = Measurement.objects.filter(customer=customer).order_by('-id').first()
+    # Return the single Measurement record for the customer (earliest created)
+    m = Measurement.objects.filter(customer=customer).order_by('id').first()
     if not m:
         return JsonResponse({'items': []})
 
@@ -808,7 +1208,7 @@ def get_measurements_json(request, cust_id):
                 'height': str(s.height) if s.height is not None else None,
                 'width': str(s.width) if s.width is not None else None,
                 'length': str(s.length) if s.length is not None else None,
-                'quantity': str(s.quantity) if s.quantity is not None else '0',
+                'quantity': format_quantity(s.quantity) if s.quantity is not None else '0',
             })
 
         qty_val = Decimal('0')
@@ -832,18 +1232,28 @@ def get_measurements_json(request, cust_id):
                 else:
                     raw_qty += qd
                     qty_val += qd
-            except Exception:
+            except Exception as e:
+                logger.exception('Unhandled exception: %s', e)
                 continue
+
+        # Prefer the service.description if available; otherwise strip dimension tokens from the stored description
+        if mi.service and mi.service.description:
+            out_desc = mi.service.description
+        else:
+            out_desc = strip_dimensions(getattr(mi, 'description', '') or '')
 
         out.append({
             'measurement_item_id': mi.id,
             'service_id': mi.service.id if mi.service else None,
             'service_name': mi.service.name if mi.service else None,
-            'custom_item_name': mi.custom_item_name,
-            'description': mi.description,
-            'quantity': str(qty_val),
+            'service_code': mi.service.service_code if mi.service else None,
+            'image_url': mi.service.image.url if mi.service and mi.service.image else '',
+            'custom_item_name': getattr(mi, 'custom_item_name', ''),
+            'description': out_desc,
+            'item_type': mi.item_type,
+            'quantity': format_quantity(qty_val),
             'unit': mi.unit,
-            'raw_quantity': str(raw_qty),
+            'raw_quantity': format_quantity(raw_qty),
             'price_per_unit': str(mi.price_per_unit or 0),
             'total_price': str(mi.total_price or 0),
             'subs': subs
@@ -852,21 +1262,113 @@ def get_measurements_json(request, cust_id):
     return JsonResponse({'items': out})
 
 
+@login_required(login_url='/login/')
+@require_POST
+def delete_measurement_item(request):
+    """Delete a MeasurementItem by ID (AJAX POST JSON).
+
+    Expects JSON: { "item_id": 123 }
+    """
+    try:
+        import json
+        data = {}
+        if request.content_type and 'application/json' in (request.content_type or ''):
+            data = json.loads(request.body.decode('utf-8') or '{}')
+        else:
+            data = request.POST.dict()
+        item_id = data.get('item_id') or data.get('measurement_item_id')
+        if not item_id:
+            return JsonResponse({'success': False, 'error': 'item_id required'}, status=400)
+
+        mi = get_object_or_404(MeasurementItem, id=item_id)
+        mi.delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        logger.exception('delete_measurement_item error: %s', e)
+        return JsonResponse({'success': False, 'error': 'Server error'}, status=500)
+
+
 # ================= SERVICES =================
 @login_required(login_url='/login/')
 def services(request):
-    return render(request, 'services.html', {
-        'data': Service.objects.all().order_by('-id')[:50]
-    })
+    return render(request, 'services.html')
 
 
 def services_api(request):
-    """Return JSON list of services for AJAX dropdowns."""
+    """Paginated JSON API for services with server-side search and filtering."""
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
 
-    qs = Service.objects.all().order_by('name').values('id', 'name', 'price')[:50]
-    out = [{'id': s['id'], 'name': s['name'], 'description': s['name'], 'price': str(s['price'])} for s in qs]
+    search = request.GET.get('search', '').strip()
+
+    queryset = Service.objects.all()
+
+    if search:
+        queryset = queryset.filter(
+            service_name__icontains=search
+        ).order_by('service_name')
+    else:
+        queryset = queryset.order_by('-id')
+
+    # pagination
+    paginator = Paginator(queryset, 25)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    data = []
+    for service in page_obj.object_list:
+        try:
+            img = service.image.url if service.image else ''
+        except Exception:
+            img = ''
+        data.append({
+            'id': service.id,
+            'service_code': service.service_code or '',
+            'service_name': service.service_name or service.name,
+            'description': service.description or service.service_name or service.name,
+            'rate': str(getattr(service, 'price', service.default_rate)),
+            'unit': service.unit or 'Sq Ft',
+            'image': img,
+        })
+
+    return JsonResponse({
+        'results': data,
+        'total_pages': paginator.num_pages,
+        'total_count': paginator.count,
+        'current_page': page_obj.number,
+        'has_next': page_obj.has_next(),
+        'has_previous': page_obj.has_previous(),
+    })
+
+
+@login_required(login_url='/login/')
+def service_search_api(request):
+    """Lightweight search endpoint for TomSelect AJAX. Returns a flat list (not paginated)."""
+    if not request.user.is_authenticated:
+        return JsonResponse([], safe=False)
+
+    q = (request.GET.get('q') or request.GET.get('query') or '').strip()
+    queryset = Service.objects.all()
+    if q:
+        queryset = queryset.filter(
+            Q(service_name__icontains=q) | Q(service_code__icontains=q) | Q(description__icontains=q)
+        )
+    queryset = queryset.order_by('service_name')[:50]
+    out = []
+    for svc in queryset:
+        try:
+            img = svc.image.url if svc.image else ''
+        except Exception:
+            img = ''
+        out.append({
+            'id': svc.id,
+            'service_name': svc.service_name or svc.name,
+            'service_code': svc.service_code or '',
+            'description': svc.description or svc.service_name or svc.name,
+            'rate': str(getattr(svc, 'price', svc.default_rate)),
+            'unit': svc.unit or 'Sq Ft',
+            'image': img,
+        })
     return JsonResponse(out, safe=False)
 
 
@@ -879,46 +1381,161 @@ def create_service_api(request):
     data = {}
     try:
         import json
-        data = json.loads(request.body.decode('utf-8')) if request.body else request.POST.dict()
-    except Exception:
+        from django.http.request import RawPostDataException
+        # Prefer JSON when Content-Type indicates JSON, but avoid re-reading body if already consumed
+        if request.content_type and 'application/json' in request.content_type:
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+            except RawPostDataException:
+                data = request.POST.dict()
+            except Exception as e:
+                logger.exception('Unhandled exception reading JSON body: %s', e)
+                data = request.POST.dict()
+        else:
+            data = request.POST.dict()
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
         data = request.POST.dict()
 
-    name = (data.get('name') or '').strip()
-    description = (data.get('description') or name).strip()
-    price_in = data.get('price') or data.get('price_per_unit') or '0'
+    service_name = (data.get('service_name') or data.get('name') or '')
+    description = (data.get('description') or service_name)
+    price_in = data.get('price') or data.get('price_per_unit') or data.get('default_rate') or '0'
 
-    if not name:
-        return JsonResponse({'error': 'Name required'}, status=400)
+    if not service_name:
+        return JsonResponse({'error': 'Service name required'}, status=400)
 
-    existing = Service.objects.filter(name__iexact=name).first()
+    existing = Service.objects.filter(service_name__iexact=service_name).first() or Service.objects.filter(name__iexact=service_name).first()
     if existing:
         return JsonResponse({
-            'id': existing.id, 'name': existing.name,
-            'description': existing.name, 'price': str(existing.price)
+            'id': existing.id,
+            'service_name': existing.service_name or existing.name,
+            'description': existing.description or existing.service_name or existing.name,
+            'price': str(getattr(existing, 'price', existing.default_rate)),
+            'image_url': existing.image.url if existing.image else ''
         })
 
     price = to_decimal(price_in or '0')
 
-    s = Service.objects.create(name=name, description=description, price=price)
-    return JsonResponse({'id': s.id, 'name': s.name, 'description': s.name, 'price': str(s.price)})
+    # ensure service_code is unique-ish: auto-generate if missing
+    svc_data = {'service_name': service_name, 'name': service_name, 'description': description, 'default_rate': price}
+    if data.get('service_code'):
+        svc_data['service_code'] = data.get('service_code')
+
+    # If an image was uploaded via multipart/form-data, prefer that
+    img = None
+    try:
+        if request.FILES:
+            # accept either 'image' or 'file' or 'service_image'
+            img = request.FILES.get('image') or request.FILES.get('file') or request.FILES.get('service_image')
+    except Exception:
+        img = None
+
+    s = Service.objects.create(**svc_data)
+    if img:
+        try:
+            fname = get_valid_filename(getattr(img, 'name', f'service_{s.id}'))
+            s.image.save(fname, img, save=True)
+        except Exception as e:
+            logger.exception('Failed to save uploaded image for new service (api): %s', e)
+
+    return JsonResponse({'id': s.id, 'name': s.service_name or s.name, 'service_name': s.service_name or s.name, 'description': s.description or s.service_name or s.name, 'price': str(getattr(s, 'price', s.default_rate)), 'image_url': s.image.url if s.image else ''})
+
+
+@login_required(login_url='/login/')
+def update_service_api(request, id):
+    """Update service via AJAX (multipart/form-data accepted)."""
+    try:
+        svc = Service.objects.get(id=id)
+    except Service.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+
+    # Accept both JSON and form data
+    data = {}
+    try:
+        import json
+        data = json.loads(request.body.decode('utf-8')) if request.body else request.POST.dict()
+    except Exception:
+        data = request.POST.dict()
+
+    svc_name = (data.get('service_name') or data.get('name') or svc.service_name or svc.name).strip()
+    svc.description = data.get('description') or svc.description or svc_name
+    price_in = data.get('price') or data.get('default_rate') or None
+    if price_in is not None:
+        try:
+            svc.default_rate = to_decimal(price_in)
+        except Exception:
+            pass
+
+    # image upload
+    try:
+        if request.FILES:
+            img = request.FILES.get('image') or request.FILES.get('file') or request.FILES.get('service_image')
+            if img:
+                try:
+                    fname = get_valid_filename(getattr(img, 'name', f'service_{svc.id}'))
+                    svc.image.save(fname, img, save=False)
+                except Exception as e:
+                    logger.exception('Failed to attach uploaded image in update_service_api: %s', e)
+    except Exception as e:
+        logger.exception('Unexpected error in update_service_api image handling: %s', e)
+
+    svc.service_name = svc_name
+    svc.name = svc_name
+    svc.save()
+    return JsonResponse({'id': svc.id, 'service_name': svc.service_name or svc.name, 'description': svc.description or svc.service_name or svc.name, 'price': str(getattr(svc, 'price', svc.default_rate)), 'image_url': svc.image.url if svc.image else ''})
+
+
+@login_required(login_url='/login/')
+def service_details_api(request, id):
+    try:
+        svc = Service.objects.get(id=id)
+    except Service.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+    return JsonResponse({
+        'id': svc.id,
+        'service_name': svc.service_name or svc.name,
+        'description': svc.description or svc.service_name or svc.name,
+        'price': str(getattr(svc, 'price', svc.default_rate)),
+        'image_url': svc.image.url if svc.image else '',
+        'unit': svc.unit or 'Sq Ft'
+    })
 
 
 @login_required(login_url='/login/')
 def add_service(request):
     if request.method == "POST":
-        name = request.POST.get('name')
-        desc = name
+        service_name = request.POST.get('service_name') or request.POST.get('name')
+        desc = request.POST.get('description') or service_name
         price_str = request.POST.get('price')
 
-        if not name or not price_str:
-            return render(request, 'add_service.html', {'error': 'Name and Price are required'})
+        if not service_name or not price_str:
+            return render(request, 'add_service.html', {'error': 'Service name and Price are required'})
 
+        # Parse price using Decimal(str(...)) to avoid float precision issues
         try:
-            price = Decimal(price_str)
+            price = Decimal(str(price_str).strip().replace(',', '.'))
+            price = price.quantize(Decimal('0.01'))
         except InvalidOperation:
             return render(request, 'add_service.html', {'error': 'Invalid price format'})
 
-        Service.objects.create(name=name, description=desc, price=price)
+        # Prepare kwargs and create service record
+        svc = Service.objects.create(service_name=service_name, name=service_name, description=desc, default_rate=price)
+
+        # If an image was uploaded as part of the multipart/form-data POST, save it now
+        try:
+            if request.FILES:
+                img = request.FILES.get('image') or request.FILES.get('file') or request.FILES.get('service_image')
+                if img:
+                    try:
+                        fname = get_valid_filename(getattr(img, 'name', f'service_{svc.id}'))
+                        svc.image.save(fname, img, save=True)
+                    except Exception as e:
+                        logger.exception('Failed to save uploaded image for new service (form): %s', e)
+        except Exception as e:
+            logger.exception('Unexpected error handling uploaded image in add_service: %s', e)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Service added successfully'})
         return redirect('services')
@@ -930,22 +1547,49 @@ def edit_service(request, id):
     service = get_object_or_404(Service, id=id)
 
     if request.method == "POST":
-        service.name = request.POST.get('name')
-        service.description = service.name
+        service.service_name = request.POST.get('service_name') or request.POST.get('name') or service.service_name
+        service.name = service.service_name
+        service.description = request.POST.get('description') or service.service_name
         price_str = request.POST.get('price')
 
         try:
-            service.price = Decimal(price_str)
+            service.default_rate = Decimal(str(price_str).strip().replace(',', '.')).quantize(Decimal('0.01'))
         except InvalidOperation:
             return render(request, 'edit_service.html', {
                 'service': service, 'error': 'Invalid price format'
             })
+
+        # handle uploaded image replacement
+        img = request.FILES.get('image')
+        if img:
+            # remove old image if present
+            try:
+                if service.image:
+                    service.image.delete(save=False)
+            except Exception:
+                pass
+            # assign and let Service.save() optimize and persist
+            service.image = img
 
         service.save()
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Service updated successfully'})
         return redirect('services')
     return render(request, 'edit_service.html', {'service': service})
+
+
+@login_required(login_url='/login/')
+def delete_service_image(request, id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+    svc = get_object_or_404(Service, id=id)
+    try:
+        if svc.image:
+            svc.image.delete(save=True)
+        return JsonResponse({'ok': True})
+    except Exception as e:
+        logger.exception('delete_service_image error: %s', e)
+        return JsonResponse({'error': 'Could not delete image'}, status=500)
 
 
 @login_required(login_url='/login/')
@@ -964,18 +1608,23 @@ def delete_service(request, id):
 @login_required(login_url='/login/')
 def create_quotation(request):
     customers = Customer.objects.order_by('name')[:50]
+    companies = Company.objects.order_by('name')
     quotations = Quotation.objects.all().order_by('-id')[:50]
     terms_qs = TermCondition.objects.order_by('id')[:20]
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
+    services_qs = Service.objects.order_by('name')
 
     if request.method == "POST":
+        company_id = request.POST.get('company')
         customer_id = request.POST.get('customer')
-        gst_type = request.POST.get('gst_type', 'with_gst')
+        # Accept new `tax_type` values: 'none', 'gst', 'igst'
+        tax_type = request.POST.get('tax_type', 'none')
 
         try:
             discount_in = to_decimal(request.POST.get('discount') or '0')
             discount_in = discount_in.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             discount_in = Decimal('0.00')
         if discount_in < 0:
             discount_in = Decimal('0.00')
@@ -984,31 +1633,64 @@ def create_quotation(request):
         quantities = request.POST.getlist('quantity')
         units = request.POST.getlist('unit')
         prices = request.POST.getlist('price')
+        service_names = request.POST.getlist('service_name')
 
         if not customer_id:
             return render(request, 'create_quotation.html', {
-                'customers': customers, 'quotations': quotations,
+                'customers': customers, 'companies': companies, 'quotations': quotations,
                 'terms': terms_qs, 'error': 'Select a customer',
-                'payment_accounts': PaymentDetails.objects.filter(user=request.user)
+                'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                'services': services_qs,
             })
 
         customer = get_object_or_404(Customer, id=customer_id)
-        quotation = Quotation.objects.create(customer=customer, gst_type=gst_type)
+        # keep legacy `gst_type` in sync for older code paths
+        legacy_gst = 'with_gst' if tax_type == 'gst' else 'without_gst'
+        quotation = Quotation.objects.create(customer=customer, gst_type=legacy_gst, tax_type=tax_type)
+        # attach company if provided
+        if company_id:
+            try:
+                quotation.company = Company.objects.get(id=int(company_id))
+                quotation.save()
+            except Exception as e:
+                logger.exception('Unhandled exception: %s', e)
         subtotal = Decimal('0')
 
-        for desc, qty, unit, price in zip(descriptions, quantities, units, prices):
-            if not desc or qty is None or price is None:
-                continue
-            qty_str = str(qty).strip().replace(',', '.')
-            price_str = str(price).strip().replace(',', '.')
+        service_ids = request.POST.getlist('service_id')
+        widths = request.POST.getlist('width')
+        heights = request.POST.getlist('height')
+        # collect uploaded row images (all inputs named 'row_image')
+        try:
+            uploaded_images = request.FILES.getlist('row_image') if request.FILES else []
+        except Exception:
+            uploaded_images = []
+
+        # Persist rows exactly as posted (do NOT group/merge rows). Each table row
+        # becomes one QuotationItem. This prevents accidental merging of windows
+        # or measurement subitems and ensures manual quantities remain atomic.
+        num_rows = max(len(descriptions), len(quantities), len(prices), len(service_ids), len(service_names))
+        for idx in range(num_rows):
+            desc = (descriptions[idx] if idx < len(descriptions) else '') or ''
+            qty = (quantities[idx] if idx < len(quantities) else '')
+            unit = (units[idx] if idx < len(units) else '') or 'Nos'
+            price = (prices[idx] if idx < len(prices) else '')
+            svc_id = (service_ids[idx] if idx < len(service_ids) else '')
+            svc_name = (service_names[idx] if idx < len(service_names) else '') or ''
+            width = (widths[idx] if idx < len(widths) else None)
+            height = (heights[idx] if idx < len(heights) else None)
+
+            # parse numeric values safely
             try:
-                qty_dec = Decimal(qty_str)
-                price_dec = Decimal(price_str)
+                qty_dec = Decimal(str(qty).strip().replace(',', '.'))
             except Exception:
-                continue
+                qty_dec = Decimal('0')
+            try:
+                price_dec = Decimal(str(price).strip().replace(',', '.'))
+            except Exception:
+                price_dec = Decimal('0')
 
             try:
-                qty_dec = qty_dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                qty_dec = qty_dec.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)
             except Exception:
                 pass
             try:
@@ -1016,26 +1698,137 @@ def create_quotation(request):
             except Exception:
                 pass
 
-            total = (qty_dec * price_dec).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-            subtotal += total
-            QuotationItem.objects.create(
-                quotation=quotation, description=desc,
-                quantity=qty_dec, unit=unit, price=price_dec, total=total
-            )
+            # skip empty rows
+            if qty_dec == 0 and price_dec == 0:
+                continue
+
+            # determine service object if available
+            svc_obj = None
+            if svc_id:
+                try:
+                    svc_obj = Service.objects.filter(id=int(svc_id)).first()
+                except Exception:
+                    svc_obj = None
+            else:
+                # if user typed a service name, try find or create service and attach uploaded image
+                if svc_name:
+                    svc_obj = Service.objects.filter(service_name__iexact=svc_name).first() or Service.objects.filter(name__iexact=svc_name).first()
+                    if not svc_obj:
+                        try:
+                            svc_create_data = {
+                                'service_name': svc_name,
+                                'name': svc_name,
+                                'description': (desc or svc_name),
+                                'default_rate': price_dec if isinstance(price_dec, Decimal) else Decimal('0')
+                            }
+                            svc_obj = Service.objects.create(**svc_create_data)
+                            # attach image if uploaded for this row (matching index)
+                            try:
+                                img = None
+                                # Prefer indexed file field name (row_image_0, row_image_1, ...)
+                                key = f'row_image_{idx}'
+                                if request.FILES and key in request.FILES:
+                                    img = request.FILES.get(key)
+                                else:
+                                    # fallback to legacy getlist('row_image') behaviour
+                                    try:
+                                        imgs = request.FILES.getlist('row_image') if request.FILES else []
+                                    except Exception:
+                                        imgs = []
+                                    if idx < len(imgs):
+                                        img = imgs[idx]
+
+                                if img:
+                                    try:
+                                        fname = get_valid_filename(getattr(img, 'name', f'service_{svc_obj.id}'))
+                                        svc_obj.image.save(fname, img, save=True)
+                                    except Exception as e:
+                                        logger.exception('Failed to save service image for new service %s: %s', svc_name, e)
+                            except Exception as e:
+                                logger.exception('Unexpected error while attaching image to service: %s', e)
+                        except Exception:
+                            svc_obj = None
+
+            # pick description
+            raw_desc = desc if desc else (svc_obj.description if svc_obj and svc_obj.description else (svc_name or (svc_obj.name if svc_obj else 'Item')))
+
+            qty_v = qty_dec.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP) if qty_dec is not None else Decimal('0')
+            rate_v = price_dec if price_dec and price_dec != Decimal('0') else (svc_obj.default_rate if svc_obj else Decimal('0'))
+            try:
+                rate_v = rate_v.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            except Exception:
+                pass
+            total_v = (qty_v * rate_v).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            qi_kwargs = {
+                'quotation': quotation,
+                'description': raw_desc,
+                'quantity': qty_v,
+                'raw_quantity': qty_v,
+                'manual_quantity': False,
+                'unit': unit or (svc_obj.unit if svc_obj else 'Nos'),
+                'rate': rate_v,
+                'total': total_v,
+            }
+            if svc_obj:
+                qi_kwargs['service'] = svc_obj
+                qi_kwargs['service_code'] = svc_obj.service_code or ''
+            if width not in (None, ''):
+                try:
+                    qi_kwargs['width'] = Decimal(str(width).replace(',', '.'))
+                except Exception:
+                    pass
+            if height not in (None, ''):
+                try:
+                    qi_kwargs['height'] = Decimal(str(height).replace(',', '.'))
+                except Exception:
+                    pass
+
+            QuotationItem.objects.create(**qi_kwargs)
+            subtotal += total_v
+
+        # Persist grouped rows (grouping may be empty)
+        grouped = {}
+        for g in grouped.values():
+            # keep quantity precision to 3 decimals (do not force 2-decimal formatting)
+            qty_v = g['quantity'].quantize(Decimal('0.001'), rounding=ROUND_HALF_UP) if g['quantity'] is not None else Decimal('0')
+            total_v = g['total'].quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            rate_v = g['price'] if g['price'] and g['price'] != Decimal('0') else (g['service'].default_rate if g.get('service') else Decimal('0'))
+            qi_kwargs = {
+                'quotation': quotation,
+                'description': g['description'],
+                'quantity': qty_v,
+                'unit': g.get('unit') or 'Nos',
+                'rate': rate_v,
+                'total': total_v,
+            }
+            if g.get('service'):
+                qi_kwargs['service'] = g['service']
+                qi_kwargs['service_code'] = g['service'].service_code or ''
+            if g.get('width') is not None:
+                qi_kwargs['width'] = g.get('width')
+            if g.get('height') is not None:
+                qi_kwargs['height'] = g.get('height')
+
+            QuotationItem.objects.create(**qi_kwargs)
+            subtotal += total_v
 
         quotation.subtotal = subtotal
         quotation.discount = discount_in
 
-        if gst_type == "with_gst":
+        # Apply tax based on selected tax_type
+        if tax_type == 'gst':
             quotation.cgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             quotation.sgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_calc = subtotal + quotation.cgst + quotation.sgst
+        elif tax_type == 'igst':
+            quotation.cgst = Decimal('0.00')
+            quotation.sgst = Decimal('0.00')
+            igst_amt = (subtotal * Decimal('0.18')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_calc = subtotal + igst_amt
         else:
             quotation.cgst = Decimal('0.00')
             quotation.sgst = Decimal('0.00')
-
-        if gst_type == 'with_gst':
-            total_calc = subtotal + quotation.cgst + quotation.sgst
-        else:
             total_calc = subtotal
         total_calc = (total_calc - quotation.discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if total_calc < 0:
@@ -1060,13 +1853,17 @@ def create_quotation(request):
 
         quotation.custom_terms = request.POST.get('custom_terms') or ''
         tac = request.POST.get('terms_and_conditions', '').strip()
-        quotation.terms_and_conditions = tac if tac else default_terms_text
+        # Do not store default/global terms text on the quotation record.
+        # If user provided custom terms, save them; otherwise keep empty
+        # and rely on `quotation.quotation_terms` as the single source of truth.
+        quotation.terms_and_conditions = tac if tac else ''
         quotation.save()
 
         # --- Payment details handling ---
         try:
             include_payment = True if request.POST.get('include_payment_details') in ('on', 'true', '1') else False
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             include_payment = False
 
         payment_action = request.POST.get('payment_action')
@@ -1078,7 +1875,8 @@ def create_quotation(request):
             if sel_id:
                 try:
                     pd_obj = PaymentDetails.objects.get(id=int(sel_id), user=request.user)
-                except Exception:
+                except Exception as e:
+                    logger.exception('Unhandled exception: %s', e)
                     pd_obj = None
 
             # prepare form data for validation
@@ -1095,6 +1893,15 @@ def create_quotation(request):
                 'is_default': True if request.POST.get('make_default') == 'on' else False,
             }
 
+            # Ensure UPI accounts get a sensible account name when none provided
+            try:
+                if (request.POST.get('payment_account_type') or '').lower() == 'upi':
+                    if not (form_data.get('account_name') or '').strip():
+                        form_data['account_name'] = request.POST.get('payment_holder_name') or ''
+            except Exception:
+                # be conservative: do not fail the request on unexpected input
+                pass
+
             form = PaymentDetailsForm(form_data)
 
             # Update existing
@@ -1107,10 +1914,12 @@ def create_quotation(request):
                 else:
                     return render(request, 'create_quotation.html', {
                         'customers': customers,
+                        'companies': companies,
                         'quotations': quotations,
                         'terms': terms_qs,
                         'terms_default': default_terms_text,
                         'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                        'services': services_qs,
                         'error': form.errors.as_text()
                     })
 
@@ -1125,15 +1934,18 @@ def create_quotation(request):
                         if new_pd.is_default:
                             PaymentDetails.objects.filter(user=request.user).exclude(id=new_pd.id).update(is_default=False)
                         pd_obj = new_pd
-                    except Exception:
+                    except Exception as e:
+                        logger.exception('Unhandled exception: %s', e)
                         pd_obj = None
                 else:
                     return render(request, 'create_quotation.html', {
                         'customers': customers,
+                        'companies': companies,
                         'quotations': quotations,
                         'terms': terms_qs,
                         'terms_default': default_terms_text,
                         'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                        'services': services_qs,
                         'error': form.errors.as_text()
                     })
 
@@ -1150,10 +1962,13 @@ def create_quotation(request):
 
     return render(request, 'create_quotation.html', {
         'customers': customers,
+        'companies': companies,
         'quotations': quotations,
         'terms': terms_qs,
         'terms_default': default_terms_text,
         'payment_accounts': PaymentDetails.objects.filter(user=request.user)
+    ,
+        'services': services_qs,
     })
 
 
@@ -1166,11 +1981,32 @@ def view_quotation(request, id):
     )
     items = list(q.items.all())
     ordered_terms = list(q.quotation_terms.all())
+    # Compute tax breakup for display
+    subtotal = getattr(q, 'subtotal', Decimal('0')) or Decimal('0')
+    cgst = sgst = igst = Decimal('0')
+    tt = _q_tax_type(q)
+    if tt == 'gst':
+        cgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'))
+        sgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'))
+        grand_total = subtotal + cgst + sgst - (getattr(q, 'discount', Decimal('0')) or Decimal('0'))
+    elif tt == 'igst':
+        igst = (subtotal * Decimal('0.18')).quantize(Decimal('0.01'))
+        grand_total = subtotal + igst - (getattr(q, 'discount', Decimal('0')) or Decimal('0'))
+    else:
+        grand_total = subtotal - (getattr(q, 'discount', Decimal('0')) or Decimal('0'))
+
+    grand_total = grand_total.quantize(Decimal('0.01')) if isinstance(grand_total, Decimal) else Decimal(str(grand_total)).quantize(Decimal('0.01'))
 
     return render(request, 'view_quotation.html', {
         'q': q,
         'items': items,
         'ordered_terms': ordered_terms,
+        'subtotal': subtotal,
+        'cgst': cgst,
+        'sgst': sgst,
+        'igst': igst,
+        'grand_total': grand_total,
+        'tax_type': tt,
     })
 
 
@@ -1181,15 +2017,21 @@ def edit_quotation(request, id):
     items = list(q.items.all())
     terms_qs = TermCondition.objects.all()
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
+    companies = Company.objects.order_by('name')
 
     if request.method == "POST":
         customer_id = request.POST.get('customer')
-        gst_type = request.POST.get('gst_type', q.gst_type)
+        company_id = request.POST.get('company')
+        # accept new `tax_type` (none/gst/igst); fall back to legacy `gst_type` if needed
+        tax_type = request.POST.get('tax_type', None)
+        if not tax_type:
+            tax_type = ('gst' if getattr(q, 'gst_type', '') == 'with_gst' else 'none')
 
         try:
             discount_in = to_decimal(request.POST.get('discount') or '0')
             discount_in = discount_in.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             discount_in = Decimal('0.00')
         if discount_in < 0:
             discount_in = Decimal('0.00')
@@ -1202,25 +2044,43 @@ def edit_quotation(request, id):
         if customer_id:
             try:
                 q.customer = get_object_or_404(Customer, id=customer_id)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception('Unhandled exception: %s', e)
+        # update company if provided
+        if company_id:
+            try:
+                q.company = Company.objects.get(id=int(company_id))
+            except Exception as e:
+                logger.exception('Unhandled exception: %s', e)
 
         # Delete existing items via queryset (items is a list, re-fetch queryset)
         q.items.all().delete()
         subtotal = Decimal('0')
 
-        for desc, qty, unit, price in zip(descriptions, quantities, units, prices):
-            if not desc and (qty is None or qty == '') and (price is None or price == ''):
-                continue
-            qty_str = str(qty).strip().replace(',', '.')
-            price_str = str(price).strip().replace(',', '.')
+        # Persist edited rows exactly as posted (do NOT group/merge rows). This preserves
+        # per-row identity and prevents accidental aggregation of measurements.
+        service_ids = request.POST.getlist('service_id')
+        service_names = request.POST.getlist('service_name')
+        num_rows = max(len(descriptions), len(quantities), len(units), len(prices), len(service_ids), len(service_names))
+        for idx in range(num_rows):
+            desc = (descriptions[idx] if idx < len(descriptions) else '') or ''
+            qty = (quantities[idx] if idx < len(quantities) else '')
+            unit = (units[idx] if idx < len(units) else '') or 'Nos'
+            price = (prices[idx] if idx < len(prices) else '')
+            svc_id = (service_ids[idx] if idx < len(service_ids) else '')
+            svc_name = (service_names[idx] if idx < len(service_names) else '') or ''
+
             try:
-                qty_dec = Decimal(qty_str)
-                price_dec = Decimal(price_str)
-            except (InvalidOperation, TypeError):
-                continue
+                qty_dec = Decimal(str(qty).strip().replace(',', '.'))
+            except Exception:
+                qty_dec = Decimal('0')
             try:
-                qty_dec = qty_dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                price_dec = Decimal(str(price).strip().replace(',', '.'))
+            except Exception:
+                price_dec = Decimal('0')
+
+            try:
+                qty_dec = qty_dec.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)
             except Exception:
                 pass
             try:
@@ -1228,27 +2088,76 @@ def edit_quotation(request, id):
             except Exception:
                 pass
 
-            total = (qty_dec * price_dec).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-            subtotal += total
-            QuotationItem.objects.create(
-                quotation=q, description=desc,
-                quantity=qty_dec, unit=unit, price=price_dec, total=total
-            )
+            if qty_dec == 0 and price_dec == 0:
+                continue
+
+            svc_obj = None
+            if svc_id:
+                try:
+                    svc_obj = Service.objects.filter(id=int(svc_id)).first()
+                except Exception:
+                    svc_obj = None
+            else:
+                if svc_name:
+                    svc_obj = Service.objects.filter(service_name__iexact=svc_name).first() or Service.objects.filter(name__iexact=svc_name).first()
+                    if not svc_obj:
+                        try:
+                            svc_obj = Service.objects.create(name=svc_name, service_name=svc_name, default_rate=price_dec)
+                            # attach image if uploaded for this row (matching index)
+                            try:
+                                img = None
+                                key = f'row_image_{idx}'
+                                if request.FILES and key in request.FILES:
+                                    img = request.FILES.get(key)
+                                else:
+                                    try:
+                                        imgs = request.FILES.getlist('row_image') if request.FILES else []
+                                    except Exception:
+                                        imgs = []
+                                    if idx < len(imgs):
+                                        img = imgs[idx]
+
+                                if img:
+                                    try:
+                                        fname = get_valid_filename(getattr(img, 'name', f'service_{svc_obj.id}'))
+                                        svc_obj.image.save(fname, img, save=True)
+                                    except Exception as e:
+                                        logger.exception('Failed to save service image for new service (edit flow) %s: %s', svc_name, e)
+                            except Exception as e:
+                                logger.exception('Unexpected error while attaching image to service (edit flow): %s', e)
+                        except Exception:
+                            svc_obj = None
+
+            raw_desc = desc if desc else (svc_obj.description if svc_obj and svc_obj.description else (svc_name or (svc_obj.name if svc_obj else 'Item')))
+
+            qty_v = qty_dec.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP) if qty_dec is not None else Decimal('0')
+            rate_v = price_dec if price_dec and price_dec != Decimal('0') else (svc_obj.default_rate if svc_obj else Decimal('0'))
+            try:
+                rate_v = rate_v.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            except Exception:
+                pass
+            total_v = (qty_v * rate_v).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            qi = QuotationItem.objects.create(quotation=q, description=raw_desc, quantity=qty_v, raw_quantity=qty_v, manual_quantity=False, unit=unit or 'Nos', rate=rate_v, total=total_v, service=svc_obj)
+            subtotal += total_v
 
         q.subtotal = subtotal
-        q.gst_type = gst_type
+        q.tax_type = tax_type
+        q.gst_type = 'with_gst' if tax_type in ('gst', 'igst') else 'without_gst'
         q.discount = discount_in
 
-        if gst_type == "with_gst":
+        if tax_type == 'gst':
             q.cgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             q.sgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_calc = subtotal + q.cgst + q.sgst
+        elif tax_type == 'igst':
+            q.cgst = Decimal('0.00')
+            q.sgst = Decimal('0.00')
+            igst_amt = (subtotal * Decimal('0.18')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            total_calc = subtotal + igst_amt
         else:
             q.cgst = Decimal('0.00')
             q.sgst = Decimal('0.00')
-
-        if gst_type == 'with_gst':
-            total_calc = subtotal + q.cgst + q.sgst
-        else:
             total_calc = subtotal
         total_calc = (total_calc - q.discount).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if total_calc < 0:
@@ -1273,13 +2182,22 @@ def edit_quotation(request, id):
 
         q.custom_terms = (request.POST.get('custom_terms') or '').strip()
         tac = request.POST.get('terms_and_conditions', '').strip()
-        q.terms_and_conditions = tac if tac else (q.terms_and_conditions or default_terms_text)
+        # Preserve explicit user-entered custom terms, but avoid populating
+        # the quotation record with the global default terms. If the user
+        # provided tac, update; otherwise clear default text while keeping
+        # any previously saved custom text.
+        if tac:
+            q.terms_and_conditions = tac
+        else:
+            if not (q.terms_and_conditions and q.terms_and_conditions != default_terms_text):
+                q.terms_and_conditions = ''
         q.save()
 
         # --- Payment details handling for edit ---
         try:
             include_payment = True if request.POST.get('include_payment_details') in ('on', 'true', '1') else False
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             include_payment = False
 
         if include_payment:
@@ -1289,7 +2207,8 @@ def edit_quotation(request, id):
             if sel_id:
                 try:
                     pd_obj = PaymentDetails.objects.get(id=int(sel_id), user=request.user)
-                except Exception:
+                except Exception as e:
+                    logger.exception('Unhandled exception: %s', e)
                     pd_obj = None
 
             if not pd_obj:
@@ -1302,7 +2221,7 @@ def edit_quotation(request, id):
                 branch = (request.POST.get('payment_branch') or '').strip()
                 upi = (request.POST.get('payment_upi_id') or '').strip()
                 phone = (request.POST.get('payment_phone_number') or '').strip()
-                save_it = True if request.POST.get('save_payment') == 'on' else False
+                save_it = True if request.POST.get('payment_action') == 'save' or request.POST.get('save_payment') == 'on' else False
                 if any([acct_name, holder, bank, acc_no, ifsc, branch, upi, phone]):
                     # validate based on account type
                     valid = True
@@ -1319,6 +2238,7 @@ def edit_quotation(request, id):
                         q.save()
                         return render(request, 'create_quotation.html', {
                             'customers': Customer.objects.all(),
+                            'companies': companies,
                             'items': items,
                             'edit': True,
                             'q': q,
@@ -1326,6 +2246,7 @@ def edit_quotation(request, id):
                             'terms': terms_qs,
                             'terms_default': default_terms_text,
                             'term_orders': {qt.term_id: qt.order for qt in q.quotation_terms.all()},
+                            'selected_terms': [qt.term_id for qt in q.quotation_terms.all()],
                             'payment_accounts': PaymentDetails.objects.filter(user=request.user),
                             'error': 'Invalid payment details for selected Account Type. Please fill required fields.'
                         })
@@ -1348,7 +2269,8 @@ def edit_quotation(request, id):
                             PaymentDetails.objects.filter(user=request.user).exclude(id=pd_obj.id).update(is_default=False)
                             pd_obj.is_default = True
                             pd_obj.save()
-                    except Exception:
+                    except Exception as e:
+                        logger.exception('Unhandled exception: %s', e)
                         pd_obj = None
 
             if pd_obj:
@@ -1366,7 +2288,8 @@ def edit_quotation(request, id):
     for t in terms_qs:
         try:
             t.selected_order = term_orders_map.get(t.id, '')
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             t.selected_order = ''
 
     return render(request, 'create_quotation.html', {
@@ -1378,8 +2301,384 @@ def edit_quotation(request, id):
         'terms': terms_qs,
         'terms_default': default_terms_text,
         'term_orders': term_orders_map,
+        'selected_terms': [qt.term_id for qt in q.quotation_terms.all()],
         'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+        'companies': companies,
+        'services': Service.objects.order_by('name'),
     })
+
+
+@login_required(login_url='/login/')
+def update_quotation_item(request):
+    """AJAX endpoint to update a single QuotationItem's dimensions/pricing and
+    recompute quotation totals. Expects JSON: { item_id, width, height, raw_quantity, quantity, price }
+    """
+    import json
+    from .models import QuotationItem, Quotation
+    from .utils import to_decimal
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+
+    try:
+        data = json.loads(request.body.decode('utf-8')) if request.body else request.POST.dict()
+    except Exception:
+        data = request.POST.dict()
+
+    item_id = data.get('item_id')
+    if not item_id:
+        return JsonResponse({'error': 'item_id required'}, status=400)
+
+    try:
+        item = QuotationItem.objects.select_related('quotation').get(id=int(item_id))
+    except QuotationItem.DoesNotExist:
+        return JsonResponse({'error': 'Item not found'}, status=404)
+
+    try:
+        w = to_decimal(data.get('width') or '0')
+        h = to_decimal(data.get('height') or '0')
+        raw_q = to_decimal(data.get('raw_quantity') or '1')
+        qty_in = data.get('quantity')
+        manual_flag = str(data.get('manual_quantity') or data.get('manual') or '').lower() in ('1', 'true', 'yes')
+        price_in = data.get('price')
+
+        # Normalize raw measurement and persist it (3 decimals)
+        try:
+            raw_q = raw_q.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)
+        except Exception:
+            pass
+
+        # BUSINESS RULE: if user provided quantity (manual entry) or explicit manual flag, preserve it exactly
+        if manual_flag or (qty_in not in (None, '', [])):
+            try:
+                qty_dec = to_decimal(qty_in).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)
+            except Exception:
+                qty_dec = Decimal('0')
+        else:
+            # calculate from measurements when no manual quantity provided
+            if w and h:
+                area = (w * h * raw_q)
+            elif w and not h:
+                area = (w * raw_q)
+            else:
+                area = raw_q
+            try:
+                qty_dec = area.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)
+            except Exception:
+                qty_dec = area
+
+        price = to_decimal(price_in or item.rate or '0')
+        try:
+            price_dec = price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        except Exception:
+            price_dec = price
+
+        total = (qty_dec * price_dec).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        # Save changes to item and persist raw/manual flags
+        item.width = w if w != Decimal('0') else (None if data.get('width') in (None, '') else w)
+        item.height = h if h != Decimal('0') else (None if data.get('height') in (None, '') else h)
+        item.quantity = qty_dec
+        item.raw_quantity = raw_q
+        item.manual_quantity = bool(manual_flag)
+        item.rate = price_dec
+        item.total = total
+        item.save()
+
+        # Recompute quotation totals
+        q = item.quotation
+        subtotal = sum((to_decimal(i.total) for i in q.items.all()), Decimal('0'))
+        q.subtotal = subtotal.quantize(Decimal('0.01'))
+        tt = _q_tax_type(q)
+        if tt == 'gst':
+            q.cgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'))
+            q.sgst = (subtotal * Decimal('0.09')).quantize(Decimal('0.01'))
+            total_calc = subtotal + q.cgst + q.sgst
+        elif tt == 'igst':
+            q.cgst = Decimal('0.00')
+            q.sgst = Decimal('0.00')
+            igst_amt = (subtotal * Decimal('0.18')).quantize(Decimal('0.01'))
+            total_calc = subtotal + igst_amt
+        else:
+            q.cgst = Decimal('0.00')
+            q.sgst = Decimal('0.00')
+            total_calc = subtotal
+        total_calc = (total_calc - (q.discount or Decimal('0'))).quantize(Decimal('0.01'))
+        if total_calc < 0:
+            total_calc = Decimal('0.00')
+        q.total = total_calc
+        q.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'item_total': str(item.total),
+            'quotation_subtotal': str(q.subtotal),
+            'quotation_cgst': str(q.cgst),
+            'quotation_sgst': str(q.sgst),
+            'quotation_total': str(q.total),
+        })
+    except Exception as e:
+        logger.exception('update_quotation_item error: %s', e)
+        return JsonResponse({'error': 'Could not update item'}, status=500)
+
+
+@login_required(login_url='/login/')
+def get_service_json(request, id):
+    try:
+        svc = Service.objects.get(id=int(id))
+    except Service.DoesNotExist:
+        return JsonResponse({'error': 'Service not found'}, status=404)
+    return JsonResponse({
+        'id': svc.id,
+        'name': svc.name,
+        'default_rate': str(svc.default_rate),
+        'image_url': svc.image.url if svc.image else '',
+        'thumbnail': svc.thumbnail or ''
+    })
+
+
+@login_required(login_url='/login/')
+def save_quotation_draft(request):
+    """Save entire quotation (draft) via AJAX JSON payload.
+    Expects JSON: { quotation_id (optional), customer_id, company_id, gst_type, discount, items: [{service_id, description, width, height, quantity, unit, price}] }
+    """
+    import json
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+    try:
+        data = json.loads(request.body.decode('utf-8')) if request.body else request.POST.dict()
+    except Exception:
+        data = request.POST.dict()
+
+    qid = data.get('quotation_id')
+    cust_id = data.get('customer_id')
+    company_id = data.get('company_id')
+    tax_type = data.get('tax_type', 'none')
+    discount_in = to_decimal(data.get('discount') or '0')
+
+    if not cust_id:
+        return JsonResponse({'error': 'customer_id required'}, status=400)
+    try:
+        customer = Customer.objects.get(id=int(cust_id))
+    except Exception:
+        return JsonResponse({'error': 'Customer not found'}, status=404)
+
+    if qid:
+        q = Quotation.objects.filter(id=int(qid)).first()
+        if not q:
+            return JsonResponse({'error': 'Quotation not found'}, status=404)
+    else:
+        legacy_gst = 'with_gst' if tax_type == 'gst' else 'without_gst'
+        q = Quotation.objects.create(customer=customer, gst_type=legacy_gst, tax_type=tax_type)
+
+    # attach company
+    if company_id:
+        try:
+            q.company = Company.objects.get(id=int(company_id))
+        except Exception:
+            q.company = None
+
+    # replace items
+    q.items.all().delete()
+    subtotal = Decimal('0')
+    items = data.get('items') or []
+    for it in items:
+        desc = it.get('description') or ''
+        svc_id = it.get('service_id')
+        svc_name = it.get('service_name')
+        width = it.get('width')
+        height = it.get('height')
+        qty_in = it.get('quantity') or it.get('raw_quantity') or '0'
+        unit = it.get('unit') or 'Nos'
+        price_in = it.get('price') or '0'
+
+        try:
+            qty = to_decimal(qty_in)
+            price = to_decimal(price_in)
+        except Exception:
+            qty = Decimal('0')
+            price = Decimal('0')
+
+        try:
+            qty_q = qty.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP)
+        except Exception:
+            qty_q = qty
+        try:
+            price_q = price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        except Exception:
+            price_q = price
+
+        total = (qty_q * price_q).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        subtotal += total
+
+        manual_flag = str(it.get('manual_quantity') or it.get('manual') or '').lower() in ('1', 'true', 'yes')
+
+        qi = QuotationItem.objects.create(
+            quotation=q,
+            description=desc,
+            quantity=qty_q,
+            raw_quantity=qty_q,
+            manual_quantity=bool(manual_flag),
+            unit=unit,
+            rate=price_q,
+            total=total
+        )
+        if svc_id:
+            try:
+                s = Service.objects.get(id=int(svc_id))
+                qi.service = s
+                qi.service_code = s.service_code or ''
+            except Exception:
+                pass
+        elif svc_name:
+            try:
+                name_clean = str(svc_name).strip()
+                if name_clean:
+                    s, created = Service.objects.get_or_create(name=name_clean, defaults={'default_rate': price, 'unit': unit or 'Sq Ft'})
+                    qi.service = s
+                    qi.service_code = s.service_code or ''
+            except Exception:
+                pass
+        try:
+            if width not in (None, ''):
+                qi.width = to_decimal(width)
+        except Exception:
+            pass
+        try:
+            if height not in (None, ''):
+                qi.height = to_decimal(height)
+        except Exception:
+            pass
+        qi.save()
+
+    q.subtotal = subtotal.quantize(Decimal('0.01'))
+    q.discount = discount_in.quantize(Decimal('0.01'))
+    q.tax_type = tax_type
+    q.gst_type = 'with_gst' if tax_type in ('gst', 'igst') else 'without_gst'
+    if tax_type == 'gst':
+        q.cgst = (q.subtotal * Decimal('0.09')).quantize(Decimal('0.01'))
+        q.sgst = (q.subtotal * Decimal('0.09')).quantize(Decimal('0.01'))
+        total_calc = q.subtotal + q.cgst + q.sgst
+    elif tax_type == 'igst':
+        q.cgst = Decimal('0.00')
+        q.sgst = Decimal('0.00')
+        igst_amt = (q.subtotal * Decimal('0.18')).quantize(Decimal('0.01'))
+        total_calc = q.subtotal + igst_amt
+    else:
+        q.cgst = Decimal('0.00')
+        q.sgst = Decimal('0.00')
+        total_calc = q.subtotal
+    total_calc = (total_calc - q.discount).quantize(Decimal('0.01'))
+    if total_calc < 0:
+        total_calc = Decimal('0.00')
+    q.total = total_calc
+    q.save()
+
+    return JsonResponse({'status': 'success', 'quotation_id': q.id, 'subtotal': str(q.subtotal), 'total': str(q.total)})
+
+
+@login_required(login_url='/login/')
+def ajax_save_payment(request):
+    """AJAX endpoint to create or update a PaymentDetails record.
+    Expects POST fields matching PaymentDetailsForm. Returns JSON with new id and data.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=400)
+
+    # accept form-encoded or JSON body
+    if request.content_type and request.content_type.startswith('application/json'):
+        try:
+            import json as _json
+            data = _json.loads(request.body.decode('utf-8') or '{}')
+        except Exception:
+            data = request.POST.dict() if request.POST else {}
+    else:
+        data = request.POST.dict() if request.POST else {}
+    logger.debug('ajax_save_payment incoming data: %s', {k: (v if len(str(v))<200 else '<<long>>') for k,v in data.items()})
+    pay_id = data.get('payment_id') or data.get('id')
+
+    form_data = {
+        'account_type': data.get('payment_account_type') or data.get('account_type'),
+        'account_name': data.get('payment_account_name') or data.get('account_name'),
+        'holder_name': data.get('payment_holder_name') or data.get('holder_name'),
+        'bank_name': data.get('payment_bank_name') or data.get('bank_name'),
+        'account_number': data.get('payment_account_number') or data.get('account_number'),
+        'ifsc_code': data.get('payment_ifsc_code') or data.get('ifsc_code'),
+        'branch': data.get('payment_branch') or data.get('branch'),
+        'upi_id': data.get('payment_upi_id') or data.get('upi_id'),
+        'phone_number': data.get('payment_phone_number') or data.get('phone_number'),
+        'is_default': True if data.get('make_default') in ('on', 'true', '1') else False,
+    }
+
+    form = PaymentDetailsForm(form_data)
+    # Debug: also print to stdout so devserver console shows payload/errors
+    try:
+        print('ajax_save_payment incoming data:', {k: (v if len(str(v))<200 else '<<long>>') for k,v in data.items()})
+    except Exception:
+        pass
+    if not form.is_valid():
+        logger.debug('ajax_save_payment form errors: %s', form.errors)
+        try:
+            print('ajax_save_payment form errors:', form.errors)
+        except Exception:
+            pass
+        # serialize errors to plain lists
+        errs = {k: [str(x) for x in v] for k, v in form.errors.items()}
+        nonf = [str(x) for x in form.non_field_errors()]
+        return JsonResponse({'status': 'error', 'errors': errs, 'non_field_errors': nonf}, status=400)
+
+    try:
+        if pay_id:
+            pd = PaymentDetails.objects.filter(id=int(pay_id), user=request.user).first()
+            if not pd:
+                return JsonResponse({'status': 'error', 'message': 'Payment record not found'}, status=404)
+            for k, v in form.cleaned_data.items():
+                setattr(pd, k, v)
+            pd.user = request.user
+            pd.save()
+            if pd.is_default:
+                PaymentDetails.objects.filter(user=request.user).exclude(id=pd.id).update(is_default=False)
+            saved = pd
+            action = 'updated'
+        else:
+            new_pd = form.save(commit=False)
+            new_pd.user = request.user
+            new_pd.is_default = form.cleaned_data.get('is_default', False)
+            new_pd.save()
+            if new_pd.is_default:
+                PaymentDetails.objects.filter(user=request.user).exclude(id=new_pd.id).update(is_default=False)
+            saved = new_pd
+            action = 'created'
+
+        payload = {
+            'status': 'success',
+            'id': saved.id,
+            'account_name': saved.account_name,
+            'holder_name': saved.holder_name,
+            'account_type': saved.account_type,
+            'bank_name': saved.bank_name,
+            'account_number': saved.account_number,
+            'ifsc_code': saved.ifsc_code,
+            'branch': saved.branch,
+            'upi_id': saved.upi_id,
+            'phone_number': saved.phone_number,
+            'action': action,
+        }
+        return JsonResponse(payload)
+    except Exception as e:
+        logger.exception('ajax_save_payment error: %s', e)
+        return JsonResponse({'status': 'error', 'message': 'Server error'}, status=500)
+
+
+@login_required(login_url='/login/')
+@require_POST
+def delete_payment_account(request, id):
+    try:
+        account = PaymentDetails.objects.get(id=id, user=request.user)
+        account.delete()
+        return JsonResponse({"success": True})
+    except PaymentDetails.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Account not found"}, status=404)
 
 
 # ================= LIST PAGE =================
@@ -1407,420 +2706,992 @@ def delete_quotation(request, id):
 
 
 # ================= QUOTATION PDF =================
+
 @login_required(login_url='/login/')
 def quotation_pdf(request, id):
     from reportlab.platypus import (
         SimpleDocTemplate, Table, TableStyle, Paragraph,
-        Spacer, HRFlowable, Image, KeepTogether
+        Spacer, HRFlowable, Image, KeepTogether, PageBreak
     )
     from reportlab.lib import colors
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
     from reportlab.lib.units import inch
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from datetime import datetime as _dt
-    import io
+    import html as _html
+    import io, os
 
     today_date = _dt.now().strftime("%d-%m-%Y")
-    q = get_object_or_404(Quotation, id=id)
-    items = QuotationItem.objects.filter(quotation=q).select_related('quotation')
+    q          = get_object_or_404(Quotation, id=id)
+    items      = QuotationItem.objects.filter(quotation=q).select_related('quotation')
 
     customer_name = re.sub(r'[^A-Za-z0-9]+', '_', q.customer.name)
-    filename = f"{customer_name}_{today_date}.pdf"
+    filename      = f"{customer_name}_{today_date}.pdf"
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
+    # ── Page setup ────────────────────────────────────────────────────────────
+    PAGE_SIZE = landscape(A4)
     doc = SimpleDocTemplate(
         response,
-        pagesize=A4,
-        leftMargin=40, rightMargin=40,
-        topMargin=32, bottomMargin=32,
+        pagesize=PAGE_SIZE,
+        leftMargin=24, rightMargin=24,
+        topMargin=40, bottomMargin=40,   # extra bottom for footer
     )
-    page_w = doc.width
+    page_w     = doc.width
+    page_full_w = PAGE_SIZE[0]           # real page width (including margins)
+    page_full_h = PAGE_SIZE[1]
 
-    font_name, _ = _load_unicode_font()
+    # ── Premium font registration ─────────────────────────────────────────────
+    _FONT_PATHS = {
+        'Poppins-Bold':    '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
+        'Poppins-Medium':  '/usr/share/fonts/truetype/google-fonts/Poppins-Medium.ttf',
+        'Poppins':         '/usr/share/fonts/truetype/google-fonts/Poppins-Regular.ttf',
+        'Caladea':         '/usr/share/fonts/truetype/crosextra/Caladea-Regular.ttf',
+        'Caladea-Bold':    '/usr/share/fonts/truetype/crosextra/Caladea-Bold.ttf',
+        'LibSerif-Bold':   '/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf',
+        'LibSerif':        '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
+    }
+    _registered = {}
+    for fname, fpath in _FONT_PATHS.items():
+        try:
+            if os.path.exists(fpath) and fname not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont(fname, fpath))
+            _registered[fname] = fname if os.path.exists(fpath) else None
+        except Exception:
+            _registered[fname] = None
 
-    NAVY        = colors.HexColor('#0F2044')
-    ACCENT      = colors.HexColor('#2563EB')
-    SLATE_LIGHT = colors.HexColor('#F1F5F9')
-    BORDER      = colors.HexColor('#CBD5E1')
+    def _f(preferred, fallback='Helvetica'):
+        """Return font name if registered, else fallback."""
+        return preferred if _registered.get(preferred) else fallback
+
+    # Resolved font aliases
+    F_COMPANY   = _f('LibSerif-Bold',  'Helvetica-Bold')   # company name
+    F_HEADING   = _f('Poppins-Bold',   'Helvetica-Bold')   # section headings
+    F_SUBHEAD   = _f('Poppins-Medium', 'Helvetica')        # sub-headings / pills
+    F_BODY      = _f('Caladea',        'Helvetica')        # body text
+    F_BODY_BOLD = _f('Caladea-Bold',   'Helvetica-Bold')   # body bold
+    F_UNICODE   = _f('Caladea',        None) or (lambda: (lambda fn, _: fn)(*_load_unicode_font()))()
+
+    # Also keep existing unicode font for item descriptions (guaranteed to render)
+    unicode_font, _ = _load_unicode_font()
+
+    # ── Colour palette ────────────────────────────────────────────────────────
+    BROWN       = colors.HexColor('#4A3428')
+    BROWN_LIGHT = colors.HexColor('#6B4C38')
+    ACCENT      = colors.HexColor('#A67C52')
+    ACCENT_PALE = colors.HexColor('#C9A97A')
+    BG          = colors.HexColor('#FAF7F2')
+    CREAM_CARD  = colors.HexColor('#F3EDE4')
+    CREAM_DEEP  = colors.HexColor('#EDE3D6')
+    BORDER      = colors.HexColor('#DDD5CB')
+    TEXT        = colors.HexColor('#1F1F1F')
+    TEXT2       = colors.HexColor('#6B6B6B')
+    TEXT3       = colors.HexColor('#9A8E84')
     _WHITE      = colors.HexColor('#FFFFFF')
-    TEXT        = colors.HexColor('#0F172A')
-    TEXT2       = colors.HexColor('#334155')
-    TEXT3       = colors.HexColor('#64748B')
+    GREEN_OK    = colors.HexColor('#2D7A4F')
+    RED_NO      = colors.HexColor('#B91C1C')
 
+    # ── Style factory ─────────────────────────────────────────────────────────
     def ps(name, font=None, size=9, color=TEXT, align=TA_LEFT, leading=None, **kw):
-        f = font or font_name
-        return ParagraphStyle(name, fontName=f, fontSize=size, textColor=color,
-                              alignment=align, leading=leading or size * 1.45, **kw)
+        f = font or F_BODY
+        return ParagraphStyle(
+            name, fontName=f, fontSize=size, textColor=color,
+            alignment=align, leading=leading or size * 1.55, **kw
+        )
 
+    # ── Try registering Times New Roman (existing helper) ─────────────────────
     try:
         tnr_font = _register_times_new_roman()
-    except Exception:
+    except Exception as e:
+        logger.exception('TNR registration: %s', e)
         tnr_font = None
+    # Override with Liberation Serif Bold (cleaner)
+    co_name_font = F_COMPANY if _registered.get('LibSerif-Bold') else (tnr_font or 'Helvetica-Bold')
 
-    s_co_name  = ps('co_name',  tnr_font or font_name, 22, _WHITE,  TA_LEFT, 26)
-    s_tagline  = ps('tagline',  'Helvetica',  9, colors.HexColor('#93C5FD'), TA_LEFT, 12, spaceBefore=2)
-    s_info_hdr = ps('info_hdr', 'Helvetica',  8, colors.HexColor('#94A3B8'), TA_LEFT, 11)
-    s_doc_title = ps('doc_title', 'Helvetica-Bold', 18, _WHITE, TA_RIGHT, 22)
-    s_doc_sub  = ps('doc_sub',  'Helvetica',  9, colors.HexColor('#93C5FD'), TA_RIGHT, 12)
-    s_pill_lbl = ps('pill_lbl', 'Helvetica',  7.5, TEXT3, TA_LEFT, 10)
-    s_pill_val = ps('pill_val', 'Helvetica-Bold', 10, TEXT, TA_LEFT, 14)
-    s_sec_lbl  = ps('sec_lbl',  'Helvetica-Bold', 7.5, ACCENT, TA_LEFT, 10,
-                    spaceAfter=2, letterSpacing=1.2)
-    s_client_n = ps('client_n', 'Helvetica-Bold', 12, TEXT, TA_LEFT, 16)
-    s_client_s = ps('client_s', 'Helvetica', 9, TEXT2, TA_LEFT, 13)
-    s_th       = ps('th',  'Helvetica-Bold', 9, _WHITE, TA_CENTER, 11)
-    s_th_r     = ps('th_r', 'Helvetica-Bold', 9, _WHITE, TA_RIGHT, 11)
-    s_td       = ps('td',  font_name, 9, TEXT,  TA_LEFT,   13)
-    s_td_c     = ps('td_c', font_name, 9, TEXT, TA_CENTER, 13)
-    s_td_r     = ps('td_r', font_name, 9, TEXT, TA_RIGHT,  13)
-    s_sum_lbl  = ps('sum_lbl', font_name,  9, TEXT2, TA_LEFT,  13)
-    s_sum_val  = ps('sum_val', font_name,  9, TEXT,  TA_RIGHT, 13)
-    s_gtl      = ps('gtl', 'Helvetica-Bold', 10, _WHITE, TA_LEFT,  14)
-    s_gtv      = ps('gtv', font_name, 11, _WHITE, TA_RIGHT, 15)
-    s_terms    = ps('terms', font_name, 9, TEXT2, TA_LEFT, 14, leftIndent=14, spaceAfter=4)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # PARAGRAPH STYLES
+    # ═══════════════════════════════════════════════════════════════════════════
 
+    # ── Header ────────────────────────────────────────────────────────────────
+    s_co_name   = ps('co_name',   co_name_font,  28, _WHITE, TA_LEFT,  33)
+    s_tagline   = ps('tagline',   F_SUBHEAD,     9,  ACCENT_PALE, TA_LEFT, 13, spaceBefore=1)
+    s_info_hdr  = ps('info_hdr',  F_BODY,        8.5, colors.HexColor('#C4B5A8'), TA_LEFT, 13)
+    s_doc_title = ps('doc_title', F_HEADING,     24, _WHITE, TA_RIGHT, 28)
+    s_doc_sub   = ps('doc_sub',   F_SUBHEAD,     9,  ACCENT_PALE, TA_RIGHT, 13)
+    s_doc_meta  = ps('doc_meta',  F_BODY,        9,  _WHITE, TA_RIGHT, 14)
+
+    # ── Client card ───────────────────────────────────────────────────────────
+    s_sec_lbl   = ps('sec_lbl',   F_HEADING,  7.5, ACCENT, TA_LEFT, 11,
+                     spaceAfter=3, letterSpacing=1.8)
+    s_client_n  = ps('client_n',  F_BODY_BOLD, 14, TEXT,   TA_LEFT, 19)
+    s_client_s  = ps('client_s',  F_BODY,      9.5, TEXT2, TA_LEFT, 14)
+    s_pill_lbl  = ps('pill_lbl',  F_BODY,      7.5, TEXT2, TA_LEFT, 11)
+    s_pill_val  = ps('pill_val',  F_BODY_BOLD, 10,  TEXT,  TA_LEFT, 14)
+
+    # ── Items table ───────────────────────────────────────────────────────────
+    s_th        = ps('th',        F_HEADING,  8.5, _WHITE, TA_CENTER, 12)
+    s_th_r      = ps('th_r',      F_HEADING,  8.5, _WHITE, TA_RIGHT,  12)
+    s_td        = ps('td',        unicode_font, 9, TEXT,   TA_LEFT,   13)
+    s_td_c      = ps('td_c',      unicode_font, 9, TEXT,   TA_CENTER, 13)
+    s_td_r      = ps('td_r',      unicode_font, 9, TEXT,   TA_RIGHT,  13)
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    s_sum_lbl   = ps('sum_lbl',   F_BODY,      9,  TEXT2,  TA_LEFT,  13)
+    s_sum_val   = ps('sum_val',   unicode_font, 9, TEXT,   TA_RIGHT, 13)
+    s_gtl       = ps('gtl',       F_HEADING,  11, _WHITE, TA_LEFT,   15)
+    s_gtv       = ps('gtv',       unicode_font,12, _WHITE, TA_RIGHT, 16)
+
+    # ── Terms / Why Choose ───────────────────────────────────────────────────
+    s_terms     = ps('terms',     F_BODY, 8.5, TEXT2, TA_LEFT, 14,
+                     leftIndent=14, spaceAfter=2)
+    s_terms_num = ps('tn',        F_HEADING, 8.5, ACCENT, TA_LEFT, 13)
+    s_wcu_item  = ps('wcu',       F_BODY, 9, TEXT, TA_LEFT, 14, spaceAfter=1)
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
     def P(text, style):
-        return Paragraph(text, style)
+        return Paragraph(str(text) if text is not None else '', style)
 
     def format_inr_local(n):
-        s = f"{to_decimal(n):.2f}"
-        integer, dec = s.split(".")
-        if len(integer) > 3:
-            last3 = integer[-3:]
-            rest = integer[:-3]
-            chunks = ""
-            while len(rest) > 2:
-                chunks = "," + rest[-2:] + chunks
-                rest = rest[:-2]
-            integer = rest + chunks + "," + last3
-        return f"\u20b9 {integer}.{dec}"
+        try:
+            s = f"{Decimal(str(n)):.2f}"
+            integer, dec = s.split(".")
+            if len(integer) > 3:
+                last3  = integer[-3:]
+                rest   = integer[:-3]
+                chunks = ""
+                while len(rest) > 2:
+                    chunks = "," + rest[-2:] + chunks
+                    rest   = rest[:-2]
+                integer = rest + chunks + "," + last3
+            return f"\u20b9\u00A0{integer}.{dec}"
+        except Exception:
+            return "\u20b9\u00A00.00"
 
-    logo_img = _load_logo_image(width=0.78 * inch, height=0.78 * inch, circular=True)
-    elements = []
+    # ══════════════════════════════════════════════════════════════════════════
+    # COMPANY DATA
+    # ══════════════════════════════════════════════════════════════════════════
+    comp = getattr(q, 'company', None)
+    if comp:
+        logo_name   = comp.logo_path or 'logo.png'
+        co_name_txt = (comp.name or 'SATYAM ALUMINIUM').upper()
+        tagline_txt = comp.tagline or ''
+        address_txt = comp.address or ''
+        contact_txt = comp.phone or ''
+        email_txt   = comp.email or ''
+        gst_txt     = comp.gstin or ''
+    else:
+        logo_name   = 'logo.png'
+        co_name_txt = 'SATYAM ALUMINIUM'
+        tagline_txt = ''
+        address_txt = ("Shop No. 4, Ganesh Plaza, Beside Triveni Bakery, "
+                       "Nehru Nagar, Gokul Road, Hubballi\u2013 580030")
+        contact_txt = "+91 8073709478 | +91 9448442717 | +91 9591291155"
+        email_txt   = 'satyamaluminiumhubli@gmail.com'
+        gst_txt     = '29ADRPR1399D1ZX'
 
-    # 1. HEADER BAND
-    left_info = Table([
-        [P("SATYAM ALUMINIUM", s_co_name)],
-        [P("PRECISION\u00A0\u2022\u00A0QUALITY\u00A0\u2022\u00A0EXCELLENCE", s_tagline)],
-        [Spacer(1, 4)],
-        [P("<font size='7.5' color='#94A3B8'>"
-           "\u25cf\u00A0 Shop No. 4, Ganesh Plaza, Beside Triveni Bakery, "
-           "Nehru Nagar, Gokul Road, Hubballi\u2013580030</font>", s_info_hdr)],
-        [P("<font size='7.5' color='#94A3B8'>"
-           "\u260e\u00A0 +91\u00A08073709478\u2002|\u2002+91\u00A09448442717"
-           "\u2002|\u2002+91\u00A09591291155\u2002\u00A0"
-           "\u2709\u00A0satyamaluminiumhubli@gmail.com</font>", s_info_hdr)],
-    ], colWidths=[page_w * 0.55])
-    left_info.setStyle(TableStyle([
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
+    logo_img = _load_logo_image(logo_name, width=1.0 * inch, height=1.0 * inch, circular=True)
 
-    right_doc = Table([
-        [P("QUOTATION", s_doc_title)],
-        [P(f"#{q.id:04d}", s_doc_sub)],
-        [Spacer(1, 6)],
-        [P(f"<font size='8' color='#93C5FD'>Date:\u00A0</font>"
-           f"<font size='9' color='#FFFFFF'><b>{today_date}</b></font>", s_doc_sub)],
-        [P(f"<font size='8' color='#93C5FD'>GSTIN:\u00A0</font>"
-           f"<font size='9' color='#FFFFFF'><b>29ADRP1399D1ZX</b></font>", s_doc_sub)],
-    ], colWidths=[page_w * 0.35 - 0.88 * inch])
-    right_doc.setStyle(TableStyle([
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'), ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-    ]))
+    # ══════════════════════════════════════════════════════════════════════════
+    # CUSTOM CANVAS — watermark & footer drawn AFTER page content (on top)
+    # ══════════════════════════════════════════════════════════════════════════
+    # ReportLab's onFirstPage/onLaterPages fire BEFORE flowables are painted.
+    # To render the watermark on top of all content we override showPage() in
+    # a Canvas subclass so our drawing code runs just before the page is
+    # finalised — guaranteeing it sits above every flowable.
 
-    header_inner = Table(
-        [[logo_img, left_info, right_doc]],
-        colWidths=[0.88 * inch, page_w * 0.55, page_w * 0.35 - 0.88 * inch]
+    _wm_font    = co_name_font
+    _wm_text    = co_name_txt
+    _wm_tagline = ''
+    _wm_gst     = gst_txt
+    # Mutable holder so the subclass can read the total set after pass-1
+    _total_holder = [1]
+
+    # Capture closure variables into the class namespace via default args
+    _BROWN      = BROWN
+    _ACCENT     = ACCENT
+    _ACCENT_PALE= ACCENT_PALE
+    _WHITE_c    = _WHITE
+    _F_HEADING  = F_HEADING
+    _F_BODY     = F_BODY
+    _pw         = page_full_w
+    _ph         = page_full_h
+
+    from reportlab.pdfgen.canvas import Canvas as _BaseCanvas
+
+    class _LuxuryCanvas(_BaseCanvas):
+        """Custom canvas that paints watermark + footer on top of each page."""
+
+        def showPage(self):
+            """Called by ReportLab when a page is complete. Draw overlays first."""
+            self._paint_overlays()
+            super().showPage()
+
+        def save(self):
+            """Called once at the very end. Draw overlays for the last page."""
+            self._paint_overlays()
+            super().save()
+
+        def _paint_overlays(self):
+            pw   = _pw
+            ph   = _ph
+            lm   = 24
+            self.saveState()
+
+            # ── Watermark (drawn on top so it's visible over content) ─────────
+            wm_size = 68
+            self.setFont(_wm_font, wm_size)
+            self.setFillColor(_BROWN)
+            self.setFillAlpha(0.07)          # 7 % — visible but non-intrusive
+            self.translate(pw / 2, ph / 2)
+            self.rotate(30)
+            tw = self.stringWidth(_wm_text, _wm_font, wm_size)
+            self.drawString(-tw / 2, 0, _wm_text)
+            self.rotate(-30)
+            self.translate(-pw / 2, -ph / 2)
+
+            # ── Footer band ───────────────────────────────────────────────────
+            self.setFillAlpha(1.0)
+            foot_h = 26
+            foot_y = 8
+
+            # Brown background rectangle
+            self.setFillColor(_BROWN)
+            self.roundRect(lm, foot_y, pw - lm * 2, foot_h, 3, fill=1, stroke=0)
+
+            # Gold top rule
+            self.setStrokeColor(_ACCENT)
+            self.setLineWidth(1.5)
+            self.line(lm, foot_y + foot_h, pw - lm, foot_y + foot_h)
+
+            page_num    = self.getPageNumber()
+            total_pages = _total_holder[0]
+
+            # Left: company name
+            self.setFillColor(_WHITE_c)
+            self.setFont(_F_HEADING, 7.5)
+            self.drawString(lm + 10, foot_y + 10, _wm_text)
+
+            tag_display = _wm_tagline.strip() if _wm_tagline else ""
+            if tag_display:
+                self.setFillColor(_ACCENT_PALE)
+                self.setFont(_F_BODY, 6.5)
+                self.drawString(lm + 10, foot_y + 3.5, tag_display)
+
+            # Centre: system note
+            self.setFillColor(colors.HexColor('#C4B5A8'))
+            self.setFont(_F_BODY, 6.5)
+            note   = (f"System-generated quotation \u2014 no signature required"
+                      f"  |  GSTIN: {_wm_gst}")
+            note_w = self.stringWidth(note, _F_BODY, 6.5)
+            self.drawString((pw - note_w) / 2, foot_y + 7, note)
+
+            # Right: page number
+            self.setFillColor(_ACCENT_PALE)
+            self.setFont(_F_HEADING, 7.5)
+            pg_txt = f"Page {page_num} of {total_pages}"
+            pg_w   = self.stringWidth(pg_txt, _F_HEADING, 7.5)
+            self.drawString(pw - lm - pg_w - 10, foot_y + 10, pg_txt)
+
+            self.restoreState()
+
+    # ── Two-pass build: pass-1 counts pages, pass-2 renders with total ────────
+    import io as _io_mod
+
+    _buf1      = _io_mod.BytesIO()
+    _doc_count = SimpleDocTemplate(
+        _buf1,
+        pagesize=PAGE_SIZE,
+        leftMargin=24, rightMargin=24,
+        topMargin=40, bottomMargin=40,
     )
-    header_inner.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('LEFTPADDING', (1, 0), (1, 0), 12),
-    ]))
 
-    header_band = Table([[header_inner]], colWidths=[page_w])
-    header_band.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), NAVY),
-        ('LEFTPADDING', (0, 0), (-1, -1), 16), ('RIGHTPADDING', (0, 0), (-1, -1), 16),
-        ('TOPPADDING', (0, 0), (-1, -1), 16), ('BOTTOMPADDING', (0, 0), (-1, -1), 16),
-        ('ROUNDEDCORNERS', [8]),
-    ]))
-    elements.append(header_band)
-    elements.append(Spacer(1, 14))
+    # ══════════════════════════════════════════════════════════════════════════
+    # BUILD FLOWABLES  (defined as a function so we can call twice)
+    # ══════════════════════════════════════════════════════════════════════════
+    def _build_elements():
+        elems = []
 
-    # 2. CLIENT CARD
-    gst_label = "With GST (18%)" if q.gst_type == "with_gst" else "Without GST"
-    gst_color = "#059669" if q.gst_type == "with_gst" else "#DC2626"
-    left_w  = page_w * 0.62
-    right_w = page_w * 0.38
+        # ══════════════════════════════════════════════════════════════════════
+        # 1. HEADER BAND
+        # ══════════════════════════════════════════════════════════════════════
 
-    bill_block = Table([
-        [P("BILL TO", s_sec_lbl)],
-        [P(q.customer.name, s_client_n)],
-        [P(q.customer.address or "\u2014", s_client_s)],
-    ], colWidths=[left_w - 28])
-    bill_block.setStyle(TableStyle([
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
+        # ── Left: logo + company info ─────────────────────────────────────────
+        # (divider column removed) — kept layout without the vertical gold line
 
-    details_block = Table([
-        [P("QUOTATION DETAILS", s_sec_lbl)],
-        [Table([
-            [P("Quotation No.", s_pill_lbl), P(f"Q-{q.id}", s_pill_val)],
-            [P("GST Type", s_pill_lbl),
+        company_text = Table([
+            [P(co_name_txt, s_co_name)],
+            [P(tagline_txt, s_tagline)] if tagline_txt else [Spacer(1, 2)],
+            [Spacer(1, 6)],
+            [P(f"<font size='8.5' color='#C4B5A8'>"
+               f"\u00A0{address_txt}</font>", s_info_hdr)],
+            [P(f"<font size='8.5' color='#C4B5A8'>"
+               f"&#9990;\u00A0{contact_txt}"
+               f"\u2002\u00B7\u2002"
+               f"&#9993;\u00A0{email_txt}</font>", s_info_hdr)],
+        ], colWidths=[page_w * 0.56])
+        company_text.setStyle(TableStyle([
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
+            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+        ]))
+
+        # ── Right: QUOTATION + meta box ───────────────────────────────────────
+        meta_w = page_w * 0.33 - 1.05 * inch
+
+        # Small info rows: Date and GSTIN rendered as two-cell mini table
+        meta_rows = Table([
+            [P("<font size='7.5' color='#C4B5A8'>DATE</font>",  s_doc_sub),
+             P(f"<b>{today_date}</b>",
+               ps('dv', F_BODY_BOLD, 9, _WHITE, TA_RIGHT, 13))],
+            [P("<font size='7.5' color='#C4B5A8'>GSTIN</font>", s_doc_sub),
+             P(f"<b>{gst_txt}</b>",
+               ps('gv', F_BODY_BOLD, 8, _WHITE, TA_RIGHT, 12))],
+        ], colWidths=[meta_w * 0.22, meta_w * 0.78])
+        meta_rows.setStyle(TableStyle([
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
+            ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ]))
+
+        right_doc = Table([
+            [P("QUOTATION", s_doc_title)],
+            [P(f"<font color='#A67C52'>&#9670;</font> #{q.id:04d}", s_doc_sub)],
+            [Spacer(1, 8)],
+            [meta_rows],
+        ], colWidths=[meta_w])
+        right_doc.setStyle(TableStyle([
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
+            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN',        (0, 0), (-1, -1), 'RIGHT'),
+        ]))
+
+        # ── Assemble header inner: logo | divider | company text | right doc ──
+        header_inner = Table(
+            [[logo_img, Spacer(18, 1),
+              company_text, right_doc]],
+            colWidths=[1.05 * inch, 18,
+                       page_w * 0.56, meta_w]
+        )
+        header_inner.setStyle(TableStyle([
+            ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 0),
+        ]))
+
+        header_band = Table([[header_inner]], colWidths=[page_w])
+        header_band.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), BROWN),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 18),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 18),
+            ('TOPPADDING',    (0, 0), (-1, -1), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 14),
+            ('ROUNDEDCORNERS', [8]),
+            ('LINEBELOW',     (0, 0), (-1, -1), 3, ACCENT),
+        ]))
+        elems.append(header_band)
+        elems.append(Spacer(1, 12))
+
+        # ══════════════════════════════════════════════════════════════════════
+        # 2. CLIENT / QUOTATION INFO CARD
+        # ══════════════════════════════════════════════════════════════════════
+        tt = _q_tax_type(q)
+        if tt == 'gst':
+            gst_label = "GST (18%)"
+            gst_color = "#2D7A4F"
+        elif tt == 'igst':
+            gst_label = "IGST (18%)"
+            gst_color = "#2D7A4F"
+        else:
+            gst_label = "Without Tax"
+            gst_color = "#B91C1C"
+
+        left_w  = page_w * 0.60
+        right_w = page_w * 0.40
+
+        bill_block = Table([
+            [P("BILL TO", s_sec_lbl)],
+            [P(q.customer.name, s_client_n)],
+            [P(q.customer.address or "\u2014", s_client_s)],
+        ], colWidths=[left_w - 32])
+        bill_block.setStyle(TableStyle([
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 3),
+            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+        ]))
+
+        pill_w = (right_w - 34) / 2
+        details_inner = Table([
+            [P("Quotation No.", s_pill_lbl), P("GST Type",  s_pill_lbl)],
+            [P(f"Q-{q.id}",     s_pill_val),
              P(f'<font color="{gst_color}"><b>{gst_label}</b></font>', s_pill_val)],
-        ], colWidths=[(right_w - 28) * 0.45, (right_w - 28) * 0.55])],
-    ], colWidths=[right_w - 28])
-    details_block.setStyle(TableStyle([
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
+        ], colWidths=[pill_w, pill_w])
+        details_inner.setStyle(TableStyle([
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
+            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+        ]))
 
-    info_card = Table([[bill_block, details_block]], colWidths=[left_w, right_w])
-    info_card.setStyle(TableStyle([
-        ('BOX', (0, 0), (-1, -1), 0.75, BORDER),
-        ('LINEAFTER', (0, 0), (0, -1), 0.5, BORDER),
-        ('BACKGROUND', (1, 0), (-1, -1), SLATE_LIGHT),
-        ('LEFTPADDING', (0, 0), (-1, -1), 14), ('RIGHTPADDING', (0, 0), (-1, -1), 14),
-        ('TOPPADDING', (0, 0), (-1, -1), 12), ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('ROUNDEDCORNERS', [6]),
-    ]))
-    elements.append(info_card)
-    elements.append(Spacer(1, 16))
+        details_block = Table([
+            [P("QUOTATION DETAILS", s_sec_lbl)],
+            [details_inner],
+        ], colWidths=[right_w - 32])
+        details_block.setStyle(TableStyle([
+            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING',   (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 4),
+            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+        ]))
 
-    # 3. ITEMS TABLE
-    elements.append(Paragraph("<b>ITEMS &amp; SERVICES</b>",
-        ps('sh', 'Helvetica-Bold', 15, NAVY, TA_CENTER, 14, spaceAfter=8)))
+        info_card = Table([[bill_block, details_block]], colWidths=[left_w, right_w])
+        info_card.setStyle(TableStyle([
+            ('BOX',          (0, 0), (-1, -1), 0.8,  BORDER),
+            ('LINEAFTER',    (0, 0), (0, -1),  0.5,  BORDER),
+            ('LINEABOVE',    (0, 0), (-1, 0),  2.5,  ACCENT),
+            ('BACKGROUND',   (0, 0), (0, -1),  _WHITE),
+            ('BACKGROUND',   (1, 0), (1, -1),  CREAM_CARD),
+            ('LEFTPADDING',  (0, 0), (-1, -1), 16),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 16),
+            ('TOPPADDING',   (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 12),
+            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+            ('ROUNDEDCORNERS', [4]),
+        ]))
+        elems.append(info_card)
+        elems.append(Spacer(1, 14))
 
-    col_sl   = 35
-    col_qty  = 80
-    col_rate = 95
-    col_tot  = 95
-    col_desc = page_w - col_sl - col_qty - col_rate - col_tot
+        # ══════════════════════════════════════════════════════════════════════
+        # 3. ITEMS TABLE SECTION HEADING
+        # ══════════════════════════════════════════════════════════════════════
+        elems.append(Paragraph(
+            "ITEMS &amp; SERVICES",
+            ps('sh', F_HEADING, 10, ACCENT, TA_CENTER, 14,
+               spaceBefore=2, spaceAfter=2, letterSpacing=2.5)
+        ))
+        elems.append(HRFlowable(width="100%", thickness=0.6, color=BORDER, spaceAfter=8))
 
-    tbl_data = [[
-        P("SL", s_th),
-        P("DESCRIPTION", s_th),
-        P("QTY", s_th),
-        P("RATE", s_th_r),
-        P("AMOUNT", s_th_r),
-    ]]
+        # ══════════════════════════════════════════════════════════════════════
+        # 4. ITEMS TABLE
+        # ══════════════════════════════════════════════════════════════════════
+        col_sl   = 30
+        col_img  = 170
+        col_qty  = 72
+        col_rate = 82
+        col_tot  = 94
+        col_desc = page_w - col_sl - col_img - col_qty - col_rate - col_tot
 
-    subtotal = Decimal("0")
-    for i, item in enumerate(items, 1):
-        subtotal += Decimal(item.total)
-        tbl_data.append([
-            P(str(i), s_td_c),
-            P(item.description, s_td),
-            P(f"{item.quantity}\u00A0{item.unit}", s_td_c),
-            P(format_inr_local(item.price), s_td_r),
-            P(format_inr_local(item.total), s_td_r),
-        ])
+        tbl_data = [[
+            P("NO",         s_th),
+            P("IMAGE",       s_th),
+            P("DESCRIPTION", s_th),
+            P("QTY",         s_th),
+            P("RATE",        s_th_r),
+            P("AMOUNT",      s_th_r),
+        ]]
 
-    items_tbl = Table(
-        tbl_data,
-        colWidths=[col_sl, col_desc, col_qty, col_rate, col_tot],
-        repeatRows=1
-    )
-    items_tbl.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), NAVY),
-        ('TEXTCOLOR', (0, 0), (-1, 0), _WHITE),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('FONTNAME', (0, 1), (-1, -1), font_name),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
-        ('ALIGN', (1, 1), (1, -1), 'LEFT'),
-        ('ALIGN', (2, 1), (2, -1), 'CENTER'),
-        ('ALIGN', (3, 1), (4, -1), 'RIGHT'),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-        ('BOX', (0, 0), (-1, -1), 0.8, BORDER),
-        ('LINEBELOW', (0, 0), (-1, 0), 0.8, BORDER),
-        ('LINEBELOW', (0, 1), (-1, -1), 0.4, BORDER),
-        ('LINEAFTER', (0, 0), (0, -1), 0.5, BORDER),
-        ('LINEAFTER', (1, 0), (1, -1), 0.5, BORDER),
-        ('LINEAFTER', (2, 0), (2, -1), 0.5, BORDER),
-        ('LINEAFTER', (3, 0), (3, -1), 0.5, BORDER),
-        *[
-            ('BACKGROUND', (0, i), (-1, i),
-             SLATE_LIGHT if i % 2 == 0 else _WHITE)
-            for i in range(1, len(tbl_data))
-        ],
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    elements.append(items_tbl)
-    elements.append(Spacer(1, 18))
+        subtotal = Decimal("0")
+        for i, item in enumerate(items, 1):
+            try:
+                subtotal += Decimal(str(item.total))
+            except Exception:
+                pass
 
-    # 4. SUMMARY
-    cgst = sgst = Decimal("0")
-    if q.gst_type == "with_gst":
-        cgst = subtotal * Decimal("0.09")
-        sgst = subtotal * Decimal("0.09")
+            img_flowable = None
+            try:
+                svc = getattr(item, 'service', None)
+                if svc and getattr(svc, 'image', None) and svc.image.name:
+                    try:
+                        img_path = svc.image.path
+                    except Exception:
+                        img_path = None
+                    if img_path and os.path.exists(img_path):
+                        img_flowable = Image(img_path, width=1.55 * inch, height=1.1 * inch)
+            except Exception:
+                img_flowable = None
 
-    discount = getattr(q, 'discount', Decimal('0')) or Decimal('0')
-    grand_total = (subtotal + cgst + sgst - discount) if q.gst_type == "with_gst" \
-                  else (subtotal - discount)
-    grand_total = max(grand_total, Decimal('0'))
-
-    sw = 140
-    summary_rows = [[P("<b>Subtotal</b>", s_sum_lbl), P(format_inr_local(subtotal), s_sum_val)]]
-    if q.gst_type == "with_gst":
-        summary_rows += [
-            [P("CGST (9%)", s_sum_lbl), P(format_inr_local(cgst), s_sum_val)],
-            [P("SGST (9%)", s_sum_lbl), P(format_inr_local(sgst), s_sum_val)],
-        ]
-    if discount and discount > 0:
-        summary_rows.append([
-            P("<font color='#D97706'><b>Special Discount</b></font>", s_sum_lbl),
-            P(f"<font color='#D97706'>\u2212\u00A0{format_inr_local(discount)}</font>", s_sum_val),
-        ])
-    summary_rows.append([P("", s_sum_lbl), P("", s_sum_val)])
-    gt_idx = len(summary_rows)
-    summary_rows.append([P("GRAND TOTAL", s_gtl), P(format_inr_local(grand_total), s_gtv)])
-
-    sum_tbl = Table(summary_rows, colWidths=[sw, sw])
-    sum_tbl.setStyle(TableStyle([
-        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 7), ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
-        ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-        ('LINEBELOW', (0, 0), (-1, gt_idx - 2), 0.4, BORDER),
-        ('BACKGROUND', (0, gt_idx), (-1, gt_idx), NAVY),
-        ('TOPPADDING', (0, gt_idx), (-1, gt_idx), 11),
-        ('BOTTOMPADDING', (0, gt_idx), (-1, gt_idx), 11),
-        ('BOX', (0, 0), (-1, -1), 0.75, BORDER),
-        ('ROUNDEDCORNERS', [4]),
-    ]))
-
-    sum_wrapper = Table([[Spacer(1, 1), sum_tbl]], colWidths=[page_w - sw * 2, sw * 2])
-    sum_wrapper.setStyle(TableStyle([
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
-    elements.append(sum_wrapper)
-    elements.append(Spacer(1, 22))
-
-    # 5. TERMS & CONDITIONS
-    elements.append(HRFlowable(width="100%", thickness=0.75, color=BORDER, spaceAfter=10))
-    elements.append(Paragraph("<b>TERMS &amp; CONDITIONS</b>",
-        ps('tc_h', 'Helvetica-Bold', 15, NAVY, TA_CENTER, 14, spaceAfter=8)))
-
-    i = 0
-    qt_qs = q.quotation_terms.select_related('term').order_by('order', 'id')
-    for i, qt in enumerate(qt_qs, 1):
-        elements.append(P(
-            f"<font color='#2563EB'><b>{i}.</b></font>\u00A0\u00A0{qt.term.text}",
-            s_terms))
-    if q.custom_terms:
-        for j, line in enumerate(q.custom_terms.split("\n"), i + 1):
-            if line.strip():
-                elements.append(P(
-                    f"<font color='#2563EB'><b>{j}.</b></font>\u00A0\u00A0{line.strip()}",
-                    s_terms))
-
-    # 5a. Payment details block (appended to elements list if included)
-    try:
-        if getattr(q, 'include_payment_details', False) and getattr(q, 'payment_details', None):
-            pd = q.payment_details
-
-            # Spacer + horizontal rule before the section
-            elements.append(Spacer(1, 8))
-            elements.append(HRFlowable(
-                width="100%",
-                thickness=0.6,
-                color=BORDER,
-                spaceAfter=6,
-            ))
-
-            # Section heading
-            elements.append(Paragraph(
-                "<b>PAYMENT DETAILS</b>",
-                ps('pd_h', 'Helvetica-Bold', 15, NAVY, TA_CENTER, spaceAfter=6),
-            ))
-
-            # Build label/value row pairs based on account type
-            rows = []
-
-            if pd.account_type == PaymentDetails.UPI:
-                if pd.upi_id:
-                    rows.append([P("UPI ID",  s_pill_lbl), P(pd.upi_id,       s_pill_val)])
-                if pd.phone_number:
-                    rows.append([P("Phone",   s_pill_lbl), P(pd.phone_number,  s_pill_val)])
-            else:
-                field_map = [
-                    ("Account Name",   pd.account_name),
-                    ("Account Holder", pd.holder_name),
-                    ("Bank Name",      pd.bank_name),
-                    ("A/C Number",     pd.account_number),
-                    ("IFSC Code",      pd.ifsc_code),
-                    ("Branch",         pd.branch),
-                ]
-                for label, value in field_map:
-                    if value:
-                        rows.append([P(label, s_pill_lbl), P(value, s_pill_val)])
-
-            # Render the two-column table only if there is data
-            if rows:
-                pay_tbl = Table(
-                    rows,
-                    colWidths=[page_w * 0.28, page_w * 0.72],
+            if img_flowable is None:
+                img_flowable = P(
+                    '<font size="7.5" color="#C4B5A8">No Image</font>',
+                    ps('ni', F_BODY, 7.5, TEXT3, TA_CENTER, 10)
                 )
-                pay_tbl.setStyle(TableStyle([
-                    ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING',   (0, 0), (-1, -1), 6),
-                    ('RIGHTPADDING',  (0, 0), (-1, -1), 6),
-                    ('TOPPADDING',    (0, 0), (-1, -1), 5),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-                    # Subtle row separators
-                    ('LINEBELOW',     (0, 0), (-1, -2), 0.4, colors.HexColor('#E4E7ED')),
-                    # Light shading on alternating rows for readability
-                    ('ROWBACKGROUNDS', (0, 0), (-1, -1),
-                     [colors.white, colors.HexColor('#F9FAFB')]),
-                ]))
-                elements.append(pay_tbl)
-                elements.append(Spacer(1, 12))
+
+            desc_text    = item.description or ''
+            desc_escaped = _html.escape(desc_text)
+            desc_with_br = desc_escaped.replace('\n', '<br/>')
+
+            tbl_data.append([
+                P(str(i), s_td_c),
+                img_flowable,
+                P(desc_with_br, s_td),
+                P(f"{format_quantity(item.quantity)}\u00A0{item.unit}", s_td_c),
+                P(format_inr_local(item.price), s_td_r),
+                P(format_inr_local(item.total), s_td_r),
+            ])
+
+        row_styles = [
+            ('BACKGROUND',    (0, 0), (-1, 0),  BROWN),
+            ('TEXTCOLOR',     (0, 0), (-1, 0),  _WHITE),
+            ('ALIGN',         (0, 0), (-1, 0),  'CENTER'),
+            ('TOPPADDING',    (0, 0), (-1, 0),  9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0),  9),
+            ('LINEBELOW',     (0, 0), (-1, 0),  2.5,  ACCENT),
+            ('FONTNAME',      (0, 1), (-1, -1), unicode_font),
+            ('FONTSIZE',      (0, 1), (-1, -1), 9),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN',         (0, 1), (0, -1),  'CENTER'),
+            ('ALIGN',         (1, 1), (1, -1),  'CENTER'),
+            ('ALIGN',         (2, 1), (2, -1),  'LEFT'),
+            ('ALIGN',         (3, 1), (5, -1),  'CENTER'),
+            ('ALIGN',         (4, 1), (5, -1),  'RIGHT'),
+            ('WORDWRAP',      (2, 1), (2, -1),  'CJK'),
+            ('TOPPADDING',    (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 8),
+            ('ROWHEIGHT',     (0, 1), (-1, -1), 90),
+            ('BOX',           (0, 0), (-1, -1), 0.75, BORDER),
+            ('LINEBELOW',     (0, 1), (-1, -1), 0.35, BORDER),
+            ('LINEAFTER',     (0, 0), (4, -1),  0.35, BORDER),
+            ('ROUNDEDCORNERS', [4]),
+        ]
+        for row in range(1, len(tbl_data)):
+            bg = CREAM_CARD if row % 2 == 0 else _WHITE
+            row_styles.append(('BACKGROUND', (0, row), (-1, row), bg))
+
+        items_tbl = Table(
+            tbl_data,
+            colWidths=[col_sl, col_img, col_desc, col_qty, col_rate, col_tot],
+            repeatRows=1
+        )
+        items_tbl.setStyle(TableStyle(row_styles))
+        elems.append(items_tbl)
+        elems.append(Spacer(1, 16))
+
+        # ══════════════════════════════════════════════════════════════════════
+        # 5. SUMMARY
+        # ══════════════════════════════════════════════════════════════════════
+        try:
+            cgst = sgst = igst = Decimal("0")
+            tt2 = _q_tax_type(q)
+            if tt2 == 'gst':
+                cgst = (subtotal * Decimal("0.09")).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP)
+                sgst = (subtotal * Decimal("0.09")).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP)
+            elif tt2 == 'igst':
+                igst = (subtotal * Decimal("0.18")).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            discount = Decimal(str(getattr(q, 'discount', None) or 0))
+            if tt2 == 'gst':
+                grand_total = subtotal + cgst + sgst - discount
+            elif tt2 == 'igst':
+                grand_total = subtotal + igst - discount
+            else:
+                grand_total = subtotal - discount
+            grand_total = max(grand_total, Decimal('0'))
+            grand_total = Decimal(grand_total).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            sw = 155
+            summary_rows = [
+                [P("Subtotal", s_sum_lbl), P(format_inr_local(subtotal), s_sum_val)]
+            ]
+            if tt2 == 'gst':
+                summary_rows += [
+                    [P("CGST (9%)",  s_sum_lbl), P(format_inr_local(cgst), s_sum_val)],
+                    [P("SGST (9%)",  s_sum_lbl), P(format_inr_local(sgst), s_sum_val)],
+                ]
+            elif tt2 == 'igst':
+                summary_rows += [
+                    [P("IGST (18%)", s_sum_lbl), P(format_inr_local(igst), s_sum_val)],
+                ]
+            if discount and discount > 0:
+                summary_rows.append([
+                    P("<font color='#A67C52'><b>Special Discount</b></font>", s_sum_lbl),
+                    P(f"<font color='#A67C52'>\u2212\u00A0"
+                      f"{format_inr_local(discount)}</font>", s_sum_val),
+                ])
+            summary_rows.append([P("", s_sum_lbl), P("", s_sum_val)])
+            gt_idx = len(summary_rows)
+            summary_rows.append([
+                P("GRAND TOTAL", s_gtl),
+                P(format_inr_local(grand_total), s_gtv),
+            ])
+
+            sum_tbl = Table(summary_rows, colWidths=[sw, sw])
+            sum_tbl.setStyle(TableStyle([
+                ('ALIGN',         (1, 0), (-1, -1), 'RIGHT'),
+                ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING',    (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING',   (0, 0), (-1, -1), 14),
+                ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
+                ('LINEBELOW',     (0, 0), (-1, gt_idx - 2), 0.35, BORDER),
+                ('BACKGROUND',    (0, gt_idx), (-1, gt_idx), BROWN),
+                ('LINEABOVE',     (0, gt_idx), (-1, gt_idx), 2.5, ACCENT),
+                ('TOPPADDING',    (0, gt_idx), (-1, gt_idx), 10),
+                ('BOTTOMPADDING', (0, gt_idx), (-1, gt_idx), 10),
+                ('BOX',           (0, 0), (-1, -1), 0.75, BORDER),
+                ('ROUNDEDCORNERS', [4]),
+            ]))
+
+            sum_wrapper = Table(
+                [[Spacer(1, 1), sum_tbl]],
+                colWidths=[page_w - sw * 2, sw * 2]
+            )
+            sum_wrapper.setStyle(TableStyle([
+                ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING',   (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING',(0, 0), (-1, -1), 0),
+                ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+            ]))
+
+        except Exception as e:
+            logger.exception('Summary block error: %s', e)
+            sw = 155
+            summary_rows = [
+                [P("Subtotal", s_sum_lbl), P(format_inr_local(subtotal), s_sum_val)]
+            ]
+            sum_tbl = Table(summary_rows, colWidths=[sw, sw])
+            sum_tbl.setStyle(TableStyle([
+                ('ALIGN',        (1, 0), (-1, -1), 'RIGHT'),
+                ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING',   (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING',(0, 0), (-1, -1), 6),
+                ('LEFTPADDING',  (0, 0), (-1, -1), 14),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+                ('BOX',          (0, 0), (-1, -1), 0.75, BORDER),
+            ]))
+            sum_wrapper = Table(
+                [[Spacer(1, 1), sum_tbl]],
+                colWidths=[page_w - sw * 2, sw * 2]
+            )
+            sum_wrapper.setStyle(TableStyle([
+                ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING',   (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING',(0, 0), (-1, -1), 0),
+                ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+            ]))
+
+        elems.append(sum_wrapper)
+        elems.append(Spacer(1, 12))
+
+        # ══════════════════════════════════════════════════════════════════════
+        # 6. WHY CHOOSE US  (inserted before Terms & Conditions)
+        # ══════════════════════════════════════════════════════════════════════
+        wcu_items = [
+            ("\u2713 Premium Grade Materials",       "\u2713 Expert Installation Team"),
+            ("\u2713 Warranty Support",              "\u2713 On-Time Project Completion"),
+            ("\u2713 Quality Assurance",             "\u2713 Professional Workmanship"),
+            ("\u2713 Transparent Pricing",           "\u2713 Customer Satisfaction Focused"),
+        ]
+
+        wcu_heading_style = ps('wcu_h', F_HEADING, 10, BROWN, TA_CENTER, 14,
+                               spaceAfter=8, letterSpacing=2)
+        wcu_block = []
+
+        # Heading row
+        wcu_block.append(HRFlowable(width="100%", thickness=1.2, color=ACCENT, spaceAfter=8))
+        wcu_block.append(Paragraph(
+            f"WHY CHOOSE {co_name_txt}?",
+            wcu_heading_style
+        ))
+
+        # Two-column grid of checkpoints
+        wcu_col_w = (page_w - 24) / 2
+        wcu_rows = []
+        for left_item, right_item in wcu_items:
+            wcu_rows.append([
+                P(f"<font color='#A67C52'><b>&#10003;</b></font>"
+                  f"\u00A0\u00A0{left_item.replace(chr(10003), '').strip()}",
+                  s_wcu_item),
+                P(f"<font color='#A67C52'><b>&#10003;</b></font>"
+                  f"\u00A0\u00A0{right_item.replace(chr(10003), '').strip()}",
+                  s_wcu_item),
+            ])
+
+        wcu_grid = Table(wcu_rows, colWidths=[wcu_col_w, wcu_col_w])
+        wcu_grid.setStyle(TableStyle([
+            ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
+            ('TOPPADDING',    (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LINEAFTER',     (0, 0), (0, -1),  0.4, BORDER),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [CREAM_CARD, _WHITE]),
+        ]))
+
+        wcu_card = Table([[wcu_grid]], colWidths=[page_w])
+        wcu_card.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.8,  BORDER),
+            ('LINEABOVE',     (0, 0), (-1, 0),  2.5,  ACCENT),
+            ('BACKGROUND',    (0, 0), (-1, -1), CREAM_CARD),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+            ('TOPPADDING',    (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('ROUNDEDCORNERS', [4]),
+        ]))
+
+        wcu_block.append(wcu_card)
+        wcu_block.append(Spacer(1, 6))
+
+        # ══════════════════════════════════════════════════════════════════════
+        # 7. TERMS & PAYMENT
+        # ══════════════════════════════════════════════════════════════════════
+        try:
+            qt_qs = q.quotation_terms.select_related('term').order_by('order', 'id')
+
+            terms_block = []
+
+            terms_block.append(HRFlowable(
+                width="100%", thickness=1.2, color=ACCENT, spaceAfter=8
+            ))
+            terms_block.append(Paragraph(
+                "TERMS &amp; CONDITIONS",
+                ps('tc_h', F_HEADING, 10, BROWN, TA_LEFT, 14,
+                   spaceAfter=6, letterSpacing=2)
+            ))
+
+            def _add_terms_lines(lines_iter, start_idx=0):
+                last = start_idx
+                for j, line in enumerate(lines_iter, start_idx + 1):
+                    if isinstance(line, str):
+                        line = line.strip()
+                    if not line:
+                        continue
+                    row_tbl = Table([[
+                        P(f"{j}.", s_terms_num),
+                        P(line, s_terms),
+                    ]], colWidths=[20, page_w - 20])
+                    row_tbl.setStyle(TableStyle([
+                        ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                        ('TOPPADDING',   (0, 0), (-1, -1), 1),
+                        ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
+                        ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+                    ]))
+                    terms_block.append(row_tbl)
+                    last = j
+                return last
+
+            if q.terms_and_conditions:
+                _add_terms_lines(q.terms_and_conditions.split("\n"))
+            else:
+                end_idx = 0
+                if qt_qs.exists():
+                    for i, qt in enumerate(qt_qs, 1):
+                        row_tbl = Table([[
+                            P(f"{i}.", s_terms_num),
+                            P(qt.term.text, s_terms),
+                        ]], colWidths=[20, page_w - 20])
+                        row_tbl.setStyle(TableStyle([
+                            ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('TOPPADDING',   (0, 0), (-1, -1), 1),
+                            ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
+                            ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
+                        ]))
+                        terms_block.append(row_tbl)
+                        end_idx = i
+
+                if q.custom_terms:
+                    _add_terms_lines(q.custom_terms.split("\n"), start_idx=end_idx)
+
+                if (not qt_qs.exists() and not q.custom_terms) \
+                        and getattr(q, 'company', None) and q.company.terms:
+                    _add_terms_lines(q.company.terms.split("\n"))
+
+            # ── Payment details (quotation-level) ─────────────────────────
+            payment_block = []
+            try:
+                if getattr(q, 'include_payment_details', False) \
+                        and getattr(q, 'payment_details', None):
+                    pd = q.payment_details
+
+                    payment_block.append(Spacer(1, 10))
+                    payment_block.append(HRFlowable(
+                        width="100%", thickness=1, color=ACCENT, spaceAfter=6
+                    ))
+                    payment_block.append(Paragraph(
+                        "PAYMENT DETAILS",
+                        ps('pd_h', F_HEADING, 10, BROWN, TA_LEFT, 14,
+                           spaceAfter=6, letterSpacing=2)
+                    ))
+
+                    rows = []
+                    if pd.account_type == PaymentDetails.UPI:
+                        if pd.upi_id:
+                            rows.append([P("UPI ID", s_pill_lbl),
+                                         P(pd.upi_id,      s_pill_val)])
+                        if pd.phone_number:
+                            rows.append([P("Phone",  s_pill_lbl),
+                                         P(pd.phone_number, s_pill_val)])
+                    else:
+                        field_map = [
+                            ("Account Name",   pd.account_name),
+                            ("Account Holder", pd.holder_name),
+                            ("Bank Name",      pd.bank_name),
+                            ("A/C Number",     pd.account_number),
+                            ("IFSC Code",      pd.ifsc_code),
+                            ("Branch",         pd.branch),
+                        ]
+                        for label, value in field_map:
+                            if value:
+                                rows.append([P(label, s_pill_lbl), P(value, s_pill_val)])
+
+                    if rows:
+                        pay_tbl = Table(
+                            rows,
+                            colWidths=[page_w * 0.26, page_w * 0.74]
+                        )
+                        pay_tbl.setStyle(TableStyle([
+                            ('VALIGN',         (0, 0), (-1, -1), 'TOP'),
+                            ('LEFTPADDING',    (0, 0), (-1, -1), 6),
+                            ('RIGHTPADDING',   (0, 0), (-1, -1), 6),
+                            ('TOPPADDING',     (0, 0), (-1, -1), 4),
+                            ('BOTTOMPADDING',  (0, 0), (-1, -1), 4),
+                            ('LINEBELOW',      (0, 0), (-1, -2), 0.35, BORDER),
+                            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [_WHITE, CREAM_CARD]),
+                        ]))
+                        # Prevent the payment table from splitting across pages
+                        payment_block.append(KeepTogether([pay_tbl]))
+            except Exception as e:
+                logger.exception('Payment details block error: %s', e)
+
+            # ── Company bank details ───────────────────────────────────────
+            bank_block = []
+            try:
+                if getattr(q, 'company', None) \
+                        and getattr(q.company, 'bank_details', None):
+                    bank_block.append(HRFlowable(
+                        width="100%", thickness=1, color=ACCENT, spaceAfter=6
+                    ))
+                    bank_block.append(Paragraph(
+                        "BANK / PAYMENT DETAILS",
+                        ps('bd_h', F_HEADING, 10, BROWN, TA_LEFT, 14,
+                           spaceAfter=6, letterSpacing=2)
+                    ))
+                    for line in q.company.bank_details.split("\n"):
+                        if line.strip():
+                            bank_block.append(Paragraph(line.strip(), s_pill_val))
+            except Exception as e:
+                logger.exception('Company bank details block error: %s', e)
+
+            # Append WCU and footer sub-blocks; keep each heading + content together
+            elems.append(KeepTogether(wcu_block))
+            if terms_block:
+                elems.append(KeepTogether(terms_block))
+            if payment_block:
+                elems.append(KeepTogether(payment_block))
+            if bank_block:
+                elems.append(KeepTogether(bank_block))
+
+        except Exception as e:
+            logger.exception('Terms & Payment wrapper error: %s', e)
+            # If building footer_block failed, at least include the WCU block
+            try:
+                elems.extend(wcu_block)
+            except Exception:
+                pass
+
+        return elems
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # TWO-PASS BUILD
+    #   Pass 1 — plain canvas into a buffer, count pages
+    #   Pass 2 — _LuxuryCanvas into response; watermark/footer drawn on top
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # --- Pass 1: count total pages -------------------------------------------
+    def _noop(c, d):
+        pass
+
+    _doc_count.build(
+        _build_elements(),
+        onFirstPage=_noop,
+        onLaterPages=_noop,
+    )
+    # After build() the internal page counter reflects the last page drawn.
+    # We extract it from the buffer PDF using a lightweight byte-scan approach.
+    # Simpler: count how many times 'showPage' was called via a wrapper canvas.
+    # We already have _buf1 written; count /Page entries to get total.
+    try:
+        _buf1.seek(0)
+        try:
+            from PyPDF2 import PdfReader
+            reader = PdfReader(_buf1)
+            _total_holder[0] = len(reader.pages)
+        except Exception:
+            # Fallback to byte-scan if PdfReader not available
+            _total_holder[0] = _buf1.getvalue().count(b'/Type /Page')
+            if _total_holder[0] < 1:
+                _total_holder[0] = 1
+    except Exception:
+        _total_holder[0] = 1
+
+    # --- Pass 2: render with _LuxuryCanvas (watermark + footer on top) -------
+    # Build into a buffer first, then remove any near-empty trailing pages
+    try:
+        from PyPDF2 import PdfReader, PdfWriter
+        pdf_buffer = _io_mod.BytesIO()
+
+        temp_doc = SimpleDocTemplate(
+            pdf_buffer,
+            pagesize=PAGE_SIZE,
+            leftMargin=24, rightMargin=24,
+            topMargin=40, bottomMargin=40,
+        )
+
+        temp_doc.build(_build_elements(), canvasmaker=_LuxuryCanvas)
+        pdf_buffer.seek(0)
+
+        reader = PdfReader(pdf_buffer)
+        writer = PdfWriter()
+
+        for page in reader.pages:
+            try:
+                text = page.extract_text() or ""
+            except Exception:
+                text = ""
+            if len(text.strip()) < 50:
+                # skip very small/blank pages
+                continue
+            writer.add_page(page)
+
+        out_buf = _io_mod.BytesIO()
+        writer.write(out_buf)
+        out_buf.seek(0)
+
+        response.write(out_buf.read())
+        return response
 
     except Exception:
-        pass  # Never crash PDF generation for optional payment details
-
-    elements.append(Spacer(1, 18))
-
-    # 6. FOOTER BAND
-    footer_band = Table([[
-        P("<font color='#64748B'>System-generated quotation \u2014 no signature required.\u2002"
-          "|\u2002satyamaluminiumhubli@gmail.com\u2002"
-          "|\u2002GSTIN: 29ADRP1399D1ZX</font>",
-          ps('fb', 'Helvetica', 7.5, TEXT3, TA_CENTER, 10))
-    ]], colWidths=[page_w])
-    footer_band.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), SLATE_LIGHT),
-        ('LEFTPADDING', (0, 0), (-1, -1), 14), ('RIGHTPADDING', (0, 0), (-1, -1), 14),
-        ('TOPPADDING', (0, 0), (-1, -1), 9), ('BOTTOMPADDING', (0, 0), (-1, -1), 9),
-        ('ROUNDEDCORNERS', [4]),
-    ]))
-    elements.append(footer_band)
-
-    doc.build(elements)
-    return response
+        # Fallback: if PyPDF2 isn't available or processing fails, build directly
+        doc.build(_build_elements(), canvasmaker=_LuxuryCanvas)
+        return response
 
 
 # ──────────────────────────────────────────────
@@ -1845,7 +3716,8 @@ def _rupee(amount, align=TA_RIGHT, size=10, color=colors.black):
     try:
         val = to_decimal(amount).quantize(Decimal('0.01'))
         return Paragraph(f'&#8377; {val:,.2f}', style)
-    except Exception:
+    except Exception as e:
+        logger.exception('Unhandled exception: %s', e)
         return Paragraph(f'&#8377; {amount}', style)
 
 
@@ -1853,13 +3725,22 @@ def _rupee(amount, align=TA_RIGHT, size=10, color=colors.black):
 @login_required(login_url='/login/')
 def orders(request):
     query = request.GET.get('q', '').strip()
-    qs = Order.objects.select_related('customer').order_by('-id')[:50]
+    qs = Order.objects.select_related('customer').order_by('-id')
     if query:
         from django.db.models import Q as DQ
-        qs = Order.objects.select_related('customer').filter(
+        qs = qs.filter(
             DQ(customer__name__icontains=query) | DQ(id__icontains=query)
-        ).order_by('-id')[:50]
-    return render(request, 'orders.html', {'data': qs, 'q': query})
+        ).order_by('-id')
+
+    paginator = Paginator(qs, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'orders.html', {
+        'data': page_obj.object_list,
+        'page_obj': page_obj,
+        'q': query
+    })
 
 
 @login_required(login_url='/login/')
@@ -1878,327 +3759,451 @@ def delete_order(request, id):
 def generate_reminder_pdf(request, order_id):
     from reportlab.lib.units import mm
     from reportlab.platypus.flowables import Flowable
-    from reportlab.pdfgen import canvas as rl_canvas
 
     order    = get_object_or_404(Order, id=order_id)
     customer = order.customer
-    payments = OrderPayment.objects.filter(order=order).order_by('date')
+    payments = OrderPayment.objects.filter(order=order).order_by('payment_date', 'date')
 
     payments_sum = sum((p.amount for p in payments), Decimal('0'))
     total_paid   = order.advance_paid + payments_sum
     remaining    = order.total_amount - total_paid
 
-    _NAVY      = colors.HexColor("#0D1B2A")
-    _GOLD      = colors.HexColor("#B8922A")
-    GOLD_LIGHT = colors.HexColor("#F5E6C8")
-    _CREAM     = colors.HexColor("#FDFAF5")
-    _SLATE     = colors.HexColor("#3D4F61")
-    RED_DEEP   = colors.HexColor("#9B1C1C")
-    RED_PALE   = colors.HexColor("#FEF2F2")
-    _RULE      = colors.HexColor("#D4AF6A")
-    LIGHT_RULE = colors.HexColor("#E8DCC8")
-    _WHITE2    = colors.white
+    # ── Palette: clean light blue theme ──────────────────────────────────────
+    C_HDR_DARK   = colors.HexColor("#1A5FA8")   # deep blue  — top header band
+    C_HDR_MID    = colors.HexColor("#2B7FD4")   # medium blue — header accent
+    C_BLUE_LIGHT = colors.HexColor("#E8F4FD")   # very light blue — title banner / info bg
+    C_BLUE_MID   = colors.HexColor("#BBDAF7")   # soft blue — table header bg
+    C_BLUE_PALE  = colors.HexColor("#F0F8FF")   # almost white blue — alternating rows
+    C_ACCENT     = colors.HexColor("#1A5FA8")   # same deep blue for labels/accents
+    C_BORDER     = colors.HexColor("#B3D4F0")   # light blue-grey border
+    C_PAGE_BG    = colors.white                 # pure white page
+    C_TEXT       = colors.HexColor("#0A0A0A")   # near-black text
+    C_MUTED      = colors.HexColor("#3A3A3A")   # dark grey muted text
+    C_LABEL      = colors.HexColor("#1A5FA8")   # blue for section labels
+    C_WHITE      = colors.white
+    C_DUE_BG     = colors.HexColor("#EBF5FF")   # light blue due block bg
+    C_DUE_BORDER = colors.HexColor("#1A5FA8")   # deep blue due block border
+    C_DUE_AMT    = colors.HexColor("#0D3E7A")   # darkest blue for due amount
+    C_PAID_GRN   = colors.HexColor("#1A7A3A")   # green for paid entries
+    C_HDR_TXT    = colors.HexColor("#FFFFFF")   # white header text
+    C_TBL_HDR    = colors.HexColor("#1A5FA8")   # deep blue table header
 
-    TNR        = "Times-Roman"
-    TNR_BOLD   = "Times-Bold"
-    TNR_ITALIC = "Times-Italic"
-    SANS       = "Helvetica"
-    SANS_BOLD  = "Helvetica-Bold"
+    # ── Fonts ─────────────────────────────────────────────────────────────────
+    TNR       = "Times-Roman"
+    TNR_BOLD  = "Times-Bold"
+    TNR_ITAL  = "Times-Italic"
+    SANS      = "Helvetica"
+    SANS_BOLD = "Helvetica-Bold"
 
     font_name, rupee_symbol = _load_unicode_font()
 
     def fmt(amount):
         try:
-            return f"{rupee_symbol} {format_inr(amount)}"
-        except Exception:
-            return f"{rupee_symbol} {Decimal(amount).quantize(Decimal('0.01'))}"
+            rs = f"<font name='{font_name}'>{rupee_symbol}</font>"
+            return f"{rs} {format_inr(amount)}"
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
+            rs = f"<font name='{font_name}'>{rupee_symbol}</font>"
+            return f"{rs} {Decimal(amount).quantize(Decimal('0.01'))}"
 
-    class GoldRule(Flowable):
-        def __init__(self, width=515, thickness=1.2, color=_RULE, top_gap=0, bot_gap=0):
+    # ── Thin rule flowable ────────────────────────────────────────────────────
+    class ThinRule(Flowable):
+        def __init__(self, width, color=C_BORDER, thickness=0.7,
+                     space_before=3, space_after=3):
             super().__init__()
-            self.width     = width
-            self.thickness = thickness
-            self.color     = color
-            self.top_gap   = top_gap
-            self.bot_gap   = bot_gap
+            self.width        = width
+            self.color        = color
+            self.thickness    = thickness
+            self.space_before = space_before
+            self.space_after  = space_after
 
         def draw(self):
             self.canv.setStrokeColor(self.color)
             self.canv.setLineWidth(self.thickness)
-            self.canv.line(0, self.bot_gap, self.width, self.bot_gap)
+            self.canv.line(0, self.space_after, self.width, self.space_after)
 
         def wrap(self, *args):
-            return self.width, self.top_gap + self.bot_gap + self.thickness
+            return self.width, self.space_before + self.space_after + self.thickness
 
-    s_company = ParagraphStyle(
-        "Company", fontName=TNR_BOLD, fontSize=26, alignment=TA_CENTER,
-        textColor=_WHITE2, leading=32, spaceAfter=2,
-    )
-    s_tagline2 = ParagraphStyle(
-        "Tagline2", fontName=TNR_ITALIC, fontSize=10, alignment=TA_CENTER,
-        textColor=_GOLD, leading=14, spaceAfter=0,
-    )
-    s_contact = ParagraphStyle(
-        "Contact", fontName=SANS, fontSize=8.5, alignment=TA_CENTER,
-        textColor=_WHITE2, leading=13,
-    )
-    s_section_title = ParagraphStyle(
-        "SectionTitle", fontName=TNR_BOLD, fontSize=11, alignment=TA_LEFT,
-        textColor=_NAVY, leading=15, spaceBefore=4,
-    )
-    s_left = ParagraphStyle(
-        "Left", fontName=SANS, fontSize=9.5, alignment=TA_LEFT,
-        textColor=_SLATE, leading=15,
-    )
-    s_right = ParagraphStyle(
-        "Right", fontName=SANS, fontSize=9.5, alignment=TA_RIGHT,
-        textColor=_SLATE, leading=15,
-    )
-    s_label = ParagraphStyle(
-        "Label", fontName=SANS_BOLD, fontSize=7.5, alignment=TA_LEFT,
-        textColor=_GOLD, leading=11, spaceAfter=3, spaceBefore=0,
-    )
-    s_label_r = ParagraphStyle(
-        "LabelR", fontName=SANS_BOLD, fontSize=7.5, alignment=TA_RIGHT,
-        textColor=_GOLD, leading=11, spaceAfter=3,
-    )
-    s_body = ParagraphStyle(
-        "Body", fontName=SANS, fontSize=9.5, alignment=TA_LEFT,
-        textColor=_SLATE, leading=16,
-    )
-    s_footer2 = ParagraphStyle(
-        "Footer2", fontName=SANS, fontSize=7.5, alignment=TA_CENTER,
-        textColor=colors.HexColor("#94A3B8"), leading=12,
-    )
+    def PS(name, **kw):
+        return ParagraphStyle(name, **kw)
 
-    # filename: use sanitized customer name followed by _reminder.pdf
+    # ── Page geometry ─────────────────────────────────────────────────────────
+    PAGE_W, PAGE_H = A4
+    MARGIN_H  = 36
+    CONTENT_W = PAGE_W - 2 * MARGIN_H
+    HDR_H     = 100  # canvas-drawn header height
+
+    # ── Company info ──────────────────────────────────────────────────────────
+    comp      = getattr(order, 'quotation', None)
+    comp      = getattr(comp,  'company',   None) if comp else None
+    comp_name = getattr(comp, 'name', '').upper()
+
+    def _sanitize_header_text(txt):
+        if not txt:
+            return ''
+        s = str(txt)
+        # Normalize common punctuation that some PDF fonts don't support
+        s = s.replace('\u2013', '-')  # en dash
+        s = s.replace('\u2014', '-')  # em dash
+        s = s.replace('\u00A0', ' ')  # non-breaking space
+        s = s.replace('\u2022', ' - ')  # bullet
+        s = s.replace('•', ' - ')
+        # Remove remaining non-ascii characters which can appear as boxes
+        s = re.sub(r'[^\x00-\x7F]', ' ', s)
+        # Collapse multiple spaces
+        s = re.sub(r'\s{2,}', ' ', s).strip()
+        return s
+
+    # ── Canvas callback: header + background on every page ───────────────────
+    def draw_page(canv, doc):
+        canv.saveState()
+
+        # White page background
+        canv.setFillColor(C_PAGE_BG)
+        canv.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+
+        # ── Header: two-tone blue band ────────────────────────────────────────
+        # Main header band
+        canv.setFillColor(C_HDR_DARK)
+        canv.rect(0, PAGE_H - HDR_H, PAGE_W, HDR_H, fill=1, stroke=0)
+
+        # Lighter blue diagonal accent (right portion of header)
+        p = canv.beginPath()
+        p.moveTo(PAGE_W * 0.55, PAGE_H - HDR_H)
+        p.lineTo(PAGE_W,        PAGE_H - HDR_H)
+        p.lineTo(PAGE_W,        PAGE_H)
+        p.lineTo(PAGE_W * 0.70, PAGE_H)
+        p.close()
+        canv.setFillColor(C_HDR_MID)
+        canv.drawPath(p, fill=1, stroke=0)
+
+        # Thin sky-blue bottom stripe on header
+        canv.setFillColor(colors.HexColor("#5BB3F0"))
+        canv.rect(0, PAGE_H - HDR_H - 3, PAGE_W, 3, fill=1, stroke=0)
+
+        # Very thin white rule 8px above that stripe
+        canv.setFillColor(colors.HexColor("#FFFFFF"))
+        canv.rect(0, PAGE_H - HDR_H - 5, PAGE_W, 1.2, fill=1, stroke=0)
+
+        # ── Logo ──────────────────────────────────────────────────────────────
+        logo_img = _load_logo_image(
+            getattr(comp, 'logo_path', 'logo.png'),
+            width=0.72 * inch, height=0.72 * inch, circular=False
+        )
+        logo_y = PAGE_H - HDR_H + (HDR_H - 0.72 * inch) / 2
+        if logo_img:
+            logo_img.drawOn(canv, MARGIN_H, logo_y)
+            text_x = MARGIN_H + 0.72 * inch + 14
+        else:
+            text_x = MARGIN_H
+
+        # Company name
+        canv.setFont(TNR_BOLD, 27)
+        canv.setFillColor(C_HDR_TXT)
+        canv.drawString(text_x, PAGE_H - 36, comp_name)
+
+        # Tagline
+        tagline = getattr(comp, 'tagline', 'PRECISION  •  QUALITY  •  EXCELLENCE')
+        canv.setFont(TNR_ITAL, 9.5)
+        canv.setFillColor(colors.HexColor("#A8D8F8"))
+        canv.drawString(text_x, PAGE_H - 52, tagline)
+
+        # Thin white divider inside header
+        canv.setStrokeColor(colors.HexColor("#4A9FD8"))
+        canv.setLineWidth(0.5)
+        canv.line(text_x, PAGE_H - 60, PAGE_W - MARGIN_H, PAGE_H - 60)
+
+        # Contact line
+        contact_parts = []
+        addr = _sanitize_header_text(getattr(comp, 'address', None))
+        if addr: contact_parts.append(addr)
+        phone = _sanitize_header_text(getattr(comp, 'phone', None))
+        if phone: contact_parts.append(phone)
+        email = _sanitize_header_text(getattr(comp, 'email', None))
+        if email: contact_parts.append(email)
+        if contact_parts:
+            contact_str = '   |   '.join(contact_parts)
+            canv.setFont(SANS, 7.5)
+            canv.setFillColor(colors.HexColor("#C8E8FA"))
+            max_w = PAGE_W - text_x - MARGIN_H - 4
+            while (canv.stringWidth(contact_str, SANS, 7.5) > max_w
+                   and len(contact_parts) > 1):
+                contact_parts = contact_parts[:-1]
+                contact_str = '   |   '.join(contact_parts)
+            canv.drawString(text_x, PAGE_H - 77, contact_str)
+
+        # Thin outer page border
+        canv.setStrokeColor(C_BORDER)
+        canv.setLineWidth(0.8)
+        canv.rect(6, 6, PAGE_W - 12, PAGE_H - 12, fill=0, stroke=1)
+
+        # Thin blue left accent bar (content area only)
+        canv.setFillColor(C_HDR_DARK)
+        canv.rect(6, 6, 3.5, PAGE_H - HDR_H - 9, fill=1, stroke=0)
+
+        canv.restoreState()
+
+    # ── Paragraph styles ─────────────────────────────────────────────────────
+    s_doc_title = PS("DocTitle", fontName=TNR_BOLD,  fontSize=15,
+                     alignment=TA_CENTER, textColor=C_HDR_DARK, leading=20)
+    s_doc_sub   = PS("DocSub",   fontName=SANS,       fontSize=8.5,
+                     alignment=TA_CENTER, textColor=C_MUTED,    leading=13)
+
+    s_label   = PS("Label",  fontName=SANS_BOLD, fontSize=7,
+                   alignment=TA_LEFT,  textColor=C_LABEL, leading=10, spaceAfter=3)
+    s_label_r = PS("LabelR", fontName=SANS_BOLD, fontSize=7,
+                   alignment=TA_RIGHT, textColor=C_LABEL, leading=10, spaceAfter=3)
+    s_val_l   = PS("ValL",   fontName=SANS, fontSize=9,
+                   alignment=TA_LEFT,  textColor=C_TEXT,  leading=13)
+    s_val_r   = PS("ValR",   fontName=SANS, fontSize=9,
+                   alignment=TA_RIGHT, textColor=C_TEXT,  leading=13)
+    s_name    = PS("CName",  fontName=TNR_BOLD, fontSize=12,
+                   alignment=TA_LEFT,  textColor=C_TEXT,  leading=15)
+
+    s_sec  = PS("Sec",  fontName=SANS_BOLD, fontSize=8.5, alignment=TA_LEFT,
+                textColor=C_HDR_DARK, leading=12, spaceBefore=2)
+    s_body = PS("Body", fontName=TNR, fontSize=10, alignment=TA_JUSTIFY,
+                textColor=C_TEXT, leading=15)
+    s_footer = PS("Footer", fontName=SANS, fontSize=7, alignment=TA_CENTER,
+                  textColor=C_MUTED, leading=11)
+
+    # ── Build document ────────────────────────────────────────────────────────
     cust_name_safe = re.sub(r'[^A-Za-z0-9]+', '_', (customer.name or 'customer')).strip('_')
     filename = f"{cust_name_safe}_reminder.pdf"
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
-    PAGE_W, PAGE_H = A4
-    MARGIN_H   = 40
-    CONTENT_W  = PAGE_W - 2 * MARGIN_H
-
-    def on_first_page(canv, doc):
-        canv.saveState()
-        canv.setFillColor(_CREAM)
-        canv.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
-        canv.setStrokeColor(_NAVY)
-        canv.setLineWidth(1.5)
-        canv.rect(14, 14, PAGE_W - 28, PAGE_H - 28, fill=0, stroke=1)
-        canv.setStrokeColor(_GOLD)
-        canv.setLineWidth(0.6)
-        canv.rect(18, 18, PAGE_W - 36, PAGE_H - 36, fill=0, stroke=1)
-        for cx, cy in [(18, 18), (PAGE_W - 18, 18),
-                       (18, PAGE_H - 18), (PAGE_W - 18, PAGE_H - 18)]:
-            canv.setFillColor(_GOLD)
-            canv.circle(cx, cy, 3, fill=1, stroke=0)
-        canv.setFillColor(_NAVY)
-        canv.rect(0, PAGE_H - 110, PAGE_W, 110, fill=1, stroke=0)
-        canv.setFillColor(_GOLD)
-        canv.rect(0, PAGE_H - 113, PAGE_W, 3, fill=1, stroke=0)
-        canv.restoreState()
-
-    def on_later_pages(canv, doc):
-        on_first_page(canv, doc)
-
     doc = SimpleDocTemplate(
         response, pagesize=A4,
-        rightMargin=MARGIN_H, leftMargin=MARGIN_H,
-        topMargin=100, bottomMargin=45,
+        rightMargin=MARGIN_H,
+        leftMargin=MARGIN_H + 4,   # clear the left accent bar
+        topMargin=HDR_H + 14,
+        bottomMargin=34,
     )
 
-    elements = []
+    elems = []
 
-    logo_img = _load_logo_image(width=0.85 * inch, height=0.85 * inch, circular=False)
-    logo_img.hAlign = "CENTER"
-
-    company_cell = Paragraph("SATYAM ALUMINIUM", s_company)
-    tagline_cell = Paragraph("Premium Quality Aluminium Fabricators", s_tagline2)
-    contact_cell = Paragraph(
-        "Shop No 4, Ganesh Plaza, Gokul Rd, Hubballi&nbsp;&nbsp;|&nbsp;&nbsp;"
-        "+91-8073709478&nbsp;&nbsp;|&nbsp;&nbsp;satyamaluminiumhubli@gmail.com",
-        s_contact,
+    # ── TITLE BANNER ──────────────────────────────────────────────────────────
+    title_banner = Table(
+        [[Paragraph("PAYMENT REMINDER", s_doc_title)],
+         [Paragraph(
+             f"Order No.&nbsp; <b>#{order.id}</b>"
+             f"&nbsp;&nbsp;|&nbsp;&nbsp;"
+             f"Issued:&nbsp; <b>{datetime.now().strftime('%d %B, %Y')}</b>",
+             s_doc_sub,
+         )]],
+        colWidths=[CONTENT_W],
     )
-
-    header_block = Table(
-        [[logo_img, [company_cell, tagline_cell, Spacer(1, 4), contact_cell], ""]],
-        colWidths=[70, 390, 55],
-    )
-    header_block.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ALIGN", (0, 0), (0, 0), "LEFT"),
-        ("ALIGN", (1, 0), (1, 0), "CENTER"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ("TOPPADDING", (0, 0), (-1, -1), 0),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    title_banner.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), C_BLUE_LIGHT),
+        ("BOX",           (0, 0), (-1, -1), 1.2, C_HDR_DARK),
+        ("LINEABOVE",     (0, 0), (-1, 0),  4,   C_HDR_DARK),
+        ("TOPPADDING",    (0, 0), (-1, 0),  9),
+        ("BOTTOMPADDING", (0,-1), (-1,-1),  9),
+        ("TOPPADDING",    (0, 1), (-1, 1),  2),
+        ("LEFTPADDING",   (0, 0), (-1,-1),  14),
+        ("RIGHTPADDING",  (0, 0), (-1,-1),  14),
     ]))
+    elems.append(title_banner)
+    elems.append(Spacer(1, 10))
 
-    elements.append(Spacer(1, -95))
-    elements.append(header_block)
-    elements.append(Spacer(1, 20))
-
-    reminder_title = Paragraph(
-        "<font name='Times-Bold' size='15' color='#0D1B2A'>PAYMENT REMINDER</font>",
-        ParagraphStyle("BannerText", alignment=TA_CENTER, leading=20),
+    # ── BILLED TO / ORDER DETAILS ─────────────────────────────────────────────
+    info_tbl = Table(
+        [[
+            [
+                Paragraph("BILLED TO", s_label),
+                Paragraph(clean_text(customer.name), s_name),
+                Paragraph(clean_text(customer.phone) or "\u2014", s_val_l),
+                Paragraph(clean_text(customer.address) or "\u2014", s_val_l),
+            ],
+            [
+                Paragraph("ORDER DETAILS", s_label_r),
+                Paragraph(f"<b>Order ID:</b>&nbsp; #{order.id}", s_val_r),
+                Paragraph(f"<b>Date:</b>&nbsp; {datetime.now().strftime('%d %B, %Y')}", s_val_r),
+                Paragraph(
+                    f"<b>Status:</b>&nbsp; "
+                    f"<font color='#C0392B'><b>Outstanding</b></font>",
+                    s_val_r,
+                ),
+            ],
+        ]],
+        colWidths=[CONTENT_W * 0.52, CONTENT_W * 0.48],
     )
-    subtitle = Paragraph(
-        f"<font name='Times-Italic' size='9' color='#B8922A'>"
-        f"Reference: Order #{order.id}  &nbsp;|&nbsp;  "
-        f"Issued: {datetime.now().strftime('%d %B, %Y')}</font>",
-        ParagraphStyle("BannerSub", alignment=TA_CENTER, leading=13),
-    )
-    banner = Table([[reminder_title], [subtitle]], colWidths=[CONTENT_W])
-    banner.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), GOLD_LIGHT),
-        ("BOX", (0, 0), (-1, -1), 1.5, _GOLD),
-        ("TOPPADDING", (0, 0), (-1, 0), 10),
-        ("BOTTOMPADDING", (0, -1), (-1, -1), 10),
-        ("TOPPADDING", (0, 1), (-1, 1), 2),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+    info_tbl.setStyle(TableStyle([
+        ("VALIGN",        (0, 0), (-1,-1), "TOP"),
+        ("BOX",           (0, 0), (-1,-1), 0.8, C_BORDER),
+        ("INNERGRID",     (0, 0), (-1,-1), 0.8, C_BORDER),
+        ("BACKGROUND",    (0, 0), (0, -1), C_WHITE),
+        ("BACKGROUND",    (1, 0), (1, -1), C_BLUE_LIGHT),
+        ("TOPPADDING",    (0, 0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1,-1), 10),
+        ("LEFTPADDING",   (0, 0), (0, -1), 12),
+        ("LEFTPADDING",   (1, 0), (1, -1), 10),
+        ("RIGHTPADDING",  (1, 0), (1, -1), 12),
     ]))
-    elements.append(banner)
-    elements.append(Spacer(1, 20))
+    elems.append(info_tbl)
+    elems.append(Spacer(1, 10))
 
-    billed_label = Paragraph("BILLED TO", s_label)
-    billed_name  = Paragraph(
-        f"<font name='Times-Bold' size='12' color='#0D1B2A'>{clean_text(customer.name)}</font>",
-        s_left
-    )
-    billed_phone = Paragraph(clean_text(customer.phone) or "\u2014", s_left)
-    billed_addr  = Paragraph(clean_text(customer.address) or "\u2014", s_left)
-
-    order_label   = Paragraph("ORDER DETAILS", s_label_r)
-    order_id_line = Paragraph(f"<b>Order ID:</b>&nbsp; #{order.id}", s_right)
-    order_date    = Paragraph(f"<b>Date Issued:</b>&nbsp; {datetime.now().strftime('%d %B, %Y')}", s_right)
-    order_status  = Paragraph(
-        f"<b>Status:</b>&nbsp; <font color='#9B1C1C'><b>Outstanding</b></font>", s_right
-    )
-
-    info_table = Table(
-        [[[billed_label, billed_name, billed_phone, billed_addr],
-          [order_label, order_id_line, order_date, order_status]]],
-        colWidths=[257, 258],
-    )
-    info_table.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BOX", (0, 0), (-1, -1), 0.8, _RULE),
-        ("INNERGRID", (0, 0), (-1, -1), 0.8, _RULE),
-        ("BACKGROUND", (0, 0), (-1, -1), _WHITE2),
-        ("TOPPADDING", (0, 0), (-1, -1), 12),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
-        ("LEFTPADDING", (0, 0), (0, -1), 14),
-        ("RIGHTPADDING", (1, 0), (1, -1), 14),
-        ("LEFTPADDING", (1, 0), (1, -1), 10),
-    ]))
-    elements.append(info_table)
-    elements.append(Spacer(1, 22))
-
-    elements.append(Paragraph("Financial Summary", s_section_title))
-    elements.append(GoldRule(width=CONTENT_W, thickness=0.8, color=_RULE, top_gap=3, bot_gap=6))
-
-    col_desc_w  = 370
-    col_amt_w   = CONTENT_W - col_desc_w
-
-    def _hdr(txt):
+    # ── Table cell helpers ────────────────────────────────────────────────────
+    def _th(txt, align=TA_LEFT):
         return Paragraph(
-            f"<font name='Times-Bold' size='9.5' color='#FDFAF5'>{txt}</font>",
-            ParagraphStyle("Hdr", alignment=TA_LEFT if txt != "Amount" else TA_RIGHT, leading=13),
+            f"<font name='{SANS_BOLD}' size='8.5' color='#FFFFFF'>{txt}</font>",
+            PS("TH", alignment=align, leading=12),
         )
 
-    def _row_l(txt, bold=False):
-        fn = SANS_BOLD if bold else SANS
+    def _td_l(txt):
         return Paragraph(
-            f"<font name='{fn}' size='9.5' color='#3D4F61'>{txt}</font>",
-            ParagraphStyle("RL", alignment=TA_LEFT, leading=13),
+            f"<font name='{SANS}' size='9' color='#0A0A0A'>{txt}</font>",
+            PS("TDL", alignment=TA_LEFT, leading=13),
         )
 
-    def _row_r(txt, bold=False, color_hex="#3D4F61"):
+    def _td_r(txt, color="#0A0A0A"):
         return Paragraph(
-            f"<font name='{font_name}' size='9.5' color='{color_hex}'>{txt}</font>",
-            ParagraphStyle("RR", alignment=TA_RIGHT, leading=13),
+            f"<font name='{font_name}' size='9' color='{color}'>{txt}</font>",
+            PS("TDR", alignment=TA_RIGHT, leading=13),
         )
 
-    summary_data = [
-        [_hdr("Description"), _hdr("Amount")],
-        [_row_l("Total Order Amount"), _row_r(fmt(order.total_amount))],
-        [_row_l("Advance Paid"),       _row_r(f"\u2212 {fmt(order.advance_paid)}")],
-        [_row_l("Additional Payments"), _row_r(f"\u2212 {fmt(payments_sum)}")],
+    # ── FINANCIAL SUMMARY ─────────────────────────────────────────────────────
+    elems.append(Paragraph("FINANCIAL SUMMARY", s_sec))
+    elems.append(ThinRule(CONTENT_W, color=C_HDR_DARK, thickness=1.4,
+                          space_before=2, space_after=4))
+
+    col_d = CONTENT_W - 135
+    col_a = 135
+    fin_data = [
+        [_th("Description"), _th("Amount", TA_RIGHT)],
+        [_td_l("Total Order Amount"),  _td_r(fmt(order.total_amount))],
+        [_td_l("Advance Paid"),        _td_r(f"\u2212 {fmt(order.advance_paid)}", "#1A7A3A")],
+        [_td_l("Additional Payments"), _td_r(f"\u2212 {fmt(payments_sum)}",       "#1A7A3A")],
     ]
-
-    summary_table = Table(summary_data, colWidths=[col_desc_w, col_amt_w])
-    summary_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), _NAVY),
-        ("TOPPADDING", (0, 0), (-1, 0), 9),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 9),
-        ("BACKGROUND", (0, 1), (-1, 1), _WHITE2),
-        ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#F7F3ED")),
-        ("BACKGROUND", (0, 3), (-1, 3), _WHITE2),
-        ("FONTNAME", (0, 1), (-1, -1), SANS),
-        ("TEXTCOLOR", (0, 1), (-1, -1), _SLATE),
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("TOPPADDING", (0, 1), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("LINEBELOW", (0, 0), (-1, -2), 0.5, LIGHT_RULE),
-        ("BOX", (0, 0), (-1, -1), 0.8, _RULE),
+    fin_tbl = Table(fin_data, colWidths=[col_d, col_a])
+    fin_tbl.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, 0),  C_TBL_HDR),
+        ("TOPPADDING",    (0, 0), (-1, 0),  7),
+        ("BOTTOMPADDING", (0, 0), (-1, 0),  7),
+        ("BACKGROUND",    (0, 1), (-1, 1),  C_WHITE),
+        ("BACKGROUND",    (0, 2), (-1, 2),  C_BLUE_PALE),
+        ("BACKGROUND",    (0, 3), (-1, 3),  C_WHITE),
+        ("ALIGN",         (1, 0), (1, -1),  "RIGHT"),
+        ("TOPPADDING",    (0, 1), (-1,-1),  6),
+        ("BOTTOMPADDING", (0, 1), (-1,-1),  6),
+        ("LEFTPADDING",   (0, 0), (-1,-1),  10),
+        ("RIGHTPADDING",  (0, 0), (-1,-1),  10),
+        ("LINEBELOW",     (0, 0), (-1,-2),  0.5, C_BORDER),
+        ("BOX",           (0, 0), (-1,-1),  0.8, C_BORDER),
     ]))
-    elements.append(summary_table)
-    elements.append(Spacer(1, 18))
+    elems.append(fin_tbl)
+    elems.append(Spacer(1, 8))
 
-    due_left = Paragraph(
-        "<font name='Times-Bold' size='13' color='#0D1B2A'>TOTAL AMOUNT DUE</font>"
-        "<br/><font name='Helvetica' size='8' color='#9B1C1C'>"
-        "Please settle at your earliest convenience</font>",
-        ParagraphStyle("DueL", alignment=TA_LEFT, leading=18),
+    # ── PAYMENT HISTORY ───────────────────────────────────────────────────────
+    if payments.exists():
+        elems.append(Paragraph("PAYMENT HISTORY", s_sec))
+        elems.append(ThinRule(CONTENT_W, color=C_HDR_DARK, thickness=1.4,
+                              space_before=2, space_after=4))
+
+        ph_rows = [[_th("Date"), _th("Amount", TA_RIGHT), _th("Remarks")]]
+        for p in payments:
+            dt     = p.payment_date or getattr(p, 'date', None)
+            dt_str = dt.strftime('%d-%m-%Y') if dt else '\u2014'
+            remarks = clean_text(getattr(p, 'remarks', '') or '\u2014')
+            ph_rows.append([
+                Paragraph(dt_str, PS("PHl", fontName=SANS, fontSize=8.5,
+                                     alignment=TA_LEFT,  textColor=C_TEXT,     leading=12)),
+                Paragraph(fmt(p.amount), PS("PHr", fontName=font_name, fontSize=8.5,
+                                            alignment=TA_RIGHT, textColor=C_PAID_GRN, leading=12)),
+                Paragraph(remarks, PS("PHm", fontName=SANS, fontSize=8.5,
+                                      alignment=TA_LEFT,  textColor=C_MUTED,   leading=12)),
+            ])
+
+        ph_tbl = Table(ph_rows, colWidths=[100, 125, CONTENT_W - 225])
+        ph_tbl.setStyle(TableStyle([
+            ("BACKGROUND",    (0, 0), (-1, 0),  C_TBL_HDR),
+            ("TOPPADDING",    (0, 0), (-1, 0),  6),
+            ("BOTTOMPADDING", (0, 0), (-1, 0),  6),
+            ("ROWBACKGROUNDS",(0, 1), (-1,-1),  [C_WHITE, C_BLUE_PALE]),
+            ("ALIGN",         (1, 0), (1, -1),  "RIGHT"),
+            ("TOPPADDING",    (0, 1), (-1,-1),  5),
+            ("BOTTOMPADDING", (0, 1), (-1,-1),  5),
+            ("LEFTPADDING",   (0, 0), (-1,-1),  10),
+            ("RIGHTPADDING",  (0, 0), (-1,-1),  10),
+            ("LINEBELOW",     (0, 0), (-1,-2),  0.4, C_BORDER),
+            ("BOX",           (0, 0), (-1,-1),  0.8, C_BORDER),
+        ]))
+        elems.append(ph_tbl)
+        elems.append(Spacer(1, 8))
+
+    # ── AMOUNT DUE BLOCK ──────────────────────────────────────────────────────
+    due_lbl = Paragraph(
+        f"<font name='{TNR_BOLD}' size='12' color='#0D3E7A'>TOTAL AMOUNT DUE</font>"
+        f"<br/><font name='{SANS}' size='8' color='#3A3A3A'>"
+        f"Kindly settle at your earliest convenience.</font>",
+        PS("DueL", alignment=TA_LEFT, leading=17),
     )
-    due_right = Paragraph(
-        f"<b>{fmt(remaining)}</b>",
-        ParagraphStyle("DueR", fontName=font_name, fontSize=20,
-                       alignment=TA_RIGHT, textColor=RED_DEEP, leading=24),
+    due_amt = Paragraph(
+        f"<font name='{font_name}' size='22' color='#0D3E7A'><b>{fmt(remaining)}</b></font>",
+        PS("DueR", fontName=font_name, fontSize=22,
+           alignment=TA_RIGHT, textColor=C_DUE_AMT, leading=26),
     )
-    due_table = Table([[due_left, due_right]], colWidths=[290, 225])
-    due_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), RED_PALE),
-        ("BOX", (0, 0), (-1, -1), 2, colors.HexColor("#DC2626")),
-        ("LINEAFTER", (0, 0), (0, 0), 0.8, colors.HexColor("#FCA5A5")),
-        ("TOPPADDING", (0, 0), (-1, -1), 14),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
-        ("LEFTPADDING", (0, 0), (0, 0), 16),
-        ("RIGHTPADDING", (1, 0), (1, 0), 16),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    due_tbl = Table(
+        [[due_lbl, due_amt]],
+        colWidths=[CONTENT_W * 0.55, CONTENT_W * 0.45],
+    )
+    due_tbl.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1,-1), C_DUE_BG),
+        ("BOX",           (0, 0), (-1,-1), 1.5, C_DUE_BORDER),
+        ("LINEAFTER",     (0, 0), (0,  0), 0.8, C_BORDER),
+        ("TOPPADDING",    (0, 0), (-1,-1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1,-1), 12),
+        ("LEFTPADDING",   (0, 0), (0,  0), 14),
+        ("RIGHTPADDING",  (1, 0), (1,  0), 14),
+        ("VALIGN",        (0, 0), (-1,-1), "MIDDLE"),
     ]))
-    elements.append(due_table)
-    elements.append(Spacer(1, 26))
+    elems.append(due_tbl)
+    elems.append(Spacer(1, 8))
 
-    elements.append(GoldRule(width=CONTENT_W, thickness=0.6, color=_RULE, top_gap=2, bot_gap=6))
+    # ── NOTE MESSAGE ─────────────────────────────────────────────────────────
+    elems.append(ThinRule(CONTENT_W, color=C_BORDER, thickness=0.6,
+                          space_before=2, space_after=5))
     msg = (
-        f"Dear <b>{clean_text(customer.name)}</b>,<br/>"
-        f"This is a gentle reminder that an amount of "
-        f"<font name='{font_name}' color='#9B1C1C'><b>{fmt(remaining)}</b></font> "
-        f"is due for Order #{order.id}.<br/>"
-        f"We kindly request you to make the payment at your earliest convenience.<br/>"
-        f"For any queries, please feel free to contact us.<br/>"
-        f"Thank you for choosing <b>Satyam Aluminium</b>."
+        f"Dear <b>{clean_text(customer.name)}</b>, this is a gentle reminder that "
+        f"<font name='{font_name}' color='#0D3E7A'><b>{fmt(remaining)}</b></font>"
+        f" remains outstanding for Order <b>#{order.id}</b>. "
+        f"Please make the payment at your earliest convenience. "
+        f"For any queries, feel free to contact us. "
+        f"Thank you for choosing <b>{comp_name}</b> — we value your trust."
     )
-    elements.append(Paragraph(msg, s_body))
-    elements.append(Spacer(1, 20))
-    elements.append(GoldRule(width=CONTENT_W, thickness=0.6, color=_RULE, top_gap=2, bot_gap=4))
+    elems.append(Paragraph(msg, s_body))
 
-    elements.append(Spacer(1, 6))
-    elements.append(Paragraph(
-        "Shop No 4, Ganesh Plaza, Gokul Rd, Hubballi  &nbsp;|&nbsp;  "
-        "+91-8073709478  &nbsp;|&nbsp;  satyamaluminiumhubli@gmail.com<br/>"
-        "<font color='#B8922A'>This document is system-generated and does not require any physical signature.</font>",
-        s_footer2,
-    ))
+    # ── BANK DETAILS (if present) ─────────────────────────────────────────────
+    if getattr(comp, 'bank_details', None):
+        elems.append(Spacer(1, 5))
+        elems.append(Paragraph("BANK / PAYMENT DETAILS", s_sec))
+        elems.append(ThinRule(CONTENT_W, color=C_HDR_DARK, thickness=0.8,
+                              space_before=2, space_after=3))
+        for line in comp.bank_details.split('\n'):
+            if line.strip():
+                elems.append(Paragraph(line.strip(), s_body))
 
-    doc.build(elements, onFirstPage=on_first_page, onLaterPages=on_later_pages)
+    # ── FOOTER ────────────────────────────────────────────────────────────────
+    elems.append(Spacer(1, 5))
+    elems.append(ThinRule(CONTENT_W, color=C_BORDER, thickness=0.5,
+                          space_before=0, space_after=4))
+    contact_lines = []
+    if getattr(comp, 'address', None): contact_lines.append(comp.address)
+    phones = []
+    if getattr(comp, 'phone',  None): phones.append(comp.phone)
+    if getattr(comp, 'email',  None): phones.append(comp.email)
+    if phones: contact_lines.append('  |  '.join(phones))
+
+    footer_txt = (' &nbsp;|&nbsp; '.join(contact_lines) + '<br/>' if contact_lines else '')
+    footer_txt += (
+        f"<font color='#1A5FA8'>This document is system-generated "
+        f"and does not require a physical signature.</font>"
+    )
+    elems.append(Paragraph(footer_txt, s_footer))
+
+    doc.build(elems, onFirstPage=draw_page, onLaterPages=draw_page)
     return response
 
 
@@ -2238,6 +4243,8 @@ def add_order_payment(request, order_id):
 
     if request.method == "POST":
         amount_str = request.POST.get('amount')
+        payment_date_str = request.POST.get('payment_date')
+        remarks = (request.POST.get('remarks') or '').strip()
         try:
             amount = Decimal(amount_str or '0')
         except InvalidOperation:
@@ -2245,7 +4252,25 @@ def add_order_payment(request, order_id):
                 'order': order, 'error': 'Invalid amount format'
             })
 
-        OrderPayment.objects.create(order=order, amount=amount)
+        # Validate amount
+        if amount <= 0:
+            return render(request, 'add_payment.html', {'order': order, 'error': 'Payment must be greater than zero'})
+
+        remaining_amt = order.remaining()
+        if amount > remaining_amt:
+            return render(request, 'add_payment.html', {'order': order, 'error': 'Payment cannot exceed remaining balance'})
+
+        # Parse payment date (allow backdating)
+        try:
+            if payment_date_str:
+                payment_date = datetime.strptime(payment_date_str, '%Y-%m-%d').date()
+            else:
+                payment_date = timezone.now().date()
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
+            payment_date = timezone.now().date()
+
+        OrderPayment.objects.create(order=order, amount=amount, payment_date=payment_date, remarks=remarks)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'message': 'Payment added successfully'})
         return redirect('orders')
@@ -2277,7 +4302,8 @@ def add_employee(request):
             daily_salary    = Decimal(salary_str)
             half_day_salary = Decimal(half_str)
             overtime_salary = Decimal(overtime_str) if (overtime_str not in (None, '', 'None')) else None
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             return render(request, 'add_employee.html', {'error': 'Invalid salary format'})
 
         if daily_salary < 0 or half_day_salary < 0 or (overtime_salary is not None and overtime_salary < 0):
@@ -2311,7 +4337,8 @@ def edit_employee(request, emp_id):
             emp.daily_salary    = Decimal(salary_str)
             emp.half_day_salary = Decimal(half_str)
             emp.overtime_salary = Decimal(overtime_str) if (overtime_str not in (None, '', 'None')) else None
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             return render(request, 'edit_employee.html', {'emp': emp, 'error': 'Invalid salary format'})
 
         if emp.daily_salary < 0 or emp.half_day_salary < 0 or \
@@ -2354,7 +4381,8 @@ def mark_attendance(request, emp_id):
         # validate date
         try:
             selected_date = _date.fromisoformat(selected_date_str)
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             return render(request, 'mark_attendance.html', {
                 'emp': emp, 'error': 'Invalid date format', 'already_marked': already_marked
             })
@@ -2416,7 +4444,8 @@ def pay_salary(request, emp_id):
         amount_str = request.POST.get('amount')
         try:
             amount = Decimal(amount_str)
-        except Exception:
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
             return render(request, 'pay_salary.html', {
                 'emp': emp, 'error': 'Invalid amount format',
                 'total_earned': total_earned, 'total_paid': total_paid, 'remaining': remaining
@@ -2480,8 +4509,8 @@ def attendance_report_pdf(request, emp_id):
     if start and end:
         try:
             records = records.filter(date__range=[start, end])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception('Unhandled exception: %s', e)
 
     records = list(records)
 

@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
 <style>
 :root {
@@ -13,247 +13,421 @@
     --faint: #c4bfba;
     --accent: #c8602a;
     --border: #e8e3de;
+    --border-focus: rgba(200,96,42,0.5);
+    --bg-field: #f5f3ef;
+    --radius: 10px;
+    --radius-lg: 16px;
 }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--cream); font-family: 'DM Sans', sans-serif; }
 
-/* Reset */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    background: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-}
-
-/* Centering */
+/* ── PAGE LAYOUT — top-aligned, not vertically centered ── */
 .page-wrapper {
-    min-height: 100vh;
+    padding: 2.25rem 2rem 4rem;
+}
+
+/* ── HEADER ── */
+.page-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
+    justify-content: space-between;
+    max-width: 980px;
+    margin: 0 auto 1.5rem;
+    animation: fadeDown 0.4s cubic-bezier(0.22,1,0.36,1) both;
 }
 
-/* Card */
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.eyebrow-pill {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    padding: 3px 9px;
+    background: var(--bg-field);
+    border-radius: 100px;
+    border: 1px solid var(--border);
+}
+
+.page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+}
+
+.page-title em { color: var(--accent); font-style: italic; }
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.48rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+
+.btn-back:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+}
+
+/* ── CARD ── */
 .card {
     width: 100%;
-    max-width: 480px;
+    max-width: 980px;
+    margin: 0 auto;
     background: var(--white);
-    border-radius: 18px;
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
     overflow: hidden;
+    animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s both;
 }
 
-.card-accent {
-    height: 4px;
-    background: linear-gradient(90deg, var(--accent), #e8956d);
+.card-bar { height: 3px; background: var(--accent); }
+.card-body { padding: 1.75rem 2rem 2rem; }
+
+.card-sub { font-size: 13px; color: var(--muted); margin-top: 3px; margin-bottom: 1.6rem; }
+
+/* ── FORM GRID ── */
+.svc-form { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 1rem;
 }
 
-.card-body {
-    padding: 36px;
-}
-
-/* Header */
-.card-eyebrow {
-    font-size: 11px;
-    letter-spacing: 1px;
-    color: var(--accent);
-    margin-bottom: 6px;
-}
-
-.card-title {
-    font-family: 'Fraunces', serif;
-    font-size: 30px;
-    line-height: 1.2;
-}
-
-.card-title em {
-    color: var(--accent);
-    font-style: italic;
-}
-
-.card-subtitle {
-    margin-top: 6px;
-    font-size: 13px;
-    color: var(--muted);
-}
-
-/* Form */
-.form {
-    margin-top: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+.form-row-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
 }
 
 .field-label {
+    display: block;
     font-size: 12px;
+    font-weight: 500;
     color: var(--muted);
     margin-bottom: 6px;
+    letter-spacing: 0.3px;
 }
 
-/* Input wrapper */
-.field-wrap {
-    position: relative;
-}
+.field-label .optional { font-weight: 400; opacity: 0.65; }
 
-/* ICON FIXED PERFECTLY */
-.field-icon {
+.field-wrap { position: relative; }
+
+.field-prefix {
     position: absolute;
-    left: 16px;
-    top: 50%;
+    left: 13px; top: 50%;
     transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    color: var(--faint);
-}
-
-/* Special for textarea */
-textarea + .field-icon {
-    top: 18px;
-    transform: none;
-}
-
-/* INPUT FIX */
-.field-input {
-    width: 100%;
-    padding: 14px 16px 14px 48px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--cream);
-    font-size: 14px;
-    outline: none;
-}
-
-.field-input::placeholder {
-    color: #aaa;
-}
-
-.field-input:focus {
-    border-color: var(--accent);
-    background: #fff;
-}
-
-/* TEXTAREA FIX */
-textarea.field-input {
-    height: 130px;
-    resize: none;
-    padding-top: 16px;
-    line-height: 1.5;
-}
-
-/* PRICE FIX */
-.price-prefix {
-    position: absolute;
-    left: 48px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 14px;
+    font-size: 13px;
     color: var(--muted);
+    pointer-events: none;
+    user-select: none;
+    line-height: 1;
 }
 
-input[name="price"] {
-    padding-left: 72px;
-}
-
-/* Divider */
-.divider {
-    height: 1px;
-    background: var(--border);
-}
-
-/* Button */
-.btn-submit {
-    margin-top: 10px;
-    padding: 14px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(90deg, #4f83ff, #2f5bd3);
-    color: white;
+.svc-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-field);
     font-size: 14px;
-    cursor: pointer;
-    transition: 0.3s;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.svc-input::placeholder { color: #b0aba6; }
+.svc-input:focus {
+    border-color: var(--accent);
+    background: var(--white);
+    box-shadow: 0 0 0 3px var(--border-focus);
+}
+.svc-input.has-prefix { padding-left: 28px; }
+
+textarea.svc-input {
+    height: 152px;
+    resize: none;
+    padding-top: 11px;
+    line-height: 1.6;
 }
 
-.btn-submit:hover {
-    transform: translateY(-1px);
-    opacity: 0.95;
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-field);
+    padding: 1.2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    height: 152px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+.upload-zone:hover { border-color: var(--accent); background: rgba(200,96,42,0.04); }
+.upload-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+}
+.upload-icon { font-size: 26px; color: var(--accent); margin-bottom: 4px; }
+.upload-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.upload-sub { font-size: 11px; color: var(--muted); }
+.upload-btn {
+    display: inline-block;
+    margin-top: 7px;
+    padding: 4px 13px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--accent);
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    pointer-events: none;
+}
+
+.preview-box {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 8px;
+}
+.preview-box.show { display: flex; }
+.preview-img { width: 44px; height: 44px; border-radius: 7px; object-fit: cover; flex-shrink: 0; }
+.preview-name { font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.preview-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.preview-rm {
+    margin-left: auto;
+    font-size: 16px;
+    color: var(--muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: color 0.18s;
+    padding: 4px;
+    flex-shrink: 0;
+}
+.preview-rm:hover { color: var(--accent); }
+
+/* ── FOOTER ROW: error + submit ── */
+.svc-divider { height: 1px; background: var(--border); margin: 0.25rem 0; }
+
+.form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
+}
+
+.btn-cancel {
+    padding: 11px 22px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+.btn-cancel:hover { border-color: var(--ink); color: var(--ink); }
+
+.btn-svc-submit {
+    padding: 11px 28px !important;
+    border: none !important;
+    border-radius: var(--radius) !important;
+    background: var(--accent) !important;
+    color: #fff !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    cursor: pointer !important;
+    letter-spacing: 0.2px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    transition: opacity 0.2s, transform 0.15s;
+}
+.btn-svc-submit:hover { opacity: 0.88 !important; transform: translateY(-1px); }
+.btn-svc-submit:active { transform: scale(0.99) !important; }
+
+.error-msg {
+    color: var(--accent);
+    font-size: 13px;
+    margin-bottom: 1rem;
+    padding: 10px 14px;
+    background: rgba(200,96,42,0.07);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 </style>
 
 <div class="page-wrapper">
-    <div class="card">
-        <div class="card-accent"></div>
 
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <span class="eyebrow-pill">Service Catalog</span>
+            <h1 class="page-title">Add a <em>new</em> service</h1>
+        </div>
+        <a href="{% url 'services' %}" class="btn-back">
+            <i class="ti ti-arrow-left" style="font-size:13px;"></i> Back to Services
+        </a>
+    </div>
+
+    <!-- Card -->
+    <div class="card">
+        <div class="card-bar"></div>
         <div class="card-body">
 
-            <div class="card-header">
-                <div class="card-eyebrow">SERVICE CATALOG</div>
-                <h1 class="card-title">Add a <em>new</em><br>service</h1>
-                <p class="card-subtitle">
-                    Fill in the details below to list a new service offering.
-                </p>
-            </div>
+            <p class="card-sub">Fill in the details below to list a new service offering.</p>
 
             {% if error %}
-            <div style="color:red; margin-bottom:10px;">
-                {{ error }}
-            </div>
+            <div class="error-msg">{{ error }}</div>
             {% endif %}
 
-            <form method="POST" class="form">
+            <form method="POST" enctype="multipart/form-data" class="svc-form">
                 {% csrf_token %}
 
-                <!-- DESCRIPTION -->
-                <div>
-                    <label class="field-label">Service Description</label>
-                    <div class="field-wrap">
-                        <textarea
-                            name="name"
-                            class="field-input"
-                            placeholder="Describe the service..."
-                            required
-                        ></textarea>
-
-                        <svg class="field-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                            <rect x="2" y="2" width="12" height="12" rx="2"/>
-                        </svg>
+                <!-- Row 1: Service Name + Price -->
+                <div class="form-row">
+                    <div>
+                        <label class="field-label">Service Name</label>
+                        <div class="field-wrap">
+                            <input type="text" name="service_name" class="svc-input" placeholder="e.g. 2 Track Sliding Window" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label">Pricing (per unit)</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">₹</span>
+                            <input type="number" name="price" class="svc-input has-prefix" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
                     </div>
                 </div>
 
-                <!-- PRICE -->
-                <div>
-                    <label class="field-label">Pricing</label>
-                    <div class="field-wrap">
-                        <input
-                            type="number"
-                            name="price"
-                            class="field-input"
-                            placeholder="0.00"
-                            required
-                        >
-
-                        <span class="price-prefix">₹</span>
-
-                        <svg class="field-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                            <circle cx="8" cy="8" r="6"/>
-                        </svg>
+                <!-- Row 2: Description + Image -->
+                <div class="form-row-bottom">
+                    <div>
+                        <label class="field-label">Service Description</label>
+                        <div class="field-wrap">
+                            <textarea name="description" class="svc-input" placeholder="Detailed description used in quotations…" required></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label">Service Image <span class="optional">(optional)</span></label>
+                        <div class="upload-zone" id="dropZone">
+                            <input type="file" name="image" id="fileInput" accept="image/*" onchange="handleFile(this)">
+                            <i class="ti ti-photo-up upload-icon" aria-hidden="true"></i>
+                            <p class="upload-title" id="uploadTitle">Drop image here or browse</p>
+                            <p class="upload-sub">PNG, JPG, WEBP — up to 10 MB</p>
+                            <span class="upload-btn" id="uploadBtnLabel">Choose file</span>
+                        </div>
+                        <div class="preview-box" id="previewBox">
+                            <img id="previewImg" class="preview-img" src="" alt="Preview">
+                            <div style="min-width:0;">
+                                <div class="preview-name" id="prevName"></div>
+                                <div class="preview-size" id="prevSize"></div>
+                            </div>
+                            <button type="button" class="preview-rm" onclick="removeFile()" aria-label="Remove image">
+                                <i class="ti ti-x"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="divider"></div>
+                <div class="svc-divider"></div>
 
-                <button type="submit" class="btn-submit">
-                    Add Service →
-                </button>
-
+                <!-- Footer: Cancel + Submit -->
+                <div class="form-footer">
+                    <a href="{% url 'services' %}" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-svc-submit">
+                        Add Service <i class="ti ti-arrow-right" style="font-size:13px;"></i>
+                    </button>
+                </div>
             </form>
 
         </div>
     </div>
 </div>
+
+<script>
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = 'var(--accent)'; });
+dz.addEventListener('dragleave', () => dz.style.borderColor = '');
+dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.style.borderColor = '';
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) {
+        const dt = new DataTransfer(); dt.items.add(f);
+        document.getElementById('fileInput').files = dt.files;
+        showPreview(f);
+    }
+});
+
+function handleFile(inp) { if (inp.files[0]) showPreview(inp.files[0]); }
+
+function showPreview(file) {
+    const reader = new FileReader();
+    reader.onload = e => document.getElementById('previewImg').src = e.target.result;
+    reader.readAsDataURL(file);
+    document.getElementById('prevName').textContent = file.name;
+    document.getElementById('prevSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+    document.getElementById('previewBox').classList.add('show');
+    document.getElementById('uploadTitle').textContent = 'Image selected';
+    document.getElementById('uploadBtnLabel').textContent = 'Change file';
+}
+
+function removeFile() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('previewBox').classList.remove('show');
+    document.getElementById('uploadTitle').textContent = 'Drop image here or browse';
+    document.getElementById('uploadBtnLabel').textContent = 'Choose file';
+}
+</script>
 
 {% endblock %}

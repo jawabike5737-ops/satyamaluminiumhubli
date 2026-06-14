@@ -2,214 +2,389 @@
 
 {% block content %}
 <style>
-    /* ===== SCOPED DARK THEME WRAPPER ===== */
+    /* ===== GOOGLE FONTS ===== */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+    /* ===== PAGE WRAPPER ===== */
     .edit-page-wrapper {
         min-height: calc(100vh - 80px);
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
-        font-family: 'Inter', 'Poppins', sans-serif;
-        /* A subtle animated mesh gradient background */
-        background: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 50%),
-                    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 50%),
-                    #0f172a;
+        padding: 2.5rem 1.5rem;
+        font-family: 'DM Sans', sans-serif;
+        background-color: #f5f0e8;
+        background-image:
+            linear-gradient(90deg, rgba(180, 160, 120, 0.08) 1px, transparent 1px),
+            linear-gradient(rgba(180, 160, 120, 0.08) 1px, transparent 1px);
+        background-size: 40px 40px;
     }
 
-    /* ===== ULTRA-PREMIUM GLASS FORM ===== */
+    /* ===== FORM CARD ===== */
     .premium-form-card {
         width: 100%;
-        max-width: 480px;
-        background: rgba(30, 41, 59, 0.4);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 24px;
-        padding: 40px 35px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 
-                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        max-width: 850px;
+        background: #fffdf7;
+        border: 1.5px solid #e2d9c8;
+        border-radius: 16px;
+        padding: 48px 52px;
+        box-shadow:
+            0 4px 6px -1px rgba(120, 100, 60, 0.07),
+            0 10px 30px -5px rgba(120, 100, 60, 0.1);
     }
 
-    .premium-form-card h2 {
-        text-align: center;
-        margin: 0 0 35px 0;
-        color: #f8fafc;
+    /* ===== HEADER ===== */
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 40px;
+        padding-bottom: 28px;
+        border-bottom: 1.5px solid #e8e0d0;
+    }
+
+    .form-header-icon {
+        width: 52px;
+        height: 52px;
+        background: #3d3422;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .form-header-icon svg {
+        width: 26px;
+        height: 26px;
+        color: #f5f0e8;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .form-header-text h2 {
+        margin: 0 0 4px 0;
+        color: #1e1a0f;
+        font-family: 'Playfair Display', serif;
         font-weight: 700;
         font-size: 1.75rem;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
     }
 
-    /* ===== FLOATING LABEL INPUTS ===== */
-    .form-floating {
+    .form-header-text p {
+        margin: 0;
+        color: #8a7d65;
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+
+    /* ===== TWO-COLUMN GRID ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px 28px;
+    }
+
+    .form-grid .field-full {
+        grid-column: 1 / -1;
+    }
+
+    /* ===== FIELD GROUPS ===== */
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .field-group label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #5a4f3a;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .field-group .field-icon-wrap {
         position: relative;
-        margin-bottom: 20px;
-        opacity: 0;
-        animation: slideInRight 0.5s ease-out forwards;
     }
 
-    /* Safe CSS-only staggering (No Django template errors) */
-    .form-floating:nth-child(2) { animation-delay: 0.1s; }
-    .form-floating:nth-child(3) { animation-delay: 0.15s; }
-    .form-floating:nth-child(4) { animation-delay: 0.2s; }
-    .form-floating:nth-child(5) { animation-delay: 0.25s; }
-    .form-floating:nth-child(6) { animation-delay: 0.3s; }
-    .form-floating:nth-child(7) { animation-delay: 0.35s; }
+    .field-group .field-icon-wrap svg {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 17px;
+        height: 17px;
+        color: #b5a68a;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: none;
+        transition: color 0.2s ease;
+    }
 
-    .form-floating input {
+    .field-group input {
         width: 100%;
-        padding: 24px 16px 8px; /* Extra padding top for floating label */
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.2);
-        color: #f8fafc;
-        font-size: 1rem;
+        padding: 11px 14px 11px 42px;
+        border-radius: 10px;
+        border: 1.5px solid #ddd5c0;
+        background: #faf8f3;
+        color: #1e1a0f;
+        font-size: 0.95rem;
         font-weight: 500;
+        font-family: 'DM Sans', sans-serif;
         outline: none;
-        transition: all 0.3s ease;
+        transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         box-sizing: border-box;
     }
 
-    .form-floating label {
-        position: absolute;
-        left: 16px;
-        top: 16px;
-        color: rgba(148, 163, 184, 0.8);
-        font-size: 1rem;
-        pointer-events: none;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        transform-origin: left top;
+    .field-group input::placeholder {
+        color: #c4b89a;
+        font-weight: 400;
     }
 
-    /* Focus & Floating Magic */
-    .form-floating input:focus {
-        background: rgba(0, 0, 0, 0.3);
-        border-color: #818cf8;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    .field-group input:focus {
+        border-color: #7a6840;
+        background: #fffdf7;
+        box-shadow: 0 0 0 3px rgba(122, 104, 64, 0.12);
     }
 
-    .form-floating input:focus ~ label,
-    .form-floating input:not(:placeholder-shown) ~ label {
-        transform: translateY(-8px) scale(0.75);
-        color: #a5b4fc;
+    .field-group input:focus ~ svg,
+    .field-group .field-icon-wrap:focus-within svg {
+        color: #7a6840;
+    }
+
+    /* Optional badge */
+    .optional-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        background: #ede8db;
+        border-radius: 4px;
+        font-size: 0.65rem;
         font-weight: 600;
+        color: #8a7d65;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        vertical-align: middle;
     }
 
-    /* Hide the default placeholder text so floating labels work */
-    .form-floating input::placeholder {
-        color: transparent;
+    /* ===== DIVIDER ===== */
+    .section-label {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
     }
 
-    /* ===== AURORA GLOW BUTTON ===== */
-    .btn-submit-wrapper {
-        margin-top: 35px;
-        opacity: 0;
-        animation: slideInRight 0.5s ease-out 0.4s forwards;
+    .section-label span {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #a08b68;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        white-space: nowrap;
     }
 
-    .btn-aurora {
-        position: relative;
-        width: 100%;
-        padding: 16px;
-        border-radius: 14px;
-        border: none;
-        background: #4f46e5;
-        color: white;
-        font-size: 1.05rem;
-        font-weight: 600;
-        cursor: pointer;
-        overflow: hidden;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1;
-    }
-
-    /* The moving gradient layer */
-    .btn-aurora::before {
+    .section-label::after {
         content: '';
-        position: absolute;
-        top: 0; right: 0; bottom: 0; left: 0;
-        background: linear-gradient(120deg, #6366f1, #a855f7, #3b82f6, #6366f1);
-        background-size: 200% auto;
-        z-index: -1;
-        transition: 0.5s;
-        animation: gradientShift 3s linear infinite;
+        flex: 1;
+        height: 1px;
+        background: #e5ddd0;
     }
 
-    .btn-aurora span {
+    /* ===== SUBMIT ROW ===== */
+    .btn-submit-wrapper {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 14px;
+        margin-top: 12px;
+        padding-top: 28px;
+        border-top: 1.5px solid #e8e0d0;
+    }
+
+    .btn-cancel {
+        padding: 12px 26px;
+        border-radius: 10px;
+        border: 1.5px solid #ddd5c0;
+        background: transparent;
+        color: #5a4f3a;
+        font-size: 0.92rem;
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-cancel:hover {
+        background: #f0ebe0;
+        border-color: #c9bda4;
+    }
+
+    .btn-save {
         position: relative;
-        z-index: 2;
-        letter-spacing: 0.5px;
+        padding: 12px 32px;
+        border-radius: 10px;
+        border: none;
+        background: #3d3422;
+        color: #f5f0e8;
+        font-size: 0.92rem;
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
     }
 
-    .btn-aurora:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+    .btn-save svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
-    .btn-aurora:active {
-        transform: scale(0.97);
+    .btn-save:hover {
+        background: #2a2415;
+        box-shadow: 0 4px 14px rgba(61, 52, 34, 0.3);
+        transform: translateY(-1px);
     }
 
-    /* ===== KEYFRAMES ===== */
-    @keyframes slideUpFade {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
+    .btn-save:active {
+        transform: translateY(0);
+        box-shadow: none;
     }
 
-    @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(15px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 680px) {
+        .premium-form-card {
+            padding: 32px 24px;
+        }
 
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        100% { background-position: 200% 50%; }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-submit-wrapper {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .btn-cancel,
+        .btn-save {
+            justify-content: center;
+            width: 100%;
+        }
     }
 </style>
 
 <div class="edit-page-wrapper">
     <div class="premium-form-card">
-        <h2>Edit Employee</h2>
+
+        <!-- Header -->
+        <div class="form-header">
+            <div class="form-header-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="form-header-text">
+                <h2>Edit Employee</h2>
+                <p>Update the profile details for this employee record</p>
+            </div>
+        </div>
 
         <form method="POST" class="ajax-form" data-after-success="reload">
             {% csrf_token %}
 
-            <div class="form-floating">
-                <input type="text" name="name" id="empName" value="{{ emp.name }}" placeholder=" " required>
-                <label for="empName">Employee Name</label>
-            </div>
+            <div class="form-grid">
 
-            <div class="form-floating">
-                <input type="text" name="phone" id="empPhone" value="{{ emp.phone }}" placeholder=" " required>
-                <label for="empPhone">Phone Number</label>
-            </div>
+                <!-- Personal Info -->
+                <div class="section-label"><span>Personal Information</span></div>
 
-            <div class="form-floating">
-                <input type="text" name="role" id="empRole" value="{{ emp.role }}" placeholder=" " required>
-                <label for="empRole">Role / Position</label>
-            </div>
+                <!-- Name -->
+                <div class="field-group field-full">
+                    <label for="empName">Employee Name</label>
+                    <div class="field-icon-wrap">
+                        <input type="text" name="name" id="empName" value="{{ emp.name }}" placeholder="Full name" required>
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                </div>
 
-            <div class="form-floating">
-                <input type="number" name="salary" id="empSalary" value="{{ emp.daily_salary }}" placeholder=" " required>
-                <label for="empSalary">Daily Salary</label>
-            </div>
+                <!-- Phone -->
+                <div class="field-group">
+                    <label for="empPhone">Phone Number</label>
+                    <div class="field-icon-wrap">
+                        <input type="text" name="phone" id="empPhone" value="{{ emp.phone }}" placeholder="e.g. +91 98765 43210" required>
+                        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.61 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.93-8.19A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </div>
+                </div>
 
-            <div class="form-floating">
-                <input type="number" step="0.01" name="half_salary" id="empHalfSalary" value="{{ emp.half_day_salary }}" placeholder=" " required>
-                <label for="empHalfSalary">Half Day Salary</label>
-            </div>
+                <!-- Role -->
+                <div class="field-group">
+                    <label for="empRole">Role / Position</label>
+                    <div class="field-icon-wrap">
+                        <input type="text" name="role" id="empRole" value="{{ emp.role }}" placeholder="e.g. Site Supervisor" required>
+                        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    </div>
+                </div>
 
-            <div class="form-floating">
-                <input type="number" step="0.01" name="overtime_salary" id="empOvertime" value="{{ emp.overtime_salary }}" placeholder=" ">
-                <label for="empOvertime">Overtime Salary (Optional)</label>
-            </div>
+                <!-- Salary Info -->
+                <div class="section-label"><span>Salary Details</span></div>
 
-            <div class="btn-submit-wrapper">
-                <button type="submit" class="btn-aurora">
-                    <span>Update Employee Profile</span>
-                </button>
+                <!-- Daily Salary -->
+                <div class="field-group">
+                    <label for="empSalary">Daily Salary</label>
+                    <div class="field-icon-wrap">
+                        <input type="number" name="salary" id="empSalary" value="{{ emp.daily_salary }}" placeholder="0.00" required>
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                </div>
+
+                <!-- Half Day Salary -->
+                <div class="field-group">
+                    <label for="empHalfSalary">Half Day Salary</label>
+                    <div class="field-icon-wrap">
+                        <input type="number" step="0.01" name="half_salary" id="empHalfSalary" value="{{ emp.half_day_salary }}" placeholder="0.00" required>
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                </div>
+
+                <!-- Overtime Salary -->
+                <div class="field-group field-full">
+                    <label for="empOvertime">Overtime Salary <span class="optional-badge">Optional</span></label>
+                    <div class="field-icon-wrap">
+                        <input type="number" step="0.01" name="overtime_salary" id="empOvertime" value="{{ emp.overtime_salary }}" placeholder="0.00">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="btn-submit-wrapper">
+                    <a href="javascript:history.back()" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-save">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                        Save Changes
+                    </button>
+                </div>
+
             </div>
         </form>
+
     </div>
 </div>
 {% endblock %}

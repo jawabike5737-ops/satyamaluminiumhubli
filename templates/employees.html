@@ -194,48 +194,26 @@
     animation: fadeUp 0.6s 0.25s cubic-bezier(0.16,1,0.3,1) forwards;
 }
 
-/* ── Stats row ── */
-.dw-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 16px;
-    margin-bottom: 28px;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
+/* ── Search bar (replaces stats row) ── */
+.dw-search-wrap{
+    margin-bottom:28px;
 }
-.dw-stat {
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 18px 20px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+
+.dw-search{
+    width:100%;
+    padding:14px 18px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fff;
+    font-size:14px;
+    font-family:'Outfit',sans-serif;
+    outline:none;
+    transition:all .2s ease;
 }
-.dw-stat::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--gold-mid), var(--gold-light));
-}
-.dw-stat:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(184,134,11,0.1);
-}
-.dw-stat-label {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--soft);
-    margin-bottom: 8px;
-}
-.dw-stat-value {
-    font-family: 'Instrument Serif', serif;
-    font-size: 28px;
-    color: var(--charcoal);
-    line-height: 1;
+
+.dw-search:focus{
+    border-color:var(--gold-mid);
+    box-shadow:0 0 0 4px rgba(184,134,11,0.08);
 }
 
 /* ── Table card ── */
@@ -488,23 +466,20 @@
 
         <div class="dw-divider"></div>
 
-        <!-- Stats -->
-        <div class="dw-stats">
-            <div class="dw-stat">
-                <div class="dw-stat-label">Total Staff</div>
-                <div class="dw-stat-value">{{ data|length }}</div>
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:28px;flex-wrap:wrap;">
+            <div style="min-width:160px;background:var(--white);border:1px solid var(--line);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--soft);margin-bottom:6px;">Total Staff</div>
+                <div style="font-family:'Instrument Serif', serif;font-size:22px;color:var(--charcoal);">{{ data|length }}</div>
             </div>
-            <div class="dw-stat">
-                <div class="dw-stat-label">Active Today</div>
-                <div class="dw-stat-value">—</div>
-            </div>
-            <div class="dw-stat">
-                <div class="dw-stat-label">Avg. Daily Rate</div>
-                <div class="dw-stat-value">₹—</div>
-            </div>
-            <div class="dw-stat">
-                <div class="dw-stat-label">Roles</div>
-                <div class="dw-stat-value">—</div>
+            <div style="flex:1;min-width:240px;">
+                <div class="dw-search-wrap">
+                    <input
+                        type="text"
+                        id="employeeSearch"
+                        class="dw-search"
+                        placeholder="Search employee by name, phone or role..."
+                    >
+                </div>
             </div>
         </div>
 
@@ -574,6 +549,17 @@ document.addEventListener('DOMContentLoaded', () => {
             row.classList.add('visible');
         }, 120 + i * 70);
     });
+
+    const searchInput = document.getElementById('employeeSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            const value = this.value.toLowerCase();
+            document.querySelectorAll('.dw-row').forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(value) ? '' : 'none';
+            });
+        });
+    }
 });
 </script>
 

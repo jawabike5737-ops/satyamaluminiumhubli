@@ -23,7 +23,13 @@ urlpatterns = [
     # ================= SERVICES =================
     path('services/', views.services, name='services'),
     path('api/services/', views.services_api, name='services_api'),
+    path('api/service-search/', views.service_search_api, name='service_search_api'),
     path('api/create-service/', views.create_service_api, name='create_service_api'),
+    path('api/save-service/', views.create_service_api, name='save_service_api'),
+    path('api/update-service/<int:id>/', views.update_service_api, name='update_service_api'),
+    path('api/service-details/<int:id>/', views.service_details_api, name='service_details_api'),
+    path('api/get-service/<str:service_code>/', views.get_service_by_code, name='get_service_by_code'),
+    path('api/service/<int:id>/delete-image/', views.delete_service_image, name='delete_service_image'),
     path('add-service/', views.add_service, name='add_service'),
     path('edit-service/<int:id>/', views.edit_service, name='edit_service'),
     path('delete-service/<int:id>/', views.delete_service, name='delete_service'),
@@ -31,11 +37,16 @@ urlpatterns = [
     # ================= QUOTATIONS =================
     path('quotations/', views.quotations, name='quotations'),
     path('create-quotation/', views.create_quotation, name='create_quotation'),
+    path('api/payment/save/', views.ajax_save_payment, name='ajax_save_payment'),
+    path('api/payment/delete/<int:id>/', views.delete_payment_account, name='delete_payment_account'),
     path('add-term/', views.add_term, name='add_term'),
     path('edit-term/<int:id>/', views.edit_term, name='edit_term'),
     path('view-quotation/<int:id>/', views.view_quotation, name='view_quotation'),
     path('edit-quotation/<int:id>/', views.edit_quotation, name='edit_quotation'),
     path('quotation-pdf/<int:id>/', views.quotation_pdf, name='quotation_pdf'),
+    path('api/quotation-item/update/', views.update_quotation_item, name='update_quotation_item'),
+    path('api/service/<int:id>/json/', views.get_service_json, name='get_service_json'),
+    path('api/quotation/save-draft/', views.save_quotation_draft, name='save_quotation_draft'),
     path('delete-quotation/<int:id>/', views.delete_quotation, name='delete_quotation'),
 
     # ================= MEASUREMENTS =================
@@ -44,6 +55,7 @@ urlpatterns = [
     path('customer/<int:cust_id>/measurements/save/', views.save_measurements, name='save_measurements'),
     path('customer/<int:cust_id>/measurements/json/', views.get_measurements_json, name='get_measurements_json'),
     path('api/get-measurements/<int:cust_id>/', views.get_measurements_json, name='api_get_measurements'),
+    path('measurement-item/delete/', views.delete_measurement_item, name='delete_measurement_item'),
 
     # ================= ORDERS =================
     path('orders/', views.orders, name='orders'),

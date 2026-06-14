@@ -1,47 +1,509 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2>Pay Salary - {{ emp.name }}</h2>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
-<!-- Salary Summary -->
-<div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:15px;">
-    <p><strong>Total Earned:</strong> ₹{{ total_earned }}</p>
-    <p><strong>Total Paid:</strong> ₹{{ total_paid }}</p>
-    <p style="color:red;"><strong>Remaining:</strong> ₹{{ remaining }}</p>
-</div>
+<style>
+:root {
+    --cream: #faf8f4;
+    --white: #ffffff;
+    --surface: #f5f3ef;
+    --surface-2: #faf9f6;
+    --ink: #1a1714;
+    --ink-2: #3d3830;
+    --ink-3: #7c7468;
+    --ink-4: #b0a89e;
+    --accent: #c8602a;
+    --accent-glow: rgba(200,96,42,0.12);
+    --accent-soft: #fff4ef;
+    --green: #15803d;
+    --green-soft: #f0fdf4;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --red: #b91c1c;
+    --red-soft: #fef2f2;
+    --border: #e8e3de;
+    --border-soft: #f0ece5;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--cream); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
 
-<!-- Error -->
-{% if error %}
-    <p style="color:red;">{{ error }}</p>
-{% endif %}
+/* ── PAGE LAYOUT ── */
+.page-wrapper { padding: 1.5rem 2rem 3rem; }
 
-<form method="POST" class="form ajax-form" data-after-success="reload">
-    {% csrf_token %}
+/* ── PAGE HEADER ── */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 680px;
+    margin: 0 auto 1rem;
+    animation: fadeDown 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
 
-    <label>Enter Amount</label>
-    <input 
-        type="number" 
-        name="amount" 
-        placeholder="Enter amount" 
-        step="0.01"
-        max="{{ remaining }}"
-        required
-    >
+.header-left { display: flex; align-items: center; gap: 0.75rem; }
 
-    <!-- Quick buttons -->
-    <div style="margin-top:10px;">
-        <button type="button" onclick="setFull()">Pay Full Remaining</button>
+.emp-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: -0.02em;
+}
+
+.header-text-wrap { display: flex; flex-direction: column; }
+
+.eyebrow-pill {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+    margin-bottom: 1px;
+}
+
+.page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+}
+.page-title em { color: var(--accent); font-style: italic; }
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.48rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-3);
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-back:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── MAIN CARD ── */
+.pay-card {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+}
+
+.card-bar { height: 3px; background: var(--accent); }
+
+/* ── STATS ROW ── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.stat-cell {
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-cell:not(:last-child) {
+    border-right: 1px solid var(--border-soft);
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-4);
+}
+
+.stat-value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+
+.stat-cell.earned .stat-value { color: var(--green); }
+.stat-cell.paid   .stat-value { color: var(--amber); }
+.stat-cell.remain .stat-value { color: var(--red); }
+
+.stat-sub {
+    font-size: 0.7rem;
+    color: var(--ink-4);
+    margin-top: 1px;
+}
+
+/* ── PROGRESS ── */
+.progress-section {
+    padding: 1rem 1.4rem;
+    border-bottom: 1px solid var(--border-soft);
+    background: var(--surface-2);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progress-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-4);
+}
+
+.progress-pct {
+    font-family: 'Fraunces', serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.progress-track {
+    height: 6px;
+    border-radius: 99px;
+    background: var(--border-soft);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--accent);
+    width: 0;
+    transition: width 1.1s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ── FORM BODY ── */
+.form-body {
+    padding: 1.5rem 1.5rem 0;
+}
+
+.form-label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 7px;
+}
+
+/* Amount input */
+.amount-wrap {
+    position: relative;
+    margin-bottom: 6px;
+}
+
+.amount-prefix {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    pointer-events: none;
+    user-select: none;
+}
+
+.amount-input {
+    width: 100%;
+    padding: 14px 14px 14px 34px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    appearance: textfield;
+    -webkit-appearance: textfield;
+}
+.amount-input::-webkit-inner-spin-button,
+.amount-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.amount-input::placeholder { color: var(--ink-4); font-weight: 400; }
+.amount-input:focus {
+    border-color: var(--accent);
+    background: var(--white);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.max-hint {
+    font-size: 0.72rem;
+    color: var(--ink-4);
+    text-align: right;
+    margin-bottom: 1rem;
+}
+.max-hint strong { color: var(--accent); font-weight: 600; }
+
+/* Quick-fill buttons */
+.quick-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.quick-btn {
+    padding: 9px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+    letter-spacing: 0.01em;
+}
+.quick-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px var(--accent-glow);
+}
+.quick-btn:active { transform: scale(0.97); }
+
+/* Error */
+.error-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--red-soft);
+    border: 1px solid #fecaca;
+    border-radius: var(--radius);
+    color: var(--red);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+/* ── FOOTER ── */
+.form-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    padding: 11px 20px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink-3);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-cancel:hover { border-color: var(--ink); color: var(--ink); background: var(--white); }
+
+.btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 26px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.01em;
+}
+.btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-submit:active { transform: scale(0.99); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<div class="page-wrapper">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <div class="emp-avatar">{{ emp.name|first|upper }}</div>
+            <div class="header-text-wrap">
+                <span class="eyebrow-pill">{{ emp.role }}</span>
+                <h1 class="page-title">Pay <em>Salary</em></h1>
+            </div>
+        </div>
+        <a href="{% url 'employees' %}" class="btn-back">
+            <i class="ti ti-arrow-left" style="font-size:13px;"></i> Back
+        </a>
     </div>
 
-    <br>
+    <!-- Main Card -->
+    <div class="pay-card">
+        <div class="card-bar"></div>
 
-    <button type="submit">Pay Salary</button>
-</form>
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-cell earned">
+                <span class="stat-label">Total Earned</span>
+                <span class="stat-value">₹{{ total_earned }}</span>
+                <span class="stat-sub">this period</span>
+            </div>
+            <div class="stat-cell paid">
+                <span class="stat-label">Total Paid</span>
+                <span class="stat-value">₹{{ total_paid }}</span>
+                <span class="stat-sub">disbursed</span>
+            </div>
+            <div class="stat-cell remain">
+                <span class="stat-label">Remaining</span>
+                <span class="stat-value">₹{{ remaining }}</span>
+                <span class="stat-sub">to settle</span>
+            </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <span class="progress-label">Payment progress</span>
+                <span class="progress-pct" id="progPct">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progFill"></div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-body">
+
+                {% if error %}
+                <div class="error-banner">
+                    <i class="ti ti-alert-circle" style="font-size:15px;flex-shrink:0;"></i>
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <label class="form-label" for="amountInput">Payment Amount</label>
+                <div class="amount-wrap">
+                    <span class="amount-prefix">₹</span>
+                    <input
+                        type="number"
+                        id="amountInput"
+                        name="amount"
+                        class="amount-input"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0.01"
+                        max="{{ remaining }}"
+                        required
+                        autofocus
+                    >
+                </div>
+                <div class="max-hint">Max payable: <strong>₹{{ remaining }}</strong></div>
+
+                <!-- Quick-fill -->
+                <div class="quick-row">
+                    <button type="button" class="quick-btn" onclick="setAmount(0.25)">Pay 25%</button>
+                    <button type="button" class="quick-btn" onclick="setAmount(0.5)">Pay 50%</button>
+                    <button type="button" class="quick-btn" onclick="setFull()">Pay Full</button>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="form-footer">
+                <a href="{% url 'employees' %}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-submit">
+                    <i class="ti ti-cash" style="font-size:15px;"></i>
+                    Pay Salary
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
 
 <script>
+const REMAINING    = parseFloat("{{ remaining }}");
+const TOTAL_EARNED = parseFloat("{{ total_earned }}");
+const TOTAL_PAID   = parseFloat("{{ total_paid }}");
+const PCT = TOTAL_EARNED > 0 ? Math.round((TOTAL_PAID / TOTAL_EARNED) * 100) : 0;
+
+// Animate progress bar on load
+setTimeout(function () {
+    document.getElementById('progFill').style.width = PCT + '%';
+    let p = 0;
+    const pctEl = document.getElementById('progPct');
+    const iv = setInterval(function () {
+        p = Math.min(p + 1, PCT);
+        pctEl.textContent = p + '%';
+        if (p >= PCT) clearInterval(iv);
+    }, 14);
+}, 300);
+
+function setAmount(ratio) {
+    const inp = document.getElementById('amountInput');
+    inp.value = (REMAINING * ratio).toFixed(2);
+    inp.focus();
+}
+
 function setFull() {
-    document.querySelector('input[name="amount"]').value = "{{ remaining }}";
+    const inp = document.getElementById('amountInput');
+    inp.value = REMAINING.toFixed(2);
+    inp.focus();
 }
 </script>
 

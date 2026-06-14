@@ -4,407 +4,816 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quotation #{{ q.id }}</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
 <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ── */
     :root {
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --success: #10b981;
-        --success-hover: #059669;
-        --bg: #f8fafc;
-        --surface: #ffffff;
-        --text-main: #0f172a;
-        --text-muted: #64748b;
-        --border: #e2e8f0;
-        --radius: 16px;
-        --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        --gold:      #C9A84C;
+        --gold-lt:   #E2C97E;
+        --gold-dim:  rgba(201,168,76,.22);
+        --brown:     #3d3422;
+        --brown-lt:  #5a4f3a;
+        --cream:     #f5f0e8;
+        --card:      #fffdf7;
+        --border:    #e2d9c8;
+        --border-2:  #e8e0d0;
+        --text-1:    #1e1a0f;
+        --text-2:    #5a4f3a;
+        --text-3:    #8a7d65;
+        --text-4:    #b5a68a;
+        --red:       #b91c1c;
+        --green:     #059669;
+        --blue:      #1D4ED8;
+        --r:         12px;
+        --r-lg:      16px;
     }
 
+    /* ── Page ── */
     body {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background: var(--bg);
-        color: var(--text-main);
-        margin: 0;
-        padding: 40px 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        font-family: 'DM Sans', sans-serif;
+        background-color: var(--cream);
+        background-image:
+            linear-gradient(90deg, rgba(180,160,120,.07) 1px, transparent 1px),
+            linear-gradient(rgba(180,160,120,.07) 1px, transparent 1px);
+        background-size: 40px 40px;
+        color: var(--text-1);
         min-height: 100vh;
+        padding: 28px 28px 60px;
     }
 
-    /* --- Animations --- */
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-15px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-
-    /* --- Main Layout --- */
-    .invoice-card {
-        background: var(--surface);
-        padding: 40px 50px;
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
+    /* ── Wrapper — full available width ── */
+    .qv-wrap {
         width: 100%;
-        max-width: 850px;
-        animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        position: relative;
-        overflow: hidden;
-    }
-
-    /* Decorative top accent border */
-    .invoice-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 6px;
-        background: linear-gradient(90deg, var(--primary), #818cf8);
-    }
-
-    /* --- Header Section --- */
-    .header-section {
+        max-width: 1600px;
+        margin: 0 auto;
         display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* ── Top action bar ── */
+    .qv-topbar {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 40px;
-        padding-bottom: 20px;
-        border-bottom: 2px dashed var(--border);
+        flex-wrap: wrap;
+        gap: 14px;
     }
 
-    .header-left h2 {
-        margin: 0 0 8px 0;
-        font-size: 28px;
+    .qv-brand {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .qv-brand-eyebrow {
+        font-size: 0.7rem;
         font-weight: 700;
-        color: var(--primary);
-        letter-spacing: -0.5px;
-    }
-
-    .header-left p {
-        margin: 0;
-        color: var(--text-muted);
-        font-size: 14px;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
+        color: var(--text-4);
     }
 
-    .customer-badge {
-        background: #f1f5f9;
-        padding: 10px 18px;
-        border-radius: 10px;
+    .qv-brand-id {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--brown);
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+
+    .qv-brand-id span { color: var(--gold); }
+
+    .qv-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .qv-customer-chip {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 40px;
+        padding: 8px 18px 8px 10px;
         font-weight: 600;
-        color: var(--text-main);
+        font-size: 0.9rem;
+        color: var(--text-1);
+    }
+
+    .qv-customer-chip-icon {
+        width: 30px; height: 30px;
+        background: var(--brown);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .qv-customer-chip-icon svg {
+        width: 15px; height: 15px;
+        stroke: var(--cream);
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 22px;
+        border-radius: var(--r);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: background .18s, box-shadow .18s, transform .15s;
+        white-space: nowrap;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn svg {
+        width: 15px; height: 15px;
+        stroke: currentColor; fill: none;
+        stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .btn-outline {
+        background: var(--card);
+        color: var(--text-2);
+        border: 1.5px solid var(--border);
+    }
+    .btn-outline:hover {
+        background: #f0ebe0;
+        border-color: var(--gold-dim);
+    }
+
+    .btn-gold {
+        background: var(--brown);
+        color: var(--cream);
+        box-shadow: 0 3px 12px rgba(61,52,34,.22);
+    }
+    .btn-gold:hover {
+        background: #2a2415;
+        box-shadow: 0 5px 18px rgba(61,52,34,.3);
+        transform: translateY(-1px);
+    }
+
+    .btn-green {
+        background: var(--green);
+        color: #fff;
+        box-shadow: 0 3px 12px rgba(5,150,105,.2);
+    }
+    .btn-green:hover {
+        background: #047857;
+        box-shadow: 0 5px 16px rgba(5,150,105,.3);
+        transform: translateY(-1px);
+    }
+
+    /* ── Card shell ── */
+    .qv-card {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        box-shadow:
+            0 4px 6px -1px rgba(120,100,60,.06),
+            0 10px 30px -5px rgba(120,100,60,.09);
+    }
+
+    /* Gold top accent */
+    .qv-card-accent {
+        height: 5px;
+        background: linear-gradient(90deg, var(--brown), var(--gold), var(--gold-lt));
+    }
+
+    /* ── Section header inside card ── */
+    .qv-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 28px;
+        background: #faf6ee;
+        border-bottom: 1.5px solid var(--border-2);
+    }
+
+    .qv-section-title {
         display: flex;
         align-items: center;
         gap: 10px;
-        border: 1px solid var(--border);
-    }
-
-    /* --- Table Styles --- */
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        margin-bottom: 30px;
-    }
-
-    th {
-        background: #f8fafc;
-        color: var(--text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 12px;
-        letter-spacing: 0.5px;
-        padding: 16px;
-        text-align: left;
-        border-bottom: 2px solid var(--border);
-    }
-
-    th:nth-child(2), td:nth-child(2),
-    th:nth-child(3), td:nth-child(3),
-    th:nth-child(4), td:nth-child(4),
-    th:last-child, td:last-child {
-        text-align: right;
-    }
-
-    td {
-        padding: 18px 16px;
-        border-bottom: 1px solid var(--border);
-        font-size: 15px;
-        color: var(--text-main);
-        transition: all 0.2s ease;
-    }
-
-    tr {
-        animation: slideIn 0.4s ease-out forwards;
-        opacity: 0;
-    }
-
-    /* Staggered animation for table rows */
-    tbody tr:nth-child(1) { animation-delay: 0.1s; }
-    tbody tr:nth-child(2) { animation-delay: 0.2s; }
-    tbody tr:nth-child(3) { animation-delay: 0.3s; }
-    tbody tr:nth-child(4) { animation-delay: 0.4s; }
-    tbody tr:nth-child(5) { animation-delay: 0.5s; }
-    tbody tr:nth-child(n+6) { animation-delay: 0.6s; }
-
-    tbody tr:hover td {
-        background-color: #f8fafc;
-        transform: scale(1.005);
-    }
-
-    /* --- Total Section --- */
-    .total-section {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 40px;
-    }
-
-    .total-box {
-        background: var(--primary);
-        color: white;
-        padding: 24px 36px;
-        border-radius: 14px;
-        text-align: right;
-        min-width: 220px;
-        box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .total-box:hover {
-        transform: translateY(-4px) scale(1.02);
-    }
-
-    .total-box span {
-        display: block;
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .total-box h3 {
-        margin: 0;
-        font-size: 32px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.78rem;
         font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--text-3);
     }
 
-    /* --- Terms Section --- */
-    .terms-section {
-        background: #f1f5f9;
-        padding: 24px;
-        border-radius: 12px;
-        margin-bottom: 40px;
-        border-left: 4px solid var(--text-muted);
+    .qv-section-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+        flex-shrink: 0;
     }
 
-    .terms-section h3 {
-        margin: 0 0 16px 0;
-        font-size: 16px;
-        color: var(--text-main);
+    /* ── Items Table ── */
+    .qv-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    table.qv-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        table-layout: fixed;
+    }
+
+    table.qv-table colgroup col.col-sl   { width: 52px; }
+    table.qv-table colgroup col.col-img  { width: 100px; }
+    table.qv-table colgroup col.col-desc { /* fill remaining */ }
+    table.qv-table colgroup col.col-qty  { width: 90px; }
+    table.qv-table colgroup col.col-unit { width: 90px; }
+    table.qv-table colgroup col.col-price{ width: 130px; }
+    table.qv-table colgroup col.col-tot  { width: 140px; }
+
+    table.qv-table thead th {
+        background: #faf6ee;
+        padding: 13px 14px;
+        text-align: center;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        border-bottom: 1.5px solid var(--border-2);
+        white-space: nowrap;
+    }
+
+    table.qv-table thead th.th-desc { text-align: left; }
+    table.qv-table thead th.th-price,
+    table.qv-table thead th.th-tot  { text-align: right; }
+
+    table.qv-table tbody td {
+        padding: 16px 14px;
+        border-bottom: 1px solid var(--border-2);
+        color: var(--text-1);
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    table.qv-table tbody tr:last-child td { border-bottom: none; }
+
+    table.qv-table tbody tr:hover td { background: #faf7f0; }
+
+    /* SL column */
+    .td-sl {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--gold);
+    }
+
+    /* Image cell */
+    .td-img {
+        text-align: center;
+    }
+
+    .item-img {
+        width: 78px;
+        height: 62px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1.5px solid var(--border);
+        display: block;
+        margin: 0 auto;
+    }
+
+    .item-img-placeholder {
+        width: 78px;
+        height: 62px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f0e8;
+        border: 1.5px dashed var(--border);
+        border-radius: 8px;
+        margin: 0 auto;
+        color: var(--text-4);
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .item-img-placeholder svg {
+        width: 18px; height: 18px;
+        stroke: var(--text-4); fill: none;
+        stroke-width: 1.5;
+    }
+
+    /* Description cell — left aligned, wider */
+    .td-desc {
+        text-align: left;
+        line-height: 1.55;
+        color: var(--text-1);
+        font-weight: 500;
+        white-space: pre-line;
+        word-break: break-word;
+        padding-right: 24px;
+    }
+
+    /* Qty / Price / Total */
+    .td-qty, .td-unit { font-weight: 500; }
+
+    .td-unit-chip {
+        display: inline-block;
+        background: #f0ebe0;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 3px 9px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-2);
+    }
+
+    .td-price {
+        text-align: right;
+        font-weight: 500;
+        color: var(--text-2);
+    }
+
+    .td-total {
+        text-align: right;
+        font-weight: 700;
+        color: var(--text-1);
+        font-size: 0.92rem;
+    }
+
+    /* ── Totals + Terms two-column layout ── */
+    .qv-bottom {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 20px;
+        padding: 28px;
+        align-items: start;
+    }
+
+    /* ── Terms & Payment ── */
+    .qv-terms-col {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .qv-terms-box {
+        background: #faf7f1;
+        border: 1.5px solid var(--border);
+        border-left: 4px solid var(--gold);
+        border-radius: var(--r);
+        padding: 20px 22px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .qv-terms-box h3 {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--brown-lt);
+        margin-bottom: 14px;
+    }
+
+    .qv-terms-box h3 svg {
+        width: 15px; height: 15px;
+        stroke: var(--gold); fill: none;
+        stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+
+    .qv-terms-box ul {
+        padding-left: 18px;
+        color: var(--text-2);
+        font-size: 0.875rem;
+        line-height: 1.75;
+        list-style: none;
+    }
+
+    .qv-terms-box ul li {
+        position: relative;
+        padding-left: 14px;
+        margin-bottom: 6px;
+    }
+
+    .qv-terms-box ul li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.6em;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--gold);
+        flex-shrink: 0;
+    }
+
+    .qv-payment-box {
+        background: #faf7f1;
+        border: 1.5px solid var(--border);
+        border-left: 4px solid var(--brown);
+        border-radius: var(--r);
+        padding: 20px 22px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .qv-payment-box h3 {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--brown-lt);
+        margin-bottom: 14px;
+    }
+
+    .qv-payment-box h3 svg {
+        width: 15px; height: 15px;
+        stroke: var(--brown); fill: none;
+        stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .qv-payment-row {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        font-size: 0.875rem;
+        padding: 5px 0;
+        border-bottom: 1px solid var(--border-2);
+        color: var(--text-2);
+    }
+
+    .qv-payment-row:last-child { border-bottom: none; }
+
+    .qv-payment-row strong {
+        color: var(--text-2);
+        font-weight: 600;
+        white-space: nowrap;
+        min-width: 130px;
+        flex-shrink: 0;
+    }
+
+    .qv-payment-row span {
+        color: var(--text-1);
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    /* ── Totals panel ── */
+    .qv-totals {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(201,168,76,.1);
+    }
+
+    .qv-totals-head {
+        background: linear-gradient(135deg, var(--brown), #2a2415);
+        padding: 16px 22px;
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
-    .terms-section ul {
-        margin: 0;
-        padding-left: 20px;
-        color: var(--text-muted);
-        font-size: 14px;
-        line-height: 1.7;
+    .qv-totals-head-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(245,240,232,.7);
     }
 
-    .terms-section li {
-        margin-bottom: 8px;
-        transition: color 0.2s;
-    }
+    .qv-totals-body { padding: 6px 0; }
 
-    .terms-section li:hover {
-        color: var(--text-main);
-    }
-
-    /* --- Action Buttons --- */
-    .action-buttons {
+    .qv-totals-row {
         display: flex;
-        gap: 16px;
-        justify-content: flex-end;
-        padding-top: 24px;
-        border-top: 1px solid var(--border);
-    }
-
-    .btn {
-        display: inline-flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        padding: 14px 28px;
-        border-radius: 10px;
-        font-size: 15px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
+        padding: 10px 22px;
+        font-size: 0.875rem;
+        border-bottom: 1px solid var(--border-2);
     }
 
-    .btn-outline {
-        color: var(--text-main);
-        background: white;
-        border: 2px solid var(--border);
+    .qv-totals-row:last-child { border-bottom: none; }
+
+    .qv-totals-row .tl { color: var(--text-3); font-weight: 500; }
+    .qv-totals-row .tv { font-weight: 600; color: var(--text-1); font-variant-numeric: tabular-nums; }
+    .qv-totals-row.discount .tv { color: var(--red); }
+
+    .qv-totals-divider {
+        height: 1.5px;
+        background: var(--border-2);
+        margin: 2px 0;
     }
 
-    .btn-outline:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        background: #f8fafc;
-        transform: translateY(-2px);
+    .qv-totals-grand {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 22px;
+        background: linear-gradient(135deg, #faf7f1, #fff8e8);
+        border-top: 2px solid var(--gold-dim);
     }
 
-    .btn-primary {
-        background: var(--success);
-        color: white;
-        border: 2px solid var(--success);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    .qv-totals-grand .grand-label {
+        font-family: 'Playfair Display', serif;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brown);
     }
 
-    .btn-primary:hover {
-        background: var(--success-hover);
-        border-color: var(--success-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
+    .qv-totals-grand .grand-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--brown);
+        letter-spacing: -0.02em;
     }
 
-    /* --- Responsive Adjustments --- */
-    @media (max-width: 600px) {
-        .header-section {
-            flex-direction: column;
-            gap: 20px;
+    /* ── Action buttons row ── */
+    .qv-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 18px 28px;
+        border-top: 1.5px solid var(--border-2);
+        background: #faf6ee;
+        flex-wrap: wrap;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+        .qv-bottom {
+            grid-template-columns: 1fr;
         }
-        .action-buttons {
-            flex-direction: column;
+        .qv-totals {
+            max-width: 440px;
         }
-        .btn {
-            width: 100%;
-        }
-        .invoice-card {
-            padding: 30px 20px;
-        }
-        td, th {
-            padding: 12px 8px;
-            font-size: 14px;
-        }
+    }
+
+    @media (max-width: 680px) {
+        body { padding: 16px 12px 40px; }
+        .qv-bottom { padding: 18px; }
+        .qv-actions { padding: 14px 18px; }
+        .qv-brand-id { font-size: 1.5rem; }
+        table.qv-table { font-size: 0.8rem; }
+        .qv-totals { max-width: 100%; }
     }
 </style>
 </head>
 
 <body>
 
-<div class="invoice-card">
-    
-    <div class="header-section">
-        <div class="header-left">
-            <p>Official Quote</p>
-            <h2>#{{ q.id }}</h2>
+<div class="qv-wrap">
+
+    <!-- ── Top bar: ID + Customer + Action buttons ── -->
+    <div class="qv-topbar">
+        <div class="qv-brand">
+            <span class="qv-brand-eyebrow">Official Quote</span>
+            <div class="qv-brand-id">#<span>{{ q.id }}</span></div>
         </div>
-        <div class="customer-badge">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            {{ q.customer.name }}
-        </div>
-    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th>Qty</th>
-                <th>Unit</th>
-                <th>Price</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for i in items %}
-            <tr>
-                <td style="font-weight: 500;">{{ i.description }}</td>
-                <td>{{ i.quantity|floatformat:"-3" }}</td>
-                <td><span style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 12px;">{{ i.unit }}</span></td>
-                <td>₹{{ i.price|floatformat:2 }}</td>
-                <td style="font-weight: 600; color: var(--text-main);">₹{{ i.total|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div class="total-section">
-        <div class="total-box">
-            <span>Grand Total</span>
-            <h3>₹ {{ q.total|floatformat:2 }}</h3>
-        </div>
-    </div>
-
-    <div class="terms-section">
-        <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Terms & Conditions
-        </h3>
-        <ul>
-            {% for qt in ordered_terms %}
-                <li>{{ qt.term.text }}</li>
-            {% empty %}
-                <li>No terms added</li>
-            {% endfor %}
-            
-            {% if q.custom_terms %}
-                <li>{{ q.custom_terms }}</li>
-            {% endif %}
-        </ul>
-    </div>
-
-    <div class="action-buttons">
-        <a href="{% url 'quotation_pdf' q.id %}" class="btn btn-outline">
-            <svg style="margin-right: 8px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Download PDF
-        </a>
-        <a href="{% url 'convert_to_order' q.id %}" class="btn btn-primary">
-            <svg style="margin-right: 8px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Convert to Order
-        </a>
-    </div>
-
-    {% if q.include_payment_details and q.payment_details %}
-    <div style="margin-top:28px;">
-        <div class="terms-section" style="border-left-color:var(--primary);">
-            <h3>
-                Payment Details
-            </h3>
-            <div style="padding-top:8px; color:var(--text-main);">
-                {% with pd=q.payment_details %}
-                    {% if pd.account_type == 'upi' %}
-                        <p><strong>UPI ID :</strong> {{ pd.upi_id }}</p>
-                        {% if pd.phone_number %}<p><strong>Phone :</strong> {{ pd.phone_number }}</p>{% endif %}
-                    {% else %}
-                        {% if pd.account_name %}<p><strong>Account Name :</strong> {{ pd.account_name }}</p>{% endif %}
-                        {% if pd.holder_name %}<p><strong>Account Holder :</strong> {{ pd.holder_name }}</p>{% endif %}
-                        {% if pd.bank_name %}<p><strong>Bank Name :</strong> {{ pd.bank_name }}</p>{% endif %}
-                        {% if pd.account_number %}<p><strong>A/C Number :</strong> {{ pd.account_number }}</p>{% endif %}
-                        {% if pd.ifsc_code %}<p><strong>IFSC Code :</strong> {{ pd.ifsc_code }}</p>{% endif %}
-                        {% if pd.branch %}<p><strong>Branch :</strong> {{ pd.branch }}</p>{% endif %}
-                    {% endif %}
-                {% endwith %}
+        <div class="qv-topbar-right">
+            <div class="qv-customer-chip">
+                <div class="qv-customer-chip-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                {{ q.customer.name }}
             </div>
+
+            <a href="{% url 'quotation_pdf' q.id %}" class="btn btn-outline">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download PDF
+            </a>
+
+            <a href="{% url 'convert_to_order' q.id %}" class="btn btn-green">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Convert to Order
+            </a>
         </div>
     </div>
-    {% endif %}
 
-</div>
+    <!-- ── Main card ── -->
+    <div class="qv-card">
+
+        <!-- Gold accent stripe -->
+        <div class="qv-card-accent"></div>
+
+        <!-- Section label -->
+        <div class="qv-section-head">
+            <div class="qv-section-title">
+                <span class="qv-section-dot"></span>
+                Line Items
+            </div>
+            <span style="font-size:0.75rem; color:var(--text-4); font-weight:600;">{{ items|length }} item{{ items|length|pluralize }}</span>
+        </div>
+
+        <!-- Items table -->
+        <div class="qv-table-wrap">
+            <table class="qv-table">
+                <colgroup>
+                    <col class="col-sl">
+                    <col class="col-img">
+                    <col class="col-desc">
+                    <col class="col-qty">
+                    <col class="col-unit">
+                    <col class="col-price">
+                    <col class="col-tot">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Sl</th>
+                        <th>Image</th>
+                        <th class="th-desc">Description</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th class="th-price">Unit Price</th>
+                        <th class="th-tot">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in items %}
+                    <tr>
+                        <td class="td-sl">{{ forloop.counter }}</td>
+
+                        <td class="td-img">
+                            {% if i.service and i.service.image %}
+                                <img class="item-img" src="{{ i.service.image.url }}" alt="{{ i.service.name }}">
+                            {% elif i.service_image_url %}
+                                <img class="item-img" src="{{ i.service_image_url }}" alt="Item image">
+                            {% else %}
+                                <div class="item-img-placeholder">
+                                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    No image
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td class="td-desc">{{ i.description }}</td>
+
+                        <td class="td-qty">{{ i.quantity|floatformat:"-3" }}</td>
+
+                        <td>
+                            <span class="td-unit-chip">{{ i.unit }}</span>
+                        </td>
+
+                        <td class="td-price">₹{{ i.price|floatformat:2 }}</td>
+
+                        <td class="td-total">₹{{ i.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ── Bottom: Terms (left) + Totals (right) ── -->
+        <div class="qv-bottom">
+
+            <!-- Terms & Payment column -->
+            <div class="qv-terms-col">
+
+                <!-- Terms -->
+                <div class="qv-terms-box" style="page-break-inside:avoid; break-inside:avoid;">
+                    <h3>
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        Terms &amp; Conditions
+                    </h3>
+                    <ul>
+                        {% for qt in ordered_terms %}
+                            <li>{{ qt.term.text }}</li>
+                        {% empty %}
+                            <li style="color:var(--text-4); font-style:italic;">No terms added.</li>
+                        {% endfor %}
+                        {% if q.custom_terms %}
+                            <li>{{ q.custom_terms }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Payment -->
+                {% if q.include_payment_details and q.payment_details %}
+                <div class="qv-payment-box" style="page-break-inside:avoid; break-inside:avoid;">
+                    <h3>
+                        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        Payment Details
+                    </h3>
+                    {% with pd=q.payment_details %}
+                        {% if pd.account_type == 'upi' %}
+                            <div class="qv-payment-row"><strong>UPI ID</strong><span>{{ pd.upi_id }}</span></div>
+                            {% if pd.phone_number %}
+                            <div class="qv-payment-row"><strong>Phone</strong><span>{{ pd.phone_number }}</span></div>
+                            {% endif %}
+                        {% else %}
+                            {% if pd.account_name %}<div class="qv-payment-row"><strong>Account Name</strong><span>{{ pd.account_name }}</span></div>{% endif %}
+                            {% if pd.holder_name %}<div class="qv-payment-row"><strong>Account Holder</strong><span>{{ pd.holder_name }}</span></div>{% endif %}
+                            {% if pd.bank_name %}<div class="qv-payment-row"><strong>Bank Name</strong><span>{{ pd.bank_name }}</span></div>{% endif %}
+                            {% if pd.account_number %}<div class="qv-payment-row"><strong>A/C Number</strong><span>{{ pd.account_number }}</span></div>{% endif %}
+                            {% if pd.ifsc_code %}<div class="qv-payment-row"><strong>IFSC Code</strong><span>{{ pd.ifsc_code }}</span></div>{% endif %}
+                            {% if pd.branch %}<div class="qv-payment-row"><strong>Branch</strong><span>{{ pd.branch }}</span></div>{% endif %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Totals panel -->
+            <div class="qv-totals">
+                <div class="qv-totals-head">
+                    <span class="qv-totals-head-label">Summary</span>
+                </div>
+
+                <div class="qv-totals-body">
+                    <div class="qv-totals-row">
+                        <span class="tl">Subtotal</span>
+                        <span class="tv">₹ {{ subtotal|floatformat:2 }}</span>
+                    </div>
+
+                    {% if tax_type == 'gst' %}
+                    <div class="qv-totals-row">
+                        <span class="tl">CGST (9%)</span>
+                        <span class="tv">₹ {{ cgst|floatformat:2 }}</span>
+                    </div>
+                    <div class="qv-totals-row">
+                        <span class="tl">SGST (9%)</span>
+                        <span class="tv">₹ {{ sgst|floatformat:2 }}</span>
+                    </div>
+                    {% elif tax_type == 'igst' %}
+                    <div class="qv-totals-row">
+                        <span class="tl">IGST (18%)</span>
+                        <span class="tv">₹ {{ igst|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if q.discount and q.discount > 0 %}
+                    <div class="qv-totals-row discount">
+                        <span class="tl">Special Discount</span>
+                        <span class="tv">− ₹ {{ q.discount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="qv-totals-divider"></div>
+
+                <div class="qv-totals-grand">
+                    <span class="grand-label">Grand Total</span>
+                    <span class="grand-value">₹ {{ grand_total|floatformat:2 }}</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Action bar ── -->
+        <div class="qv-actions">
+            <a href="{% url 'quotation_pdf' q.id %}" class="btn btn-outline">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download PDF
+            </a>
+            <a href="{% url 'convert_to_order' q.id %}" class="btn btn-green">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Convert to Order
+            </a>
+        </div>
+
+    </div><!-- /.qv-card -->
+
+</div><!-- /.qv-wrap -->
 
 </body>
 </html>

@@ -63,14 +63,14 @@ class AttendanceAdmin(admin.ModelAdmin):
 # ================= SERVICE =================
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'price')
-    search_fields = ('name',)
+    list_display = ('id', 'service_code', 'name', 'default_rate', 'status')
+    search_fields = ('name', 'service_code', 'category')
 
 
 # ================= QUOTATION =================
 @admin.register(Quotation)
 class QuotationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'total', 'date')
+    list_display = ('id', 'customer', 'company', 'total', 'date')
     list_filter = ('date',)
 
     # 🔥 Fix N+1
@@ -80,9 +80,8 @@ class QuotationAdmin(admin.ModelAdmin):
 # ================= QUOTATION ITEM =================
 @admin.register(QuotationItem)
 class QuotationItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'quotation', 'description', 'quantity', 'total')
-
-    list_select_related = ('quotation',)
+    list_display = ('id', 'quotation', 'service', 'service_code', 'quantity', 'rate', 'total')
+    list_select_related = ('quotation', 'service')
 
 
 # ================= TERMS =================
@@ -115,11 +114,11 @@ class MeasurementAdmin(admin.ModelAdmin):
 # ================= MEASUREMENT ITEM =================
 @admin.register(MeasurementItem)
 class MeasurementItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'measurement', 'description', 'item_type', 'unit')
-    list_filter = ('item_type', 'unit')
+    list_display = ('id', 'measurement', 'service', 'service_code', 'width', 'height', 'quantity', 'rate', 'total')
+    list_filter = ('service', 'measurement')
 
     # 🔥 Fix N+1
-    list_select_related = ('measurement',)
+    list_select_related = ('measurement', 'service')
 
 
 # ================= MEASUREMENT SUBITEM =================
@@ -128,3 +127,10 @@ class MeasurementSubItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'item', 'height', 'width', 'length', 'quantity')
 
     list_select_related = ('item',)
+
+
+# ================= COMPANY =================
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'slug', 'phone', 'email')
+    search_fields = ('name', 'slug', 'phone', 'email')

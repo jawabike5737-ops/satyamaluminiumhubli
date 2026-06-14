@@ -1,240 +1,342 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
 <style>
-    :root {
-        --primary: #4f46e5;
-        --primary-glow: rgba(79, 70, 229, 0.4);
-        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        --card-bg: #ffffff;
-        --text-dark: #1e293b;
-        --text-light: #64748b;
-        --danger: #ef4444;
-        --success: #10b981;
-    }
+:root {
+    --cream: #faf8f4;
+    --white: #ffffff;
+    --surface: #f5f3ef;
+    --surface-2: #faf9f6;
+    --ink: #1a1714;
+    --ink-2: #3d3830;
+    --ink-3: #7c7468;
+    --ink-4: #b0a89e;
+    --accent: #c8602a;
+    --accent-glow: rgba(200,96,42,0.12);
+    --green: #15803d;
+    --green-soft: #f0fdf4;
+    --red: #b91c1c;
+    --red-soft: #fef2f2;
+    --border: #e8e3de;
+    --border-soft: #f0ece5;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--cream); font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; }
 
-    body {
-        background: var(--bg-gradient);
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0;
-    }
+/* ── PAGE LAYOUT ── */
+.page-wrapper { padding: 1.5rem 2rem 3rem; }
 
-    /* ✨ Main Container Animation */
-    .payment-container {
-        width: 100%;
-        max-width: 440px;
-        background: var(--card-bg);
-        padding: 40px;
-        border-radius: 24px;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        position: relative;
-        overflow: hidden;
-        animation: cardAppear 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+/* ── PAGE HEADER ── */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 680px;
+    margin: 0 auto 1rem;
+    animation: fadeDown 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
 
-    @keyframes cardAppear {
-        0% { opacity: 0; transform: scale(0.9) translateY(20px); }
-        100% { opacity: 1; transform: scale(1) translateY(0); }
-    }
+.header-left { display: flex; align-items: baseline; gap: 0.75rem; }
 
-    /* 🏷️ Header */
-    .payment-container h2 {
-        font-size: 24px;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 30px;
-        color: var(--text-dark);
-        letter-spacing: -0.5px;
-    }
+.eyebrow-pill {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-4);
+    padding: 3px 9px;
+    background: var(--surface);
+    border-radius: 100px;
+    border: 1px solid var(--border);
+}
 
-    /* 📦 Info Cards */
-    .info-grid {
-        display: grid;
-        gap: 12px;
-        margin-bottom: 25px;
-    }
+.page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+}
+.page-title em { color: var(--accent); font-style: italic; }
 
-    .info-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 14px 18px;
-        border-radius: 14px;
-        background: #f8fafc;
-        border: 1px solid #f1f5f9;
-        transition: 0.3s;
-    }
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.48rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-3);
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-back:hover { border-color: var(--ink); color: var(--ink); }
 
-    .info-item:hover {
-        background: #f1f5f9;
-        transform: translateX(5px);
-    }
+/* ── CARD ── */
+.pay-card {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+}
+.card-bar { height: 3px; background: var(--accent); }
 
-    .info-label {
-        font-size: 13px;
-        color: var(--text-light);
-        font-weight: 500;
-    }
+/* ── INFO ROW ── */
+.info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border-soft);
+}
 
-    .info-value {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--text-dark);
-    }
+.info-cell {
+    padding: 1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.info-cell:not(:last-child) { border-right: 1px solid var(--border-soft); }
 
-    .info-item.remaining {
-        background: rgba(239, 68, 68, 0.05);
-        border: 1px solid rgba(239, 68, 68, 0.1);
-    }
+.info-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-4);
+}
 
-    .info-item.remaining .info-value {
-        color: var(--danger);
-    }
+.info-value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
 
-    /* ⌨️ Modern Input Styling */
-    .form-group {
-        position: relative;
-        margin-top: 30px;
-    }
+.info-cell.remaining .info-value { color: var(--red); }
 
-    .input-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
+/* ── FORM ── */
+.form-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 
-    .currency-symbol {
-        position: absolute;
-        left: 16px;
-        font-weight: 600;
-        color: var(--text-light);
-        font-size: 18px;
-    }
+.field { display: flex; flex-direction: column; gap: 6px; }
 
-    input[type="number"] {
-        width: 100%;
-        padding: 16px 16px 16px 40px;
-        border-radius: 14px;
-        border: 2px solid #e2e8f0;
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-dark);
-        background: #fff;
-        transition: all 0.3s ease;
-        outline: none;
-    }
+.field-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+.field-label .opt { font-weight: 400; opacity: 0.65; text-transform: none; letter-spacing: 0; font-size: 11px; }
 
-    input[type="number"]::placeholder {
-        color: #cbd5e1;
-        font-weight: 400;
-    }
+.field-wrap { position: relative; }
 
-    input:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px var(--primary-glow);
-    }
+.field-prefix {
+    position: absolute;
+    left: 13px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    pointer-events: none;
+    user-select: none;
+}
 
-    /* 🚀 Action Button */
-    button {
-        width: 100%;
-        margin-top: 25px;
-        padding: 16px;
-        border: none;
-        border-radius: 14px;
-        background: var(--primary);
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
+.f-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.f-input::placeholder { color: var(--ink-4); }
+.f-input:focus {
+    border-color: var(--accent);
+    background: var(--white);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.f-input.has-prefix { padding-left: 30px; font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 600; }
+.f-input.amount-err { border-color: var(--red); box-shadow: 0 0 0 3px rgba(185,28,28,0.1); }
 
-    button:hover {
-        background: #4338ca;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-    }
+textarea.f-input { resize: none; line-height: 1.55; padding-top: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; }
 
-    button:active {
-        transform: scale(0.98);
-    }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
-    /* ✨ Background Decoration */
-    .circle-decoration {
-        position: absolute;
-        top: -50px;
-        right: -50px;
-        width: 150px;
-        height: 150px;
-        background: var(--primary-glow);
-        filter: blur(60px);
-        z-index: -1;
-    }
+/* ── FOOTER ── */
+.form-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
 
+.btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    padding: 11px 20px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 500;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--ink-3);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-cancel:hover { border-color: var(--ink); color: var(--ink); background: var(--white); }
+
+.btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 26px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+}
+.btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-submit:active { transform: scale(0.99); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 </style>
 
-<div class="payment-container">
-    <div class="circle-decoration"></div>
+<div class="page-wrapper">
 
-    <h2>Add Payment</h2>
-
-    <div class="info-grid">
-        <div class="info-item">
-            <span class="info-label">Customer</span>
-            <span class="info-value">{{ order.customer.name }}</span>
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <span class="eyebrow-pill">Order #{{ order.id }}</span>
+            <h1 class="page-title">Add <em>Payment</em></h1>
         </div>
-
-        <div class="info-item remaining">
-            <span class="info-label">Outstanding Balance</span>
-            <span class="info-value">₹ {{ order.remaining }}</span>
-        </div>
+        <a href="{% url 'orders' %}" class="btn-back">
+            <i class="ti ti-arrow-left" style="font-size:13px;"></i> Back
+        </a>
     </div>
 
-    <form method="POST" class="ajax-form" data-after-success="reload">
-        {% csrf_token %}
+    <!-- Card -->
+    <div class="pay-card">
+        <div class="card-bar"></div>
 
-        <div class="form-group">
-            <div class="input-wrapper">
-                <span class="currency-symbol">₹</span>
-                <input 
-                    type="number" 
-                    name="amount" 
-                    placeholder="0.00" 
-                    step="0.01"
-                    min="0"
-                    max="{{ order.remaining }}"
-                    required
-                >
+        <!-- Info row -->
+        <div class="info-row">
+            <div class="info-cell">
+                <span class="info-label">Customer</span>
+                <span class="info-value">{{ order.customer.name }}</span>
+            </div>
+            <div class="info-cell remaining">
+                <span class="info-label">Outstanding Balance</span>
+                <span class="info-value">₹{{ order.remaining }}</span>
             </div>
         </div>
 
-        <button type="submit">
-            Confirm Payment
-        </button>
-    </form>
+        <!-- Form -->
+        <form method="POST" class="ajax-form" data-after-success="reload">
+            {% csrf_token %}
+
+            <div class="form-body">
+
+                <!-- Amount + Date on same row -->
+                <div class="form-row">
+                    <div class="field">
+                        <label class="field-label">Amount</label>
+                        <div class="field-wrap">
+                            <span class="field-prefix">₹</span>
+                            <input
+                                type="number"
+                                name="amount"
+                                id="amountInput"
+                                class="f-input has-prefix"
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                                max="{{ order.remaining }}"
+                                required
+                                autofocus
+                            >
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="field-label">Payment Date</label>
+                        <div class="field-wrap">
+                            <input type="date" name="payment_date" class="f-input" value="{{ today|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="field">
+                    <label class="field-label">Remarks <span class="opt">(optional)</span></label>
+                    <div class="field-wrap">
+                        <textarea name="remarks" class="f-input" rows="2" placeholder="e.g. Partial payment via UPI…"></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="form-footer">
+                <a href="{% url 'orders' %}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-submit">
+                    <i class="ti ti-cash" style="font-size:15px;"></i>
+                    Confirm Payment
+                </button>
+            </div>
+        </form>
+
+    </div>
 </div>
 
 <script>
-    const input = document.querySelector('input[name="amount"]');
-    const max = Number('{{ order.remaining|default:"0" }}');
-    
-    input.addEventListener('input', (e) => {
-        if (e.target.value > max) {
-            e.target.style.borderColor = 'var(--danger)';
-        } else {
-            e.target.style.borderColor = 'var(--primary)';
-        }
-    });
+const input = document.getElementById('amountInput');
+const max   = Number('{{ order.remaining|default:"0" }}');
+
+input.addEventListener('input', function () {
+    if (parseFloat(this.value) > max) {
+        this.classList.add('amount-err');
+    } else {
+        this.classList.remove('amount-err');
+    }
+});
 </script>
 
 {% endblock %}

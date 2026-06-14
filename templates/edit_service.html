@@ -1,107 +1,591 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
 <style>
-    body {
-        background: linear-gradient(135deg, #1f2a3a, #2c3e50);
-        font-family: 'Poppins', sans-serif;
-        margin: 0;
-    }
+:root {
+    --cream: #faf8f4;
+    --white: #ffffff;
+    --surface: #f5f3ef;
+    --surface-2: #faf9f6;
+    --ink: #1a1714;
+    --muted: #6b6560;
+    --faint: #c4bfba;
+    --accent: #c8602a;
+    --accent-glow: rgba(200,96,42,0.12);
+    --border: #e8e3de;
+    --border-soft: #f0ece5;
+    --danger: #d84040;
+    --danger-bg: #fff0f0;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--cream); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
 
-    .container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
+/* ── PAGE LAYOUT ── */
+.page-wrapper {
+    padding: 1rem 2rem 2rem;
+}
 
-    /* OUTER BOX */
-    .form-card {
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(20px);
-        border-radius: 20px;
-        padding: 40px 30px;
-        width: 500px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-        text-align: center;
-        color: white;
-    }
+/* ── PAGE HEADER ── */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto 0.75rem;
+    animation: fadeDown 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
 
-    .form-card h2 {
-        margin-bottom: 25px;
-        font-size: 24px;
-    }
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
 
-    /* INNER BOX */
-    .form-card form {
-        background: #ffffff;
-        padding: 25px;
-        border-radius: 14px;
-        width: 95%;
-        margin: 0 auto;
-        box-sizing: border-box;
-    }
+.eyebrow-pill {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    padding: 3px 9px;
+    background: var(--surface);
+    border-radius: 100px;
+    border: 1px solid var(--border);
+}
 
-    .form-card input,
-    .form-card textarea {
-        width: 100%;
-        padding: 12px;
-        margin: 12px 0;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        background: #f5f7fa;
-        color: #333;
-        font-size: 15px;
-        transition: 0.3s;
-    }
+.page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+}
+.page-title em { color: var(--accent); font-style: italic; }
 
-    .form-card textarea {
-        height: 100px;
-        resize: none;
-    }
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    .form-card input:focus,
-    .form-card textarea:focus {
-        border-color: #00c6ff;
-        background: #fff;
-        box-shadow: 0 0 8px rgba(0,198,255,0.4);
-    }
+.svc-id-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 100px;
+    letter-spacing: 0.04em;
+}
 
-    .form-card button {
-        width: 100%;
-        padding: 14px;
-        margin-top: 15px;
-        border: none;
-        border-radius: 10px;
-        background: linear-gradient(45deg, #00c6ff, #0072ff);
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-    }
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.48rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-back:hover { border-color: var(--ink); color: var(--ink); }
 
-    .form-card button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(0,198,255,0.5);
-    }
+/* ── CARD ── */
+.es-card {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+}
 
+.card-bar { height: 3px; background: var(--accent); }
+
+/* ── BODY GRID ── */
+.es-body {
+    padding: 1.25rem 2rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    align-items: stretch;
+}
+
+/* ── LEFT COL ── */
+.es-col-left { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* description group stretches to fill remaining height */
+.es-col-left .desc-group { flex: 1; display: flex; flex-direction: column; }
+.es-col-left .desc-group .field-wrap { flex: 1; display: flex; flex-direction: column; }
+.es-col-left .desc-group textarea.es-input { flex: 1; height: auto; min-height: 260px; resize: none; }
+
+/* ── RIGHT COL ── */
+.es-col-right { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── FIELD LABELS ── */
+.es-label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+}
+.es-label .opt {
+    font-weight: 400;
+    opacity: 0.65;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11px;
+}
+
+/* ── INPUTS ── */
+.field-wrap { position: relative; }
+
+.es-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.es-input::placeholder { color: #b5b0ab; }
+.es-input:focus {
+    border-color: var(--accent);
+    background: var(--white);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+textarea.es-input {
+    padding-top: 11px;
+    line-height: 1.6;
+}
+
+/* Price field */
+.price-prefix {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--muted);
+    pointer-events: none;
+    user-select: none;
+    font-family: 'DM Sans', sans-serif;
+}
+.es-input.has-prefix { padding-left: 28px; }
+
+/* Two-col sub-grid for name + price on same row */
+.form-row-top {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 1rem;
+}
+
+/* ── IMAGE PANEL (right col) ── */
+.img-panel-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.img-panel-label .opt {
+    font-weight: 400;
+    opacity: 0.65;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 11px;
+}
+
+.es-current-img {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.es-current-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.img-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.img-placeholder i { font-size: 32px; color: #ccc; }
+.img-placeholder span { font-size: 12px; color: var(--muted); }
+
+.del-overlay {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 11px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: background 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.del-overlay:hover { background: var(--danger-bg); }
+
+.upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+.upload-zone:hover { border-color: var(--accent); background: rgba(200,96,42,0.04); }
+.upload-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+}
+.upload-icon { font-size: 22px; color: var(--accent); }
+.upload-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.upload-sub { font-size: 11px; color: var(--muted); }
+
+.new-preview {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.new-preview.show { display: flex; }
+.prev-thumb { width: 42px; height: 42px; border-radius: 7px; object-fit: cover; flex-shrink: 0; }
+.prev-name { font-size: 12px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.prev-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.prev-rm {
+    margin-left: auto;
+    background: none; border: none;
+    cursor: pointer; font-size: 16px;
+    color: var(--muted); padding: 3px;
+    transition: color 0.15s;
+}
+.prev-rm:hover { color: var(--accent); }
+
+/* ── FOOTER ── */
+.es-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 26px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-primary:active { transform: scale(0.99); }
+
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    padding: 11px 22px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.18s ease;
+}
+.btn-ghost:hover { border-color: var(--ink); color: var(--ink); background: var(--white); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .es-body { grid-template-columns: 1fr; }
+    .form-row-top { grid-template-columns: 1fr; }
+}
 </style>
 
-<div class="container">
-    <div class="form-card">
-        <h2>Edit Service</h2>
+<div class="page-wrapper">
 
-        <form method="POST" class="ajax-form" data-after-success="reload">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <span class="eyebrow-pill">Service Catalog</span>
+            <h1 class="page-title">Edit <em>service</em></h1>
+        </div>
+        <div class="header-right">
+            <span class="svc-id-badge">#SVC-{{ service.id }}</span>
+            <a href="{% url 'services' %}" class="btn-back">
+                <i class="ti ti-arrow-left" style="font-size:13px;"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Card -->
+    <div class="es-card">
+        <div class="card-bar"></div>
+
+        <form id="editForm" method="POST" enctype="multipart/form-data" action="">
             {% csrf_token %}
+            <input type="hidden" name="delete_image" id="deleteImageFlag" value="">
 
-            <textarea name="name" required style="height:120px">{{ service.name }}</textarea>
-            <input type="number" name="price" value="{{ service.price }}" required>
+            <div class="es-body">
 
-            <button type="submit">Update Service</button>
+                <!-- LEFT COL: fields -->
+                <div class="es-col-left" style="height:100%;">
+
+                    <!-- Row: Service Name + Price -->
+                    <div class="form-row-top">
+                        <div>
+                            <label class="es-label">Service Name</label>
+                            <div class="field-wrap">
+                                <input type="text" name="service_name" class="es-input"
+                                    value="{{ service.service_name|default:service.name }}" required
+                                    placeholder="e.g. UPVC 2-Track Window">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="es-label">Pricing</label>
+                            <div class="field-wrap">
+                                <span class="price-prefix">₹</span>
+                                <input type="number" name="price" class="es-input has-prefix"
+                                    value="{{ service.price }}" min="0" step="0.01" required
+                                    placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description — stretches to fill remaining height -->
+                    <div class="desc-group">
+                        <label class="es-label">Service Description</label>
+                        <div class="field-wrap">
+                            <textarea name="description" class="es-input" required
+                                placeholder="Detailed description used in quotations…">{{ service.description }}</textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COL: image -->
+                <div class="es-col-right">
+
+                    <div>
+                        <span class="img-panel-label">
+                            Service Image <span class="opt">(optional)</span>
+                        </span>
+                    </div>
+
+                    <!-- Current image -->
+                    <div class="es-current-img" id="currentImgBox">
+                        {% if service.image %}
+                            <img id="currentImg" src="{{ service.image.url }}" alt="Current image">
+                            <button type="button" class="del-overlay" id="deleteImageBtn">
+                                <i class="ti ti-trash" aria-hidden="true"></i> Remove
+                            </button>
+                        {% else %}
+                            <div class="img-placeholder">
+                                <i class="ti ti-photo-off" aria-hidden="true"></i>
+                                <span>No image set</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Upload zone -->
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" name="image" id="fileInput" accept="image/*" onchange="handleFile(this)">
+                        <i class="ti ti-photo-up upload-icon" aria-hidden="true"></i>
+                        <p class="upload-title" id="uploadTitle">
+                            {% if service.image %}Replace image{% else %}Upload image{% endif %}
+                        </p>
+                        <p class="upload-sub">Drop or click · PNG, JPG, WEBP</p>
+                    </div>
+
+                    <!-- New file preview -->
+                    <div class="new-preview" id="newPreview">
+                        <img id="newThumb" class="prev-thumb" src="" alt="New image preview">
+                        <div style="min-width:0">
+                            <div class="prev-name" id="newName"></div>
+                            <div class="prev-size" id="newSize"></div>
+                        </div>
+                        <button type="button" class="prev-rm" onclick="clearNew()" aria-label="Remove new image">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="es-footer">
+                <a href="{% url 'services' %}" class="btn-ghost">Discard</a>
+                <button type="submit" class="btn-primary">
+                    <i class="ti ti-check" style="font-size:14px;" aria-hidden="true"></i>
+                    Save changes
+                </button>
+            </div>
+
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Drag & drop on upload zone ──
+    const uploadZone = document.getElementById('uploadZone');
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--accent)'; });
+    uploadZone.addEventListener('dragleave', () => uploadZone.style.borderColor = '');
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault(); uploadZone.style.borderColor = '';
+        const f = e.dataTransfer.files[0];
+        if (f && f.type.startsWith('image/')) {
+            const dt = new DataTransfer(); dt.items.add(f);
+            document.getElementById('fileInput').files = dt.files;
+            showNewPreview(f);
+        }
+    });
+
+    // ── Remove existing image via API ──
+    const delBtn = document.getElementById('deleteImageBtn');
+    if (delBtn) {
+        delBtn.addEventListener('click', function () {
+            if (!confirm('Remove the current image?')) return;
+            const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch(`/api/service/{{ service.id }}/delete-image/`, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'X-CSRFToken': csrf }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    document.getElementById('currentImgBox').innerHTML =
+                        '<div class="img-placeholder"><i class="ti ti-photo-off"></i><span>No image set</span></div>';
+                } else {
+                    alert(data.error || 'Could not delete image');
+                }
+            })
+            .catch(() => alert('Could not delete image'));
+        });
+    }
+
+    // ── Form submit → redirect to services page ──
+    const form = document.getElementById('editForm');
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(form.action || window.location.href, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => {
+            if (r.ok) {
+                // Redirect to services list after successful save
+                window.location.href = "{% url 'services' %}";
+            } else {
+                return r.text().then(txt => { throw new Error(txt); });
+            }
+        })
+        .catch(err => {
+            console.error('Save failed:', err);
+            // Fallback: normal form submit so Django can show errors
+            form.submit();
+        });
+    });
+
+});
+
+function handleFile(inp) { if (inp.files[0]) showNewPreview(inp.files[0]); }
+
+function showNewPreview(file) {
+    const r = new FileReader();
+    r.onload = e => document.getElementById('newThumb').src = e.target.result;
+    r.readAsDataURL(file);
+    document.getElementById('newName').textContent = file.name;
+    document.getElementById('newSize').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+    document.getElementById('newPreview').classList.add('show');
+    document.getElementById('uploadTitle').textContent = 'Change again';
+}
+
+function clearNew() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('newThumb').src = '';
+    document.getElementById('newPreview').classList.remove('show');
+    document.getElementById('uploadTitle').textContent = '{% if service.image %}Replace image{% else %}Upload image{% endif %}';
+}
+</script>
 
 {% endblock %}
