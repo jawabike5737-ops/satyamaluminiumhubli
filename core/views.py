@@ -3205,7 +3205,7 @@ def quotation_pdf(request, id):
         # 4. ITEMS TABLE
         # ══════════════════════════════════════════════════════════════════════
         col_sl   = 30
-        col_img  = 170
+        col_img  = 150
         col_qty  = 72
         col_rate = 82
         col_tot  = 94
@@ -3251,18 +3251,43 @@ def quotation_pdf(request, id):
                             if pil_img.mode != 'RGB':
                                 pil_img = pil_img.convert('RGB')
 
-                            # Create a small thumbnail to reduce memory and PDF size
-                            pil_img.thumbnail((250, 180))
+                            # Production-grade thumbnail: keep good quality and reasonable size
+                            pil_img.thumbnail((700, 550))
 
                             buffer = BytesIO()
-                            pil_img.save(buffer, format='JPEG', quality=55, optimize=True)
+                            pil_img.save(buffer, format='JPEG', quality=85, optimize=True)
                             buffer.seek(0)
 
-                            img_flowable = Image(
-                                buffer,
-                                width=0.8 * inch,
-                                height=0.6 * inch
-                            )
+                            # Auto-fit the image into the image cell while preserving aspect ratio
+                            # CELL_W/CELL_H are in points (approx layout units)
+                            CELL_W = col_img - 12  # leave small padding inside column
+                            CELL_H = 90 - 12       # row height (ROWHEIGHT) minus padding
+
+                            img_w, img_h = pil_img.size
+                            if img_w <= 0 or img_h <= 0:
+                                raise ValueError('Invalid image dimensions')
+
+                            ratio = min(CELL_W / img_w, CELL_H / img_h)
+                            new_w = img_w * ratio
+                            new_h = img_h * ratio
+
+                            img_flowable = Image(buffer, width=new_w, height=new_h)
+
+                            # Center the image inside the cell using a small one-cell table
+                            img_table = Table([[img_flowable]], colWidths=[col_img])
+                            img_table.setStyle(TableStyle([
+                                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                ('LEFTPADDING', (0,0), (-1,-1), 6),
+                                ('RIGHTPADDING', (0,0), (-1,-1), 6),
+                                ('TOPPADDING', (0,0), (-1,-1), 6),
+                                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+                            ]))
+
+                            img_flowable = img_table
+                        except Exception:
+                            logger.exception('Failed to process service image: %s', image_url)
+                            img_flowable = None
                         except Exception:
                             logger.exception('Failed to process service image: %s', image_url)
                             img_flowable = None
