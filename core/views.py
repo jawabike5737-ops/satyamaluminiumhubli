@@ -685,21 +685,39 @@ def _load_logo_image(logo_name='logo.png', width=100, height=100, circular=False
         try:
             from PIL import Image as PILImage, ImageDraw
             img = PILImage.open(logo_path).convert('RGBA')
-            size = max(img.size)
-            square = PILImage.new('RGBA', (size, size), (255, 255, 255, 0))
-            offset = ((size - img.width) // 2, (size - img.height) // 2)
-            square.paste(img, offset)
-            mask = PILImage.new('L', (size, size), 0)
-            ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
-            square.putalpha(mask)
-            buf = BytesIO()
-            square.save(buf, format='PNG')
-            buf.seek(0)
             try:
-                _OPEN_BUFFERS.append(buf)
-            except Exception:
-                pass
-            return RLImage(buf, width=width, height=height)
+                size = max(img.size)
+                square = PILImage.new('RGBA', (size, size), (255, 255, 255, 0))
+                try:
+                    offset = ((size - img.width) // 2, (size - img.height) // 2)
+                    square.paste(img, offset)
+                    mask = PILImage.new('L', (size, size), 0)
+                    try:
+                        ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
+                        square.putalpha(mask)
+                        buf = BytesIO()
+                        square.save(buf, format='PNG')
+                        buf.seek(0)
+                        try:
+                            _OPEN_BUFFERS.append(buf)
+                        except Exception:
+                            pass
+                        return RLImage(buf, width=width, height=height)
+                    finally:
+                        try:
+                            mask.close()
+                        except Exception:
+                            pass
+                finally:
+                    try:
+                        square.close()
+                    except Exception:
+                        pass
+            finally:
+                try:
+                    img.close()
+                except Exception:
+                    pass
         except Exception as e:
             logger.exception('Unhandled exception: %s', e)
 
@@ -2965,6 +2983,10 @@ def quotation_pdf(request, id):
                 self._saved_page_states.clear()
             except Exception:
                 pass
+            try:
+                del self._saved_page_states[:]
+            except Exception:
+                pass
 
         def _paint_watermark(self):
             pw = _pw
@@ -3259,8 +3281,9 @@ def quotation_pdf(request, id):
 
                     image_bytes = image_cache.get(image_url)
                     if image_bytes:
+                        src_buf = BytesIO(image_bytes)
                         try:
-                            pil_img = PILImage.open(BytesIO(image_bytes))
+                            pil_img = PILImage.open(src_buf)
                             if pil_img.mode != 'RGB':
                                 pil_img = pil_img.convert('RGB')
 
@@ -3282,14 +3305,7 @@ def quotation_pdf(request, id):
                             except Exception:
                                 pass
 
-                            # Close PIL image to release memory held by the image object
-                            try:
-                                pil_img.close()
-                            except Exception:
-                                pass
-
                             # Auto-fit the image into the image cell while preserving aspect ratio
-                            # CELL_W/CELL_H are in points (approx layout units)
                             CELL_W = col_img - 12  # leave small padding inside column
                             CELL_H = 90 - 12       # row height (ROWHEIGHT) minus padding
 
@@ -3314,9 +3330,15 @@ def quotation_pdf(request, id):
                         except Exception:
                             logger.exception('Failed to process service image: %s', image_url)
                             img_flowable = None
-                        except Exception:
-                            logger.exception('Failed to process service image: %s', image_url)
-                            img_flowable = None
+                        finally:
+                            try:
+                                pil_img.close()
+                            except Exception:
+                                pass
+                            try:
+                                src_buf.close()
+                            except Exception:
+                                pass
 
             except Exception:
                 logger.exception('IMAGE ERROR for item id %s', getattr(item, 'id', None))
@@ -3720,27 +3742,46 @@ def quotation_pdf(request, id):
         # Prepare elements once so we can explicitly release them after build
         elements = _build_elements()
 
+        # Start tracemalloc to capture memory allocation hotspots
+        try:
+            import tracemalloc
+            tracemalloc.start()
+        except Exception:
+            tracemalloc = None
+
         # Log memory before PDF generation
         try:
             import os, psutil
             process = psutil.Process(os.getpid())
             logger.info(f"RAM BEFORE PDF: {process.memory_info().rss / 1024 / 1024:.2f} MB")
         except Exception:
-            pass
+            process = None
 
-        doc.build(elements, canvasmaker=NumberedLuxuryCanvas)
-
-        # Log memory after PDF generation
+        # Build inside a try/finally so cleanup always runs even on errors
         try:
-            import os, psutil
-            process = psutil.Process(os.getpid())
-            logger.info(f"RAM AFTER PDF: {process.memory_info().rss / 1024 / 1024:.2f} MB")
-        except Exception:
-            pass
+            doc.build(elements, canvasmaker=NumberedLuxuryCanvas)
 
-        # Explicitly release large objects, close buffers and force a GC pass
-        try:
-            # Clear and close per-request buffers
+            # Log memory after PDF generation
+            try:
+                if process is None:
+                    import os, psutil
+                    process = psutil.Process(os.getpid())
+                logger.info(f"RAM AFTER PDF: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+            except Exception:
+                pass
+
+        finally:
+            # RAM before/after GC diagnostics
+            try:
+                import gc, os, psutil
+                process = psutil.Process(os.getpid())
+                logger.info(f"RAM BEFORE GC: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+                gc.collect()
+                logger.info(f"RAM AFTER GC: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+            except Exception:
+                pass
+
+            # Close tracked per-request buffers
             try:
                 for b in buffers_to_close:
                     try:
@@ -3772,15 +3813,38 @@ def quotation_pdf(request, id):
             except Exception:
                 pass
 
-            import gc
+            # Tracemalloc snapshot (top consumers)
             try:
-                elements.clear()
-                del elements
+                if tracemalloc:
+                    snapshot = tracemalloc.take_snapshot()
+                    top_stats = snapshot.statistics('lineno')
+                    logger.info('Top tracemalloc allocations:')
+                    for stat in top_stats[:20]:
+                        try:
+                            logger.info(stat)
+                        except Exception:
+                            pass
+                    try:
+                        tracemalloc.stop()
+                    except Exception:
+                        pass
             except Exception:
                 pass
-            gc.collect()
-        except Exception:
-            pass
+
+            # Explicitly release large objects and force a GC pass
+            try:
+                try:
+                    elements.clear()
+                except Exception:
+                    pass
+                try:
+                    del elements
+                except Exception:
+                    pass
+                import gc
+                gc.collect()
+            except Exception:
+                pass
 
         return response
     except Exception as e:

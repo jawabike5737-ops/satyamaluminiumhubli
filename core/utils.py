@@ -73,7 +73,9 @@ def compress_image_file(file_obj, max_width=1200, quality=22, target_kb=None):
         except Exception:
             pass
 
+        bufs = []
         buf = io.BytesIO()
+        bufs.append(buf)
         q = int(max(10, min(quality, 95)))
         img.save(buf, format='JPEG', quality=q, optimize=True)
         data = buf.getvalue()
@@ -82,6 +84,7 @@ def compress_image_file(file_obj, max_width=1200, quality=22, target_kb=None):
         if target_kb and len(data) > (target_kb * 1024):
             for q2 in range(q - 2, 9, -2):
                 buf = io.BytesIO()
+                bufs.append(buf)
                 try:
                     img.save(buf, format='JPEG', quality=q2, optimize=True)
                     data = buf.getvalue()
@@ -113,6 +116,22 @@ def compress_image_file(file_obj, max_width=1200, quality=22, target_kb=None):
         return data
     except Exception:
         return None
+    finally:
+        try:
+            try:
+                img.close()
+            except Exception:
+                pass
+        except Exception:
+            pass
+        try:
+            for b in bufs:
+                try:
+                    b.close()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 
 def optimize_image(file_obj, max_width=1920, quality=85, fmt='WEBP', method=6):
@@ -157,9 +176,20 @@ def optimize_image(file_obj, max_width=1920, quality=85, fmt='WEBP', method=6):
             pass
         save_kwargs['optimize'] = True
 
-        img.save(output, **save_kwargs)
-        output.seek(0)
-        return ContentFile(output.read())
+        try:
+            img.save(output, **save_kwargs)
+            output.seek(0)
+            data = output.read()
+            return ContentFile(data)
+        finally:
+            try:
+                output.close()
+            except Exception:
+                pass
+            try:
+                img.close()
+            except Exception:
+                pass
     except Exception:
         return None
 
@@ -910,6 +940,11 @@ def generate_advance_acknowledgement_pdf(order, quotation, advance_amount):
         _total_holder[0] = max(1, _buf.getvalue().count(b'/Type /Page'))
     except Exception:
         _total_holder[0] = 1
+    finally:
+        try:
+            _buf.close()
+        except Exception:
+            pass
 
     # Build final PDF into memory buffer so we can trim extra pages if needed
     out_buf = _io.BytesIO()
@@ -920,6 +955,10 @@ def generate_advance_acknowledgement_pdf(order, quotation, advance_amount):
     )
     _doc_out.build(_build_elements(), canvasmaker=_LuxuryCanvas)
     pdf_bytes = out_buf.getvalue()
+    try:
+        out_buf.close()
+    except Exception:
+        pass
 
     # If pypdf / PyPDF2 is available, trim to first page to avoid useless blank pages
     try:
@@ -928,13 +967,27 @@ def generate_advance_acknowledgement_pdf(order, quotation, advance_amount):
         except Exception:
             from PyPDF2 import PdfReader, PdfWriter
 
-        reader = PdfReader(_io.BytesIO(pdf_bytes))
-        if len(reader.pages) > 1:
-            writer = PdfWriter()
-            writer.add_page(reader.pages[0])
-            trimmed = _io.BytesIO()
-            writer.write(trimmed)
-            pdf_bytes = trimmed.getvalue()
+        tmp_buf = _io.BytesIO(pdf_bytes)
+        try:
+            reader = PdfReader(tmp_buf)
+            if len(reader.pages) > 1:
+                writer = PdfWriter()
+                writer.add_page(reader.pages[0])
+                trimmed = _io.BytesIO()
+                try:
+                    writer.write(trimmed)
+                    pdf_bytes = trimmed.getvalue()
+                finally:
+                    try:
+                        trimmed.close()
+                    except Exception:
+                        pass
+        finally:
+            try:
+                tmp_buf.close()
+            except Exception:
+                pass
+    
     except Exception:
         # If trimming not possible, return full PDF as-is
         pass
