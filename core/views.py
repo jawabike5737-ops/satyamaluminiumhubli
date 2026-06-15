@@ -3296,7 +3296,7 @@ def quotation_pdf(request, id):
                                 raise ValueError('Invalid image dimensions')
 
                             buffer = BytesIO()
-                            pil_img.save(buffer, format='JPEG', quality=85, optimize=True)
+                            pil_img.save(buffer, format='JPEG', quality=80, optimize=True)
                             buffer.seek(0)
 
                             # Track buffer so we can close it after reportlab finishes
@@ -3756,6 +3756,28 @@ def quotation_pdf(request, id):
             logger.info(f"RAM BEFORE PDF: {process.memory_info().rss / 1024 / 1024:.2f} MB")
         except Exception:
             process = None
+
+        # Safety: refuse to start PDF if process is already using too much RAM
+        try:
+            import os, psutil
+            check_proc = psutil.Process(os.getpid())
+            ram_mb = check_proc.memory_info().rss / 1024 / 1024
+            if ram_mb > 420:
+                logger.warning('Refusing to start PDF build: high memory %.2f MB', ram_mb)
+                try:
+                    elements.clear()
+                except Exception:
+                    pass
+                try:
+                    del elements
+                except Exception:
+                    pass
+                return HttpResponse(
+                    "Server is currently busy generating quotations. Please try again in 1 minute.",
+                    status=503
+                )
+        except Exception:
+            pass
 
         # Build inside a try/finally so cleanup always runs even on errors
         try:
