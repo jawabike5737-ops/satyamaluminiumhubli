@@ -2,6 +2,7 @@
 from django.contrib.auth.decorators import login_required
 import logging
 logger = logging.getLogger(__name__)
+_OPEN_BUFFERS = []
 
 
 
@@ -694,6 +695,10 @@ def _load_logo_image(logo_name='logo.png', width=100, height=100, circular=False
             buf = BytesIO()
             square.save(buf, format='PNG')
             buf.seek(0)
+            try:
+                _OPEN_BUFFERS.append(buf)
+            except Exception:
+                pass
             return RLImage(buf, width=width, height=height)
         except Exception as e:
             logger.exception('Unhandled exception: %s', e)
@@ -2785,6 +2790,8 @@ def quotation_pdf(request, id):
     from PIL import Image as PILImage
     from io import BytesIO
     image_cache = {}
+    thumbnail_cache = {}
+    buffers_to_close = []
 
     # ── Colour palette ────────────────────────────────────────────────────────
     BROWN       = colors.HexColor('#4A3428')
@@ -3260,9 +3267,20 @@ def quotation_pdf(request, id):
                             # Production-grade thumbnail: keep good quality and reasonable size
                             pil_img.thumbnail((700, 550))
 
+                            # Get size after thumbnailing
+                            img_w, img_h = pil_img.size
+                            if img_w <= 0 or img_h <= 0:
+                                raise ValueError('Invalid image dimensions')
+
                             buffer = BytesIO()
                             pil_img.save(buffer, format='JPEG', quality=85, optimize=True)
                             buffer.seek(0)
+
+                            # Track buffer so we can close it after reportlab finishes
+                            try:
+                                buffers_to_close.append(buffer)
+                            except Exception:
+                                pass
 
                             # Close PIL image to release memory held by the image object
                             try:
@@ -3274,10 +3292,6 @@ def quotation_pdf(request, id):
                             # CELL_W/CELL_H are in points (approx layout units)
                             CELL_W = col_img - 12  # leave small padding inside column
                             CELL_H = 90 - 12       # row height (ROWHEIGHT) minus padding
-
-                            img_w, img_h = pil_img.size
-                            if img_w <= 0 or img_h <= 0:
-                                raise ValueError('Invalid image dimensions')
 
                             ratio = min(CELL_W / img_w, CELL_H / img_h)
                             new_w = img_w * ratio
@@ -3724,11 +3738,46 @@ def quotation_pdf(request, id):
         except Exception:
             pass
 
-        # Explicitly release large objects and force a GC pass
+        # Explicitly release large objects, close buffers and force a GC pass
         try:
+            # Clear and close per-request buffers
+            try:
+                for b in buffers_to_close:
+                    try:
+                        b.close()
+                    except Exception:
+                        pass
+                buffers_to_close.clear()
+            except Exception:
+                pass
+
+            # Close any buffers created by helpers (logo, etc.)
+            try:
+                for b in list(_OPEN_BUFFERS):
+                    try:
+                        b.close()
+                    except Exception:
+                        pass
+                _OPEN_BUFFERS.clear()
+            except Exception:
+                pass
+
+            # Clear image caches
+            try:
+                image_cache.clear()
+            except Exception:
+                pass
+            try:
+                thumbnail_cache.clear()
+            except Exception:
+                pass
+
             import gc
-            elements.clear()
-            del elements
+            try:
+                elements.clear()
+                del elements
+            except Exception:
+                pass
             gc.collect()
         except Exception:
             pass
