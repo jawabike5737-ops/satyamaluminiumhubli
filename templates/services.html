@@ -15,17 +15,13 @@
         --ink-3:        #7c7468;
         --ink-4:        #b0a89e;
         --accent:       #c2410c;
-        --accent-soft:  #fff4ef;
         --green:        #15803d;
-        --green-soft:   #f0fdf4;
         --blue:         #1d4ed8;
         --blue-soft:    #eff6ff;
         --red:          #b91c1c;
         --red-soft:     #fef2f2;
         --shadow-sm:    0 1px 2px rgba(0,0,0,0.05);
         --shadow-md:    0 4px 16px rgba(0,0,0,0.07);
-        --shadow-lg:    0 8px 32px rgba(0,0,0,0.1);
-        --r:            12px;
         --r-lg:         16px;
     }
 
@@ -39,7 +35,6 @@
         min-height: 100vh;
     }
 
-    /* grain texture */
     body::after {
         content: '';
         position: fixed;
@@ -49,11 +44,10 @@
         z-index: 9999;
     }
 
-    /* ── WRAPPER — full width with comfortable padding ── */
     .page-wrap {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 2rem 4rem;
+        width: 100%;
+        max-width: none;
+        padding: 1.25rem 1.25rem 3rem;
     }
 
     /* ── HEADER ── */
@@ -61,35 +55,36 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
         animation: fadeDown 0.45s cubic-bezier(0.22,1,0.36,1) both;
     }
 
     .header-left {
         display: flex;
-        align-items: baseline;
-        gap: 0.75rem;
+        align-items: center;
+        gap: 0.65rem;
     }
 
     .header-eyebrow {
-        font-size: 0.6rem;
+        font-size: 0.58rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.14em;
         color: var(--ink-4);
-        padding: 3px 8px;
+        padding: 3px 9px;
         background: var(--border-soft);
         border-radius: 100px;
         border: 1px solid var(--border);
+        line-height: 1.6;
     }
 
     .page-header h2 {
         font-family: 'Fraunces', Georgia, serif;
-        font-size: 1.75rem;
+        font-size: 1.65rem;
         font-weight: 700;
         color: var(--ink);
         letter-spacing: -0.025em;
-        line-height: 1.1;
+        line-height: 1.15;
     }
 
     .page-header h2 em {
@@ -101,12 +96,13 @@
     .btn-add {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        padding: 0.55rem 1.25rem;
+        gap: 6px;
+        padding: 0 1.1rem;
+        height: 34px;
         background: var(--ink);
         color: #fff;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 600;
         text-decoration: none;
         border-radius: 100px;
@@ -114,26 +110,22 @@
         transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
         box-shadow: var(--shadow-sm);
         white-space: nowrap;
+        flex-shrink: 0;
     }
 
-    .btn-add:hover {
-        background: var(--ink-2);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-
+    .btn-add:hover { background: var(--ink-2); transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .btn-add:active { transform: scale(0.97); }
 
-    .btn-add-icon {
-        width: 18px; height: 18px;
-        background: rgba(255,255,255,0.15);
+    .btn-add-plus {
+        width: 17px; height: 17px;
+        background: rgba(255,255,255,0.18);
         border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 14px;
         line-height: 1;
-        font-style: normal;
+        flex-shrink: 0;
     }
 
     /* ── TABLE CARD ── */
@@ -146,12 +138,12 @@
         animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both;
     }
 
-    /* ── TOOLBAR: count + search in one row ── */
+    /* ── TOOLBAR ── */
     .table-toolbar {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        padding: 0.875rem 1.25rem;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
         border-bottom: 1px solid var(--border-soft);
         background: var(--surface-2);
     }
@@ -159,78 +151,86 @@
     .table-meta {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-shrink: 0;
     }
 
     .table-meta-label {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
         color: var(--ink-3);
-        white-space: nowrap;
     }
 
     .count-badge {
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         font-weight: 700;
         color: var(--ink-3);
         background: var(--bg);
         border: 1px solid var(--border);
-        padding: 2px 8px;
+        padding: 1px 7px;
         border-radius: 100px;
         letter-spacing: 0.04em;
-        white-space: nowrap;
+        line-height: 1.7;
     }
 
     /* ── SEARCH ── */
     .search-wrap {
-        flex: 1;
         position: relative;
-        max-width: 420px;
+        flex: 1;
+        max-width: 380px;
         margin-left: auto;
     }
 
-    .search-wrap svg {
+    .search-icon {
         position: absolute;
-        left: 11px;
+        left: 9px;
         top: 50%;
         transform: translateY(-50%);
-        width: 15px;
-        height: 15px;
+        width: 13px;
+        height: 13px;
         color: var(--ink-4);
         pointer-events: none;
-        flex-shrink: 0;
+        display: block;
     }
 
     #serviceSearch {
         width: 100%;
-        padding: 0.5rem 0.75rem 0.5rem 2.1rem;
+        height: 32px;
+        padding: 0 0.7rem 0 1.85rem;
         border: 1.5px solid var(--border);
-        border-radius: 8px;
+        border-radius: 7px;
         background: var(--surface);
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: var(--ink);
         outline: none;
         transition: border-color 0.15s, box-shadow 0.15s;
+        display: block;
     }
 
     #serviceSearch::placeholder { color: var(--ink-4); }
-
-    #serviceSearch:focus {
-        border-color: var(--ink-3);
-        box-shadow: 0 0 0 3px rgba(26,23,20,0.07);
-    }
+    #serviceSearch:focus { border-color: var(--ink-3); box-shadow: 0 0 0 3px rgba(26,23,20,0.07); }
 
     /* ── TABLE ── */
+    .table-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+
     table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
+        min-width: 680px;
     }
 
+    /* Column widths — fixed px so nothing gets squeezed */
+    col.c-img   { width: 68px;  }
+    col.c-name  { width: 200px; }
+    col.c-desc  { width: auto;  }   /* takes remaining space, desc truncates */
+    col.c-price { width: 110px; }
+    col.c-act   { width: 170px; }
+
     thead th {
-        padding: 0.65rem 1rem;
-        font-size: 0.6rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.58rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.1em;
@@ -238,24 +238,20 @@
         background: var(--surface-2);
         border-bottom: 1px solid var(--border-soft);
         text-align: left;
+        white-space: nowrap;
     }
 
     tbody tr {
         transition: background 0.14s, opacity 0.3s ease, transform 0.3s ease;
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(5px);
     }
-
-    tbody tr.visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
+    tbody tr.visible { opacity: 1; transform: translateY(0); }
     tbody tr:hover { background: #faf7f3; }
 
     tbody td {
-        padding: 0.85rem 1rem;
-        font-size: 0.85rem;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.82rem;
         color: var(--ink-2);
         border-bottom: 1px solid var(--border-soft);
         vertical-align: middle;
@@ -263,54 +259,103 @@
 
     tbody tr:last-child td { border-bottom: none; }
 
-    .td-name {
-        font-weight: 600;
-        color: var(--ink);
-        font-size: 0.875rem;
+    /* IMAGE cell */
+    .cell-img {
+        padding: 0.5rem 0.75rem !important;
     }
 
-    .td-price {
-        font-family: 'Fraunces', Georgia, serif;
-        font-size: 1rem;
+    .cell-img img {
+        width: 52px;
+        height: 38px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        display: block;
+    }
+
+    .img-placeholder {
+        width: 52px;
+        height: 38px;
+        background: var(--surface-2);
+        border-radius: 6px;
+        border: 1px dashed var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ink-4);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.03em;
+    }
+
+    /* NAME cell */
+    .cell-name {
         font-weight: 600;
-        color: var(--green);
-        letter-spacing: -0.02em;
+        color: var(--ink);
+        font-size: 0.83rem;
+        word-break: break-word;
+    }
+
+    /* DESC td — overflow must be on the td in fixed-layout tables */
+    td.td-desc-cell {
+        overflow: hidden;
+        max-width: 0;
+    }
+
+    /* DESC cell */
+    .cell-desc {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink-3);
+        font-size: 0.8rem;
+    }
+
+    /* PRICE cell */
+    .cell-price {
         white-space: nowrap;
     }
 
-    .td-price .currency {
-        font-size: 0.7rem;
+    .price-val {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 1px;
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--green);
+        letter-spacing: -0.02em;
+    }
+
+    .price-val .cur {
+        font-size: 0.65rem;
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-weight: 500;
         opacity: 0.6;
-        margin-right: 1px;
+        align-self: flex-end;
+        margin-bottom: 1px;
     }
 
-    .td-desc {
-        color: var(--ink-3);
-        font-size: 0.8rem;
-        line-height: 1.45;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+    /* ACTIONS cell */
+    .cell-actions { white-space: nowrap; padding: 0.6rem 0.75rem !important; }
 
-    /* ── ACTIONS ── */
-    .td-actions {
+    .action-group {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
+        flex-wrap: nowrap;
     }
 
     .action-btn {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 4px;
-        padding: 0.35rem 0.8rem;
-        border-radius: 7px;
+        padding: 0 0.65rem;
+        height: 28px;
+        border-radius: 6px;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 600;
         text-decoration: none;
         border: 1.5px solid transparent;
@@ -319,6 +364,14 @@
         letter-spacing: 0.01em;
         background: none;
         white-space: nowrap;
+        line-height: 1;
+    }
+
+    .action-btn svg {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+        display: block;
     }
 
     .btn-edit {
@@ -326,60 +379,42 @@
         background: var(--blue-soft);
         border-color: #bfdbfe;
     }
-
-    .btn-edit:hover {
-        background: #dbeafe;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(29,78,216,0.15);
-    }
+    .btn-edit:hover { background: #dbeafe; transform: translateY(-1px); box-shadow: 0 3px 8px rgba(29,78,216,0.15); }
 
     .btn-delete {
         color: var(--red);
         background: var(--red-soft);
         border-color: #fecaca;
     }
+    .btn-delete:hover { background: #fee2e2; transform: translateY(-1px); box-shadow: 0 3px 8px rgba(185,28,28,0.15); }
 
-    .btn-delete:hover {
-        background: #fee2e2;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(185,28,28,0.15);
-    }
-
-    .btn-edit:active,
-    .btn-delete:active { transform: scale(0.96); }
+    .btn-edit:active, .btn-delete:active { transform: scale(0.96); }
 
     /* ── EMPTY STATE ── */
     .empty-state {
         text-align: center;
-        padding: 3.5rem 2rem;
+        padding: 3rem 2rem;
     }
-
-    .empty-icon {
-        font-size: 2rem;
-        margin-bottom: 0.6rem;
-        display: block;
-        opacity: 0.35;
-    }
-
-    .empty-state p {
-        font-size: 0.85rem;
-        color: var(--ink-4);
-    }
+    .empty-state span { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; opacity: 0.3; }
+    .empty-state p { font-size: 0.82rem; color: var(--ink-4); }
 
     /* ── PAGINATION ── */
     .pagination-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.75rem 1.25rem;
+        gap: 0.75rem;
+        padding: 0.65rem 1rem;
         border-top: 1px solid var(--border-soft);
         background: var(--surface-2);
+        flex-wrap: wrap;
     }
 
     .pagination-info {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         color: var(--ink-4);
         font-weight: 500;
+        white-space: nowrap;
     }
 
     .pagination-controls {
@@ -391,54 +426,44 @@
     .pg-btn {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 0.38rem 0.85rem;
-        border-radius: 7px;
+        justify-content: center;
+        gap: 4px;
+        padding: 0 0.8rem;
+        height: 28px;
+        border-radius: 6px;
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
         border: 1.5px solid var(--border);
         background: var(--surface);
         color: var(--ink-2);
         cursor: pointer;
         transition: all 0.17s ease;
-        letter-spacing: 0.01em;
+        white-space: nowrap;
+        line-height: 1;
     }
 
-    .pg-btn:hover:not(:disabled) {
-        background: var(--ink);
-        color: #fff;
-        border-color: var(--ink);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .pg-btn:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-    }
+    .pg-btn:hover:not(:disabled) { background: var(--ink); color: #fff; border-color: var(--ink); transform: translateY(-1px); }
+    .pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
     .pg-label {
-        padding: 0.38rem 0.9rem;
-        font-size: 0.72rem;
+        display: inline-flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 0.8rem;
+        font-size: 0.7rem;
         font-weight: 700;
         color: var(--ink-3);
         background: var(--bg);
         border: 1.5px solid var(--border);
-        border-radius: 7px;
-        letter-spacing: 0.03em;
+        border-radius: 6px;
+        white-space: nowrap;
+        line-height: 1;
     }
 
     /* ── ANIMATIONS ── */
-    @keyframes fadeDown {
-        from { opacity: 0; transform: translateY(-12px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(12px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(10px);  } to { opacity:1; transform:translateY(0); } }
 </style>
 
 <div class="page-wrap">
@@ -450,7 +475,7 @@
             <h2>All <em>Services</em></h2>
         </div>
         <a href="{% url 'add_service' %}" class="btn-add">
-            <i class="btn-add-icon">+</i>
+            <span class="btn-add-plus" aria-hidden="true">+</span>
             Add Service
         </a>
     </div>
@@ -458,34 +483,44 @@
     <!-- Table Card -->
     <div class="table-card">
 
-        <!-- Toolbar: meta + search in one line -->
+        <!-- Toolbar -->
         <div class="table-toolbar">
             <div class="table-meta">
                 <span class="table-meta-label">Services</span>
                 <span class="count-badge" id="serviceCount">—</span>
             </div>
             <div class="search-wrap">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                <input type="text" id="serviceSearch" placeholder="Search by service name...">
+                <input type="text" id="serviceSearch" placeholder="Search by service name…" autocomplete="off">
             </div>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:88px">Image</th>
-                    <th style="width:18%">Service</th>
-                    <th>Description</th>
-                    <th style="width:110px">Price</th>
-                    <th style="width:150px">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="serviceTableBody"></tbody>
-        </table>
+        <!-- Table -->
+        <div class="table-scroll">
+            <table>
+                <colgroup>
+                    <col class="c-img">
+                    <col class="c-name">
+                    <col class="c-desc">
+                    <col class="c-price">
+                    <col class="c-act">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Service</th>
+                        <th>Description</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="serviceTableBody"></tbody>
+            </table>
+        </div>
 
-        <!-- Pagination Bar -->
+        <!-- Pagination -->
         <div class="pagination-bar" id="paginationContainer" style="display:none;"></div>
 
     </div>
@@ -494,48 +529,48 @@
 <script>
 let currentPage = 1;
 
+const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const ICON_DEL  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
 function renderRowsWithAnimation(html) {
     const tbody = document.getElementById('serviceTableBody');
     tbody.innerHTML = html;
     tbody.querySelectorAll('tr').forEach((row, i) => {
-        setTimeout(() => row.classList.add('visible'), 40 + i * 30);
+        setTimeout(() => row.classList.add('visible'), 40 + i * 25);
     });
 }
 
 function loadServices(page = 1) {
     const search = document.getElementById('serviceSearch').value || '';
-
     fetch(`/api/services/?page=${page}&search=${encodeURIComponent(search)}`)
         .then(r => r.json())
         .then(data => {
             currentPage = data.current_page;
-            document.getElementById('serviceCount').innerText = data.total_count;
+            document.getElementById('serviceCount').textContent = data.total_count;
 
             let html = '';
             if (!data.results.length) {
-                html = `<tr class="visible"><td colspan="5"><div class="empty-state"><span class="empty-icon">📦</span><p>No services found.</p></div></td></tr>`;
+                html = `<tr class="visible"><td colspan="5"><div class="empty-state"><span>📦</span><p>No services found.</p></div></td></tr>`;
             } else {
                 data.results.forEach(s => {
                     const imgHtml = s.image
-                        ? `<img src="${s.image}" style="width:72px;height:50px;object-fit:cover;border-radius:7px;border:1px solid var(--border);">`
-                        : `<div style="width:72px;height:50px;background:#f7f7f7;border-radius:7px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-4);font-size:11px;">No img</div>`;
+                        ? `<img src="${s.image}" alt="${esc(s.service_name)}" loading="lazy">`
+                        : `<div class="img-placeholder">No img</div>`;
 
-                    html += `
-                    <tr>
-                        <td style="width:88px">${imgHtml}</td>
-                        <td class="td-name">${escapeHtml(s.service_name)}</td>
-                        <td><div class="td-desc">${escapeHtml(s.description)}</div></td>
-                        <td class="td-price"><span class="currency">₹</span>${s.rate}</td>
-                        <td>
-                            <div class="td-actions">
-                                <a href="/edit-service/${s.id}/" class="action-btn btn-edit">✎ Edit</a>
-                                <button class="action-btn btn-delete" onclick="if(confirm('Delete this service?')) deleteService(${s.id})">✕ Delete</button>
+                    html += `<tr>
+                        <td class="cell-img">${imgHtml}</td>
+                        <td class="cell-name">${esc(s.service_name)}</td>
+                        <td class="td-desc-cell" title="${esc(s.description)}"><span class="cell-desc">${esc(s.description)}</span></td>
+                        <td class="cell-price"><span class="price-val"><span class="cur">₹</span>${esc(String(s.rate))}</span></td>
+                        <td class="cell-actions">
+                            <div class="action-group">
+                                <a href="/edit-service/${s.id}/" class="action-btn btn-edit">${ICON_EDIT} Edit</a>
+                                <button class="action-btn btn-delete" onclick="if(confirm('Delete this service?')) deleteService(${s.id})">${ICON_DEL} Delete</button>
                             </div>
                         </td>
                     </tr>`;
                 });
             }
-
             renderRowsWithAnimation(html);
             renderPagination(data);
         })
@@ -546,44 +581,34 @@ function deleteService(id) {
     fetch(`/delete-service/${id}/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(r => r.json())
-    .then(res => { if (res.status === 'success') loadServices(currentPage); });
+    }).then(r => r.json()).then(res => { if (res.status === 'success') loadServices(currentPage); });
 }
 
 function renderPagination(data) {
-    const container = document.getElementById('paginationContainer');
-    if (data.total_pages <= 1) { container.style.display = 'none'; return; }
-
-    container.style.display = 'flex';
-
-    const totalCount = data.total_count || 0;
+    const c = document.getElementById('paginationContainer');
+    if (data.total_pages <= 1) { c.style.display = 'none'; return; }
+    c.style.display = 'flex';
     const pageSize = 25;
     const start = (data.current_page - 1) * pageSize + 1;
-    const end   = Math.min(data.current_page * pageSize, totalCount);
-
-    container.innerHTML = `
-        <span class="pagination-info">Showing ${start}–${end} of ${totalCount}</span>
+    const end   = Math.min(data.current_page * pageSize, data.total_count || 0);
+    c.innerHTML = `
+        <span class="pagination-info">Showing ${start}–${end} of ${data.total_count}</span>
         <div class="pagination-controls">
-            <button class="pg-btn" onclick="loadServices(${data.current_page - 1})" ${!data.has_previous ? 'disabled' : ''}>
-                ← Previous
-            </button>
+            <button class="pg-btn" onclick="loadServices(${data.current_page - 1})" ${!data.has_previous ? 'disabled' : ''}>← Prev</button>
             <span class="pg-label">Page ${data.current_page} / ${data.total_pages}</span>
-            <button class="pg-btn" onclick="loadServices(${data.current_page + 1})" ${!data.has_next ? 'disabled' : ''}>
-                Next →
-            </button>
+            <button class="pg-btn" onclick="loadServices(${data.current_page + 1})" ${!data.has_next ? 'disabled' : ''}>Next →</button>
         </div>`;
 }
 
-window.escapeHtml = function(str) {
-    if (!str) return '';
+function esc(str) {
+    if (str == null) return '';
     return String(str).replace(/[&"'<>]/g, s => ({'&':'&amp;','"':'&quot;',"'":'&#39;','<':'&lt;','>':'&gt;'})[s]);
-};
+}
 
-window.getCookie = function(name) {
+function getCookie(name) {
     const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return v ? v.pop() : '';
-};
+}
 
 let typingTimer;
 document.addEventListener('DOMContentLoaded', function () {
