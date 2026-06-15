@@ -21,3 +21,4 @@ pypdf
 python-dotenv
 cloudinary
 django-cloudinary-storage
+requests
