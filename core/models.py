@@ -193,7 +193,7 @@ class Service(models.Model):
     # Compatibility alias: expose `service_name` and `price` as requested
     service_name = models.CharField(max_length=200, blank=True, db_index=True)
     unit = models.CharField(max_length=50, default='Sq Ft')
-    image = models.ImageField(upload_to='services/', blank=True, null=True)
+    image = models.ImageField(upload_to='services/', blank=True, null=True,max_length=500)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True, null=True)
