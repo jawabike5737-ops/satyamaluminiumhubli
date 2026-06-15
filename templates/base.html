@@ -1153,7 +1153,12 @@ document.addEventListener('submit', async function (e) {
                 setTimeout(() => { window.location = data.redirect; }, 450);
                 return;
             }
-            if (form.dataset.afterSuccess === 'reload') setTimeout(() => location.reload(), 700);
+            if (form.dataset.afterSuccess === 'reload') {
+                setTimeout(() => location.reload(), 700);
+            } else if (form.dataset.afterSuccess) {
+                // If data-after-success contains a URL, navigate there
+                setTimeout(() => { window.location = form.dataset.afterSuccess; }, 700);
+            }
         } else {
             showToast('error', data.message || 'An error occurred.');
         }

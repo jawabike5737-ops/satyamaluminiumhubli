@@ -1,116 +1,318 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
 <style>
-    /* Full page center */
-    .delete-container {
-        height: 90vh;
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+    .delete-wrap {
+        min-height: calc(100vh - 80px);
         display: flex;
-        justify-content: center;
         align-items: center;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    /* Glass card */
-    .delete-card {
-        backdrop-filter: blur(20px);
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 40px;
-        width: 400px;
-        text-align: center;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        color: white;
-        animation: fadeIn 0.5s ease-in-out;
-    }
-
-    /* Title */
-    .delete-card h2 {
-        font-size: 28px;
-        margin-bottom: 20px;
-        font-weight: 600;
-    }
-
-    /* Message */
-    .delete-card p {
-        font-size: 16px;
-        margin-bottom: 30px;
-        color: #e0e0e0;
-    }
-
-    .delete-card b {
-        color: #fff;
-        font-weight: 600;
-    }
-
-    /* Buttons container */
-    .btn-group {
-        display: flex;
         justify-content: center;
-        gap: 15px;
+        padding: 2.5rem 1.5rem;
+        font-family: 'DM Sans', sans-serif;
+        background-color: #f5f0e8;
+        background-image:
+            linear-gradient(90deg, rgba(180,160,120,.08) 1px, transparent 1px),
+            linear-gradient(rgba(180,160,120,.08) 1px, transparent 1px);
+        background-size: 40px 40px;
     }
 
-    /* Delete button */
-    .delete-btn {
-        background: linear-gradient(135deg, #ff416c, #ff4b2b);
-        border: none;
-        padding: 12px 20px;
+    /* ── Card ── */
+    .delete-card {
+        width: 100%;
+        max-width: 460px;
+        background: #fffdf7;
+        border: 1.5px solid #e2d9c8;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow:
+            0 4px 6px -1px rgba(120,100,60,.07),
+            0 12px 32px -6px rgba(120,100,60,.12);
+    }
+
+    /* Red accent stripe */
+    .delete-accent {
+        height: 5px;
+        background: linear-gradient(90deg, #7f1d1d, #b91c1c, #ef4444);
+    }
+
+    /* ── Header ── */
+    .delete-header {
+        padding: 28px 36px 22px;
+        border-bottom: 1.5px solid #e8e0d0;
+        background: linear-gradient(180deg, #fffdf7 0%, #fdf6f6 100%);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .delete-icon {
+        width: 48px; height: 48px;
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .delete-icon svg {
+        width: 22px; height: 22px;
+        stroke: #b91c1c; fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .delete-header-text h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #1e1a0f;
+        margin-bottom: 3px;
+        line-height: 1.2;
+    }
+
+    .delete-header-text p {
+        font-size: 0.82rem;
+        color: #8a7d65;
+        font-weight: 400;
+    }
+
+    /* ── Body ── */
+    .delete-body {
+        padding: 26px 36px 28px;
+    }
+
+    /* Warning box */
+    .delete-warning {
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        border-left: 4px solid #b91c1c;
         border-radius: 10px;
-        color: white;
+        padding: 16px 18px;
+        margin-bottom: 26px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .delete-warning svg {
+        width: 18px; height: 18px;
+        stroke: #b91c1c; fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .delete-warning-text {
+        font-size: 0.875rem;
+        color: #7f1d1d;
+        line-height: 1.6;
+    }
+
+    .delete-warning-text strong {
+        display: block;
+        font-weight: 700;
+        color: #991b1b;
+        margin-bottom: 3px;
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    /* Object name chip */
+    .delete-name-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #faf8f3;
+        border: 1.5px solid #e2d9c8;
+        border-radius: 10px;
+        padding: 13px 16px;
+        margin-bottom: 26px;
+    }
+
+    .delete-name-chip svg {
+        width: 16px; height: 16px;
+        stroke: #8a7d65; fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+
+    .delete-name-chip span {
+        font-size: 0.95rem;
         font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        color: #1e1a0f;
+        word-break: break-word;
     }
 
-    .delete-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 20px rgba(255, 75, 43, 0.5);
+    /* ── Action row ── */
+    .delete-actions {
+        display: flex;
+        gap: 12px;
     }
 
-    /* Cancel button */
-    .cancel-btn {
-        background: rgba(255,255,255,0.2);
+    .btn-cancel {
+        flex: 1;
         padding: 12px 20px;
         border-radius: 10px;
-        color: white;
+        border: 1.5px solid #ddd5c0;
+        background: transparent;
+        color: #5a4f3a;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition: background .18s, border-color .18s;
+    }
+
+    .btn-cancel svg {
+        width: 15px; height: 15px;
+        stroke: currentColor; fill: none;
+        stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .btn-cancel:hover {
+        background: #f0ebe0;
+        border-color: #c9bda4;
+    }
+
+    .btn-delete {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: none;
+        background: #b91c1c;
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        transition: background .18s, box-shadow .18s, transform .15s;
+        box-shadow: 0 3px 10px rgba(185,28,28,.25);
+    }
+
+    .btn-delete svg {
+        width: 15px; height: 15px;
+        stroke: currentColor; fill: none;
+        stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .btn-delete:hover {
+        background: #991b1b;
+        box-shadow: 0 5px 16px rgba(185,28,28,.35);
+        transform: translateY(-1px);
+    }
+
+    .btn-delete:active { transform: translateY(0) scale(.98); }
+
+    /* ── Footer ── */
+    .delete-footer {
+        padding: 13px 36px 15px;
+        border-top: 1.5px solid #e8e0d0;
+        background: #fcf8f2;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: #b5a68a;
         font-weight: 500;
-        transition: all 0.3s ease;
     }
 
-    .cancel-btn:hover {
-        background: rgba(255,255,255,0.35);
-        transform: scale(1.05);
+    .delete-footer svg {
+        width: 13px; height: 13px;
+        stroke: #b5a68a; fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round;
+        flex-shrink: 0;
     }
 
-    /* Animation */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    @media (max-width: 480px) {
+        .delete-header { padding: 22px 22px 18px; }
+        .delete-body   { padding: 20px 22px 24px; }
+        .delete-footer { padding: 12px 22px; }
+        .delete-actions { flex-direction: column-reverse; }
     }
 </style>
 
-<div class="delete-container">
+<div class="delete-wrap">
     <div class="delete-card">
-        <h2>⚠️ Confirm Delete</h2>
 
-        <p>Are you sure you want to delete <br><b>{{ obj.name }}</b>?</p>
+        <!-- Red accent stripe -->
+        <div class="delete-accent"></div>
 
-        <form method="POST" class="ajax-form" data-after-success="reload">
-            {% csrf_token %}
-            <div class="btn-group">
-                <button type="submit" class="delete-btn">Yes, Delete</button>
-                <a href="{% url 'services' %}" class="cancel-btn">Cancel</a>
+        <!-- Header -->
+        <div class="delete-header">
+            <div class="delete-icon">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14H6L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4h6v2"/>
+                </svg>
             </div>
-        </form>
+            <div class="delete-header-text">
+                <h2>Confirm Delete</h2>
+                <p>This action cannot be undone</p>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="delete-body">
+
+            <!-- Warning -->
+            <div class="delete-warning">
+                <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div class="delete-warning-text">
+                    <strong>Permanent Action</strong>
+                    You are about to permanently delete this record. All associated data will be removed and cannot be recovered.
+                </div>
+            </div>
+
+            <!-- Object name -->
+            <div class="delete-name-chip">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>{{ obj.name }}</span>
+            </div>
+
+            <!-- Buttons -->
+            <form method="POST" class="ajax-form" data-after-success="{% url 'dashboard' %}">
+                {% csrf_token %}
+                <div class="delete-actions">
+                    <a href="{% url 'services' %}" class="btn-cancel">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-delete">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        Yes, Delete
+                    </button>
+                </div>
+            </form>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="delete-footer">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Deleting this item will also remove all linked records
+        </div>
+
     </div>
 </div>
 
