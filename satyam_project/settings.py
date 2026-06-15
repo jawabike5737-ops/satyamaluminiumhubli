@@ -27,6 +27,13 @@ allowed = os.environ.get(
 )
 ALLOWED_HOSTS = [h.strip() for h in allowed.split(',') if h.strip()]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://satyamaluminiumhubli-1.onrender.com",
+    "https://*.onrender.com",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # ========================
 # APPLICATIONS
 # ========================
