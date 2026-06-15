@@ -1308,7 +1308,7 @@ def services_api(request):
             service_name__icontains=search
         ).order_by('service_name')
     else:
-        queryset = queryset.order_by('-id')
+        queryset = queryset.order_by('service_name')
 
     # pagination
     paginator = Paginator(queryset, 25)
