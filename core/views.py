@@ -3215,17 +3215,36 @@ def quotation_pdf(request, id):
             except Exception:
                 pass
 
+            import requests
+            from io import BytesIO
+
             img_flowable = None
+
             try:
                 svc = getattr(item, 'service', None)
-                if svc and getattr(svc, 'image', None) and svc.image.name:
-                    try:
-                        img_path = svc.image.path
-                    except Exception:
-                        img_path = None
-                    if img_path and os.path.exists(img_path):
-                        img_flowable = Image(img_path, width=1.55 * inch, height=1.1 * inch)
-            except Exception:
+
+                if svc and svc.image:
+                    image_url = svc.image.url
+
+                    print("IMAGE URL:", image_url)
+
+                    response = requests.get(image_url, timeout=20)
+
+                    print("STATUS:", response.status_code)
+
+                    if response.status_code == 200:
+                        image_data = BytesIO(response.content)
+
+                        img_flowable = Image(
+                            image_data,
+                            width=1.55 * inch,
+                            height=1.1 * inch
+                        )
+                    else:
+                        print("FAILED URL:", image_url)
+
+            except Exception as e:
+                print("IMAGE ERROR:", str(e))
                 img_flowable = None
 
             if img_flowable is None:
