@@ -2726,7 +2726,7 @@ def quotation_pdf(request, id):
 
     today_date = _dt.now().strftime("%d-%m-%Y")
     q          = get_object_or_404(Quotation, id=id)
-    items      = QuotationItem.objects.filter(quotation=q).select_related('quotation')
+    items      = QuotationItem.objects.filter(quotation=q).select_related('quotation', 'service')
 
     customer_name = re.sub(r'[^A-Za-z0-9]+', '_', q.customer.name)
     filename      = f"{customer_name}_{today_date}.pdf"
@@ -2779,6 +2779,12 @@ def quotation_pdf(request, id):
 
     # Also keep existing unicode font for item descriptions (guaranteed to render)
     unicode_font, _ = _load_unicode_font()
+
+# Image download cache and PIL for thumbnails
+    import requests
+    from PIL import Image as PILImage
+    from io import BytesIO
+    image_cache = {}
 
     # ── Colour palette ────────────────────────────────────────────────────────
     BROWN       = colors.HexColor('#4A3428')
@@ -2908,10 +2914,7 @@ def quotation_pdf(request, id):
     _wm_text    = co_name_txt
     _wm_tagline = ''
     _wm_gst     = gst_txt
-    # Mutable holder so the subclass can read the total set after pass-1
-    _total_holder = [1]
-
-    # Capture closure variables into the class namespace via default args
+    # Capture closure variables for canvas drawing
     _BROWN      = BROWN
     _ACCENT     = ACCENT
     _ACCENT_PALE= ACCENT_PALE
@@ -2923,53 +2926,73 @@ def quotation_pdf(request, id):
 
     from reportlab.pdfgen.canvas import Canvas as _BaseCanvas
 
-    class _LuxuryCanvas(_BaseCanvas):
-        """Custom canvas that paints watermark + footer on top of each page."""
+    class NumberedLuxuryCanvas(_BaseCanvas):
+        """Single-pass canvas that records pages and paints watermark/footer
+        after the document is generated so we can include total page count.
+        """
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._saved_page_states = []
 
         def showPage(self):
-            """Called by ReportLab when a page is complete. Draw overlays first."""
-            self._paint_overlays()
-            super().showPage()
+            # Save the state of the current page and start a new one
+            self._saved_page_states.append(dict(self.__dict__))
+            self._startPage()
 
         def save(self):
-            """Called once at the very end. Draw overlays for the last page."""
-            self._paint_overlays()
-            super().save()
+            # Iterate saved pages, restore state and paint overlays with total
+            num_pages = len(self._saved_page_states)
+            for page_num, state in enumerate(self._saved_page_states, start=1):
+                self.__dict__.update(state)
+                try:
+                    self._paint_watermark()
+                    self._paint_footer(page_num, num_pages)
+                except Exception:
+                    logger.exception('Error painting overlays on page %s', page_num)
+                _BaseCanvas.showPage(self)
+            _BaseCanvas.save(self)
 
-        def _paint_overlays(self):
-            pw   = _pw
-            ph   = _ph
-            lm   = 24
+        def _paint_watermark(self):
+            pw = _pw
+            ph = _ph
+            lm = 24
             self.saveState()
-
-            # ── Watermark (drawn on top so it's visible over content) ─────────
             wm_size = 68
             self.setFont(_wm_font, wm_size)
             self.setFillColor(_BROWN)
-            self.setFillAlpha(0.07)          # 7 % — visible but non-intrusive
+            try:
+                self.setFillAlpha(0.07)
+            except Exception:
+                pass
             self.translate(pw / 2, ph / 2)
             self.rotate(30)
             tw = self.stringWidth(_wm_text, _wm_font, wm_size)
             self.drawString(-tw / 2, 0, _wm_text)
             self.rotate(-30)
             self.translate(-pw / 2, -ph / 2)
+            self.restoreState()
 
-            # ── Footer band ───────────────────────────────────────────────────
-            self.setFillAlpha(1.0)
+        def _paint_footer(self, page_num, total_pages):
+            pw = _pw
+            lm = 24
+            self.saveState()
+            try:
+                self.setFillAlpha(1.0)
+            except Exception:
+                pass
             foot_h = 26
             foot_y = 8
-
-            # Brown background rectangle
             self.setFillColor(_BROWN)
-            self.roundRect(lm, foot_y, pw - lm * 2, foot_h, 3, fill=1, stroke=0)
+            try:
+                self.roundRect(lm, foot_y, pw - lm * 2, foot_h, 3, fill=1, stroke=0)
+            except Exception:
+                # fallback if roundRect not supported
+                self.rect(lm, foot_y, pw - lm * 2, foot_h, fill=1, stroke=0)
 
-            # Gold top rule
             self.setStrokeColor(_ACCENT)
             self.setLineWidth(1.5)
             self.line(lm, foot_y + foot_h, pw - lm, foot_y + foot_h)
-
-            page_num    = self.getPageNumber()
-            total_pages = _total_holder[0]
 
             # Left: company name
             self.setFillColor(_WHITE_c)
@@ -2985,8 +3008,8 @@ def quotation_pdf(request, id):
             # Centre: system note
             self.setFillColor(colors.HexColor('#C4B5A8'))
             self.setFont(_F_BODY, 6.5)
-            note   = (f"System-generated quotation \u2014 no signature required"
-                      f"  |  GSTIN: {_wm_gst}")
+            note = (f"System-generated quotation \u2014 no signature required"
+                    f"  |  GSTIN: {_wm_gst}")
             note_w = self.stringWidth(note, _F_BODY, 6.5)
             self.drawString((pw - note_w) / 2, foot_y + 7, note)
 
@@ -2994,21 +3017,10 @@ def quotation_pdf(request, id):
             self.setFillColor(_ACCENT_PALE)
             self.setFont(_F_HEADING, 7.5)
             pg_txt = f"Page {page_num} of {total_pages}"
-            pg_w   = self.stringWidth(pg_txt, _F_HEADING, 7.5)
+            pg_w = self.stringWidth(pg_txt, _F_HEADING, 7.5)
             self.drawString(pw - lm - pg_w - 10, foot_y + 10, pg_txt)
 
             self.restoreState()
-
-    # ── Two-pass build: pass-1 counts pages, pass-2 renders with total ────────
-    import io as _io_mod
-
-    _buf1      = _io_mod.BytesIO()
-    _doc_count = SimpleDocTemplate(
-        _buf1,
-        pagesize=PAGE_SIZE,
-        leftMargin=24, rightMargin=24,
-        topMargin=40, bottomMargin=40,
-    )
 
     # ══════════════════════════════════════════════════════════════════════════
     # BUILD FLOWABLES  (defined as a function so we can call twice)
@@ -3215,9 +3227,6 @@ def quotation_pdf(request, id):
             except Exception:
                 pass
 
-            import requests
-            from io import BytesIO
-
             img_flowable = None
 
             try:
@@ -3226,25 +3235,40 @@ def quotation_pdf(request, id):
                 if svc and svc.image:
                     image_url = svc.image.url
 
-                    print("IMAGE URL:", image_url)
+                    # Cache image bytes so repeated builds don't re-download
+                    if image_url not in image_cache:
+                        try:
+                            r = requests.get(image_url, timeout=10)
+                            if r.status_code == 200:
+                                image_cache[image_url] = r.content
+                        except Exception:
+                            image_cache[image_url] = None
 
-                    response = requests.get(image_url, timeout=20)
+                    image_bytes = image_cache.get(image_url)
+                    if image_bytes:
+                        try:
+                            pil_img = PILImage.open(BytesIO(image_bytes))
+                            if pil_img.mode != 'RGB':
+                                pil_img = pil_img.convert('RGB')
 
-                    print("STATUS:", response.status_code)
+                            # Create a small thumbnail to reduce memory and PDF size
+                            pil_img.thumbnail((250, 180))
 
-                    if response.status_code == 200:
-                        image_data = BytesIO(response.content)
+                            buffer = BytesIO()
+                            pil_img.save(buffer, format='JPEG', quality=55, optimize=True)
+                            buffer.seek(0)
 
-                        img_flowable = Image(
-                            image_data,
-                            width=1.55 * inch,
-                            height=1.1 * inch
-                        )
-                    else:
-                        print("FAILED URL:", image_url)
+                            img_flowable = Image(
+                                buffer,
+                                width=0.8 * inch,
+                                height=0.6 * inch
+                            )
+                        except Exception:
+                            logger.exception('Failed to process service image: %s', image_url)
+                            img_flowable = None
 
-            except Exception as e:
-                print("IMAGE ERROR:", str(e))
+            except Exception:
+                logger.exception('IMAGE ERROR for item id %s', getattr(item, 'id', None))
                 img_flowable = None
 
             if img_flowable is None:
@@ -3639,78 +3663,14 @@ def quotation_pdf(request, id):
         return elems
 
     # ══════════════════════════════════════════════════════════════════════════
-    # TWO-PASS BUILD
-    #   Pass 1 — plain canvas into a buffer, count pages
-    #   Pass 2 — _LuxuryCanvas into response; watermark/footer drawn on top
-    # ══════════════════════════════════════════════════════════════════════════
-
-    # --- Pass 1: count total pages -------------------------------------------
-    def _noop(c, d):
-        pass
-
-    _doc_count.build(
-        _build_elements(),
-        onFirstPage=_noop,
-        onLaterPages=_noop,
-    )
-    # After build() the internal page counter reflects the last page drawn.
-    # We extract it from the buffer PDF using a lightweight byte-scan approach.
-    # Simpler: count how many times 'showPage' was called via a wrapper canvas.
-    # We already have _buf1 written; count /Page entries to get total.
+    # Single-pass build using NumberedLuxuryCanvas (records page states
+    # and paints watermark/footer with total page count at save time)
     try:
-        _buf1.seek(0)
-        try:
-            from PyPDF2 import PdfReader
-            reader = PdfReader(_buf1)
-            _total_holder[0] = len(reader.pages)
-        except Exception:
-            # Fallback to byte-scan if PdfReader not available
-            _total_holder[0] = _buf1.getvalue().count(b'/Type /Page')
-            if _total_holder[0] < 1:
-                _total_holder[0] = 1
-    except Exception:
-        _total_holder[0] = 1
-
-    # --- Pass 2: render with _LuxuryCanvas (watermark + footer on top) -------
-    # Build into a buffer first, then remove any near-empty trailing pages
-    try:
-        from PyPDF2 import PdfReader, PdfWriter
-        pdf_buffer = _io_mod.BytesIO()
-
-        temp_doc = SimpleDocTemplate(
-            pdf_buffer,
-            pagesize=PAGE_SIZE,
-            leftMargin=24, rightMargin=24,
-            topMargin=40, bottomMargin=40,
-        )
-
-        temp_doc.build(_build_elements(), canvasmaker=_LuxuryCanvas)
-        pdf_buffer.seek(0)
-
-        reader = PdfReader(pdf_buffer)
-        writer = PdfWriter()
-
-        for page in reader.pages:
-            try:
-                text = page.extract_text() or ""
-            except Exception:
-                text = ""
-            if len(text.strip()) < 50:
-                # skip very small/blank pages
-                continue
-            writer.add_page(page)
-
-        out_buf = _io_mod.BytesIO()
-        writer.write(out_buf)
-        out_buf.seek(0)
-
-        response.write(out_buf.read())
+        doc.build(_build_elements(), canvasmaker=NumberedLuxuryCanvas)
         return response
-
-    except Exception:
-        # Fallback: if PyPDF2 isn't available or processing fails, build directly
-        doc.build(_build_elements(), canvasmaker=_LuxuryCanvas)
-        return response
+    except Exception as e:
+        logger.exception('PDF build failed: %s', e)
+        raise
 
 
 # ──────────────────────────────────────────────
