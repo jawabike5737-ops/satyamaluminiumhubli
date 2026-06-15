@@ -2953,6 +2953,12 @@ def quotation_pdf(request, id):
                 _BaseCanvas.showPage(self)
             _BaseCanvas.save(self)
 
+            # Release page state memory explicitly to avoid retention across requests
+            try:
+                self._saved_page_states.clear()
+            except Exception:
+                pass
+
         def _paint_watermark(self):
             pw = _pw
             ph = _ph
@@ -3257,6 +3263,12 @@ def quotation_pdf(request, id):
                             buffer = BytesIO()
                             pil_img.save(buffer, format='JPEG', quality=85, optimize=True)
                             buffer.seek(0)
+
+                            # Close PIL image to release memory held by the image object
+                            try:
+                                pil_img.close()
+                            except Exception:
+                                pass
 
                             # Auto-fit the image into the image cell while preserving aspect ratio
                             # CELL_W/CELL_H are in points (approx layout units)
@@ -3691,7 +3703,36 @@ def quotation_pdf(request, id):
     # Single-pass build using NumberedLuxuryCanvas (records page states
     # and paints watermark/footer with total page count at save time)
     try:
-        doc.build(_build_elements(), canvasmaker=NumberedLuxuryCanvas)
+        # Prepare elements once so we can explicitly release them after build
+        elements = _build_elements()
+
+        # Log memory before PDF generation
+        try:
+            import os, psutil
+            process = psutil.Process(os.getpid())
+            logger.info(f"RAM BEFORE PDF: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+        except Exception:
+            pass
+
+        doc.build(elements, canvasmaker=NumberedLuxuryCanvas)
+
+        # Log memory after PDF generation
+        try:
+            import os, psutil
+            process = psutil.Process(os.getpid())
+            logger.info(f"RAM AFTER PDF: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+        except Exception:
+            pass
+
+        # Explicitly release large objects and force a GC pass
+        try:
+            import gc
+            elements.clear()
+            del elements
+            gc.collect()
+        except Exception:
+            pass
+
         return response
     except Exception as e:
         logger.exception('PDF build failed: %s', e)
