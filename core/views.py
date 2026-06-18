@@ -37,7 +37,7 @@ from reportlab.platypus import (
 from django.utils.text import get_valid_filename
 
 from .models import Customer, Measurement
-from .models import Service, Quotation, QuotationItem
+from .models import Service, Quotation, QuotationItem, Company
 from .utils import to_decimal, format_quantity
 import re
 
@@ -505,6 +505,18 @@ from datetime import datetime
 
 import openpyxl
 from django.conf import settings
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
+
+# Register DejaVuSans globally (if available in staticfiles)
+FONT_PATH = os.path.join(settings.BASE_DIR, 'staticfiles', 'fonts', 'DejaVuSans.ttf')
+try:
+    if os.path.exists(FONT_PATH):
+        if 'DejaVuSans' not in pdfmetrics.getRegisteredFontNames():
+            pdfmetrics.registerFont(TTFont('DejaVuSans', FONT_PATH))
+except Exception:
+    logger.exception('Failed to register DejaVuSans: %s', FONT_PATH)
 from django.contrib.staticfiles import finders
 from io import BytesIO
 from django.db import transaction
@@ -937,11 +949,12 @@ def add_customer(request):
 
         customer = Customer.objects.create(name=name, phone=phone, address=address)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            # After AJAX add, redirect to create quotation and prefill the new customer
             return JsonResponse({
                 'status': 'success',
                 'message': 'Customer added successfully',
                 'customer': {'id': customer.id, 'name': customer.name, 'phone': customer.phone},
-                'redirect': reverse('customers')
+                'redirect': reverse('create_quotation') + '?customer_id=' + str(customer.id)
             })
         return redirect('customers')
     return render(request, 'add_customer.html')
@@ -3969,11 +3982,12 @@ def generate_reminder_pdf(request, order_id):
     C_TBL_HDR    = colors.HexColor("#1A5FA8")   # deep blue table header
 
     # ── Fonts ─────────────────────────────────────────────────────────────────
-    TNR       = "Times-Roman"
-    TNR_BOLD  = "Times-Bold"
-    TNR_ITAL  = "Times-Italic"
-    SANS      = "Helvetica"
-    SANS_BOLD = "Helvetica-Bold"
+    # Use DejaVuSans for Unicode-safe rendering (bullets, ₹, dashes, local scripts)
+    TNR       = "DejaVuSans"
+    TNR_BOLD  = "Helvetica-Bold"
+    TNR_ITAL  = "DejaVuSans"
+    SANS      = "DejaVuSans"
+    SANS_BOLD = "DejaVuSans"
 
     font_name, rupee_symbol = _load_unicode_font()
 
@@ -4020,20 +4034,18 @@ def generate_reminder_pdf(request, order_id):
     comp_name = getattr(comp, 'name', '').upper()
 
     def _sanitize_header_text(txt):
+        """Preserve Unicode; normalize whitespace and common non-breaking spaces/dashes.
+
+        DejaVuSans is registered for rendering so we must NOT strip non-ASCII characters.
+        """
         if not txt:
             return ''
         s = str(txt)
-        # Normalize common punctuation that some PDF fonts don't support
-        s = s.replace('\u2013', '-')  # en dash
-        s = s.replace('\u2014', '-')  # em dash
-        s = s.replace('\u00A0', ' ')  # non-breaking space
-        s = s.replace('\u2022', ' - ')  # bullet
-        s = s.replace('•', ' - ')
-        # Remove remaining non-ascii characters which can appear as boxes
-        s = re.sub(r'[^\x00-\x7F]', ' ', s)
-        # Collapse multiple spaces
-        s = re.sub(r'\s{2,}', ' ', s).strip()
-        return s
+        s = s.replace('\u2013', '–')
+        s = s.replace('\u2014', '—')
+        s = s.replace('\u00A0', ' ')
+        s = re.sub(r'\s+', ' ', s)
+        return s.strip()
 
     # ── Canvas callback: header + background on every page ───────────────────
     def draw_page(canv, doc):

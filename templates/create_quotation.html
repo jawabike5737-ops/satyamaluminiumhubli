@@ -836,6 +836,30 @@
           </div>
         </div>
 
+        <script>
+        (function () {
+          // Prefill customer selection when redirected with ?customer_id=...
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const cid = params.get('customer_id');
+            if (cid) {
+              const sel = document.querySelector('select[name="customer"]');
+              if (sel) {
+                const opt = sel.querySelector('option[value="' + cid + '"]');
+                if (opt) {
+                  sel.value = cid;
+                  sel.dispatchEvent(new Event('change'));
+                  // remove param from URL to avoid repeated actions
+                  const url = new URL(window.location);
+                  url.searchParams.delete('customer_id');
+                  window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                }
+              }
+            }
+          } catch (e) { console.error('Prefill customer error', e); }
+        })();
+        </script>
+
         <div class="discount-row">
           <div class="field-wrap">
             <label class="field-label">Special Discount (₹)</label>
@@ -1366,13 +1390,31 @@
   </form>
 
   <!-- ── Quotation History ── -->
+  <style>
+  /* Quotation history: modern table + pagination */
+  .quotation-history { padding: 0; }
+  .quotation-history .table-wrap { border-radius: 10px; overflow: hidden; }
+  .quotation-history table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .quotation-history thead th { text-align: left; padding: 14px 16px; font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
+  .quotation-history tbody td { padding: 12px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
+  .quotation-history tbody tr:hover td { background: rgba(34,197,94,0.03); }
+  .quotation-history .card-header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; }
+  .qh-footer { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-top:1px solid var(--border); background:transparent; }
+  .pagination { display:flex; gap:8px; align-items:center; }
+  .pagination button { padding:6px 10px; border-radius:6px; border:1px solid var(--border-md); background:var(--surface); color:var(--text-2); cursor:pointer; font-weight:600; }
+  .pagination button:hover { transform:translateY(-1px); }
+  .pagination button:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
+  .pagination button.active, .pagination button.active:disabled { background:var(--brand); color:white; border-color:var(--brand-line); }
+  .qh-info { color:var(--text-3); font-size:13px; }
+  @media (max-width:800px) { .quotation-history thead th:nth-child(3), .quotation-history thead th:nth-child(2) { font-size:13px; } }
+  </style>
   <div class="section-divider">
     <div class="section-divider-line"></div>
     <span class="section-divider-text">Quotation History</span>
     <div class="section-divider-line"></div>
   </div>
 
-  <div class="card">
+  <div class="card quotation-history">
     <div class="card-header">
       <div class="card-title"><span class="card-title-dot"></span>All Quotations</div>
       <div style="display:flex; gap:8px; align-items:center;">
@@ -1382,7 +1424,7 @@
     </div>
     <div class="card-body" style="padding:0;">
       <div class="table-wrap" style="border:none; border-radius:0;">
-        <table>
+        <table class="quotation-history-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -1444,9 +1486,81 @@
             {% endfor %}
           </tbody>
         </table>
+        <div class="qh-footer" aria-hidden="false">
+          <div class="qh-info" id="qh-info"></div>
+          <div class="pagination" id="qh-pagination" role="navigation" aria-label="Quotation pagination"></div>
+        </div>
       </div>
     </div>
   </div>
+
+  <script>
+  (function () {
+    const table = document.querySelector('.quotation-history-table');
+    if (!table) return;
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const pageSize = 7;
+    let current = 1;
+
+    function renderPage(page) {
+      const total = rows.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      rows.forEach((r, i) => { r.style.display = (i >= start && i < end) ? 'table-row' : 'none'; });
+      current = page;
+      renderPagination(totalPages);
+      const info = document.getElementById('qh-info');
+      if (info) info.textContent = total === 0 ? 'No quotations' : ('Showing ' + (start + 1) + '–' + Math.min(end, total) + ' of ' + total);
+    }
+
+    function renderPagination(totalPages) {
+      const wrap = document.getElementById('qh-pagination');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      function makeBtn(label, cls, disabled, onClick) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = label; if (cls) b.className = cls;
+        if (disabled) b.disabled = true;
+        b.addEventListener('click', onClick);
+        return b;
+      }
+
+      wrap.appendChild(makeBtn('Prev', '', current === 1, () => renderPage(current - 1)));
+
+      const maxButtons = 5;
+      let start = Math.max(1, current - Math.floor(maxButtons / 2));
+      let end = Math.min(totalPages, start + maxButtons - 1);
+      if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+      if (start > 1) {
+        wrap.appendChild(makeBtn('1', '', false, () => renderPage(1)));
+        if (start > 2) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; wrap.appendChild(s); }
+      }
+
+      for (let i = start; i <= end; i++) {
+        const btn = makeBtn(String(i), '', false, () => renderPage(i));
+        if (i === current) { btn.classList.add('active'); btn.disabled = true; }
+        wrap.appendChild(btn);
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; wrap.appendChild(s); }
+        wrap.appendChild(makeBtn(String(totalPages), '', false, () => renderPage(totalPages)));
+      }
+
+      wrap.appendChild(makeBtn('Next', '', current === totalPages, () => renderPage(current + 1)));
+    }
+
+    // Initialize
+    renderPage(1);
+  })();
+  </script>
 
 </div><!-- /.page -->
 
