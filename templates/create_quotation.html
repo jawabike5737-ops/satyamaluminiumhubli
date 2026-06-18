@@ -963,8 +963,8 @@
                             {% if s.image %}data-img="{{ s.image.url }}"{% else %}data-img=""{% endif %}
                             data-price="{{ s.price|default:0 }}"
                             data-unit="{{ s.unit|default:'Sq Ft' }}"
-                            data-service-name="{{ s.service_name|default:s.name|escapejs }}"
-                            data-description="{{ s.description|default:s.service_name|default:s.name|escapejs }}"
+                            data-service-name="{{ s.service_name|default:s.name|escape }}"
+                            data-description="{{ s.description|default:s.service_name|default:s.name|escape }}"
                             {% if item.service_id and item.service_id == s.id %}selected{% endif %}>
                             {{ s.service_name|default:s.name }}
                           </option>
@@ -1071,8 +1071,8 @@
                           {% if s.image %}data-img="{{ s.image.url }}"{% else %}data-img=""{% endif %}
                           data-price="{{ s.price|default:0 }}"
                           data-unit="{{ s.unit|default:'Sq Ft' }}"
-                          data-service-name="{{ s.service_name|default:s.name|escapejs }}"
-                          data-description="{{ s.description|default:s.service_name|default:s.name|escapejs }}">
+                          data-service-name="{{ s.service_name|default:s.name|escape }}"
+                          data-description="{{ s.description|default:s.service_name|default:s.name|escape }}">
                           {{ s.service_name|default:s.name }}
                         </option>
                       {% endfor %}
@@ -1772,6 +1772,21 @@ function escapeAttr(str) {
   return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Decode service description strings that may contain escaped unicode sequences
+function decodeServiceDescription(str) {
+  if (!str && str !== '') return '';
+  try {
+    // If string contains literal backslash escapes like \uXXXX or \n, let JSON.parse decode them
+    if (/\\u[0-9a-fA-F]{4}|\\n|\\r/.test(str)) {
+      return JSON.parse('"' + String(str).replace(/"/g, '\\"') + '"');
+    }
+  } catch (e) {
+    // fall through to fallback replacements
+  }
+  // Replace escaped newlines if present
+  return String(str).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+}
+
 /**
  * Render (or re-render) the options list inside a panel.
  */
@@ -2155,7 +2170,7 @@ function applyServiceDataToRow(tr, opt) {
   var imgUrl  = opt.dataset.img || '';
   var price   = parseFloat(opt.dataset.price || '0') || 0;
   var unit    = opt.dataset.unit || 'Nos';
-  var desc    = opt.dataset.description || '';
+  var desc    = decodeServiceDescription(opt.dataset.description || '');
   var svcName = opt.dataset.serviceName || opt.text || '';
 
   setRowImage(tr, imgUrl);
@@ -2323,6 +2338,7 @@ function calculate() {
 function insertMeasRow(desc, imgUrl, qty, unit, price, serviceId, rawQty) {
   var tbody = document.getElementById('tableBody');
   var n = tbody.querySelectorAll('tr').length + 1;
+  desc = decodeServiceDescription(desc || '');
   var imgBlock = imgUrl
     ? '<img src="' + imgUrl + '" alt="" class="loaded" style="display:block;">'
     : '<img src="" alt="">';
