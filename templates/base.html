@@ -16,9 +16,9 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-        --sidebar-w:    260px;
-        --sidebar-collapsed-w: 68px;
-        --topbar-h:     64px;
+        --sidebar-w:             260px;
+        --sidebar-collapsed-w:   68px;
+        --topbar-h:              64px;
 
         /* Light Palette */
         --bg:           #f4f2ed;
@@ -56,17 +56,17 @@
         --font-mono:    'DM Mono', 'Courier New', monospace;
 
         /* Radii */
-        --r-sm:  8px;
-        --r-md:  12px;
-        --r-lg:  16px;
-        --r-xl:  20px;
-        --r-pill:99px;
+        --r-sm:   8px;
+        --r-md:   12px;
+        --r-lg:   16px;
+        --r-xl:   20px;
+        --r-pill: 99px;
 
         /* Shadows */
-        --shadow-xs: 0 1px 3px rgba(0,0,0,0.05);
-        --shadow-sm: 0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03);
-        --shadow-md: 0 4px 18px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
-        --shadow-lg: 0 8px 36px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+        --shadow-xs:    0 1px 3px rgba(0,0,0,0.05);
+        --shadow-sm:    0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03);
+        --shadow-md:    0 4px 18px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+        --shadow-lg:    0 8px 36px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
         --shadow-brand: 0 4px 18px rgba(181,114,42,0.25);
     }
 
@@ -124,14 +124,14 @@
     }
 
     /* ══════════════════════════════════════
-       OVERLAY  (FIX: was missing styles entirely)
+       OVERLAY
     ══════════════════════════════════════ */
     .overlay {
         display: none;
         position: fixed;
         inset: 0;
         background: rgba(24,20,13,0.45);
-        z-index: 99998 !important;
+        z-index: 99998;
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
         animation: fadeIn 0.25s ease;
@@ -151,11 +151,15 @@
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        z-index: 99999 !important;
+        z-index: 99999;
         overflow: hidden;
         box-shadow: var(--shadow-sm);
         animation: slideRight 0.55s cubic-bezier(0.16,1,0.3,1) both;
-        transition: width 0.3s cubic-bezier(0.16,1,0.3,1);
+
+        /* Smooth transition for both collapse (desktop) and drawer (mobile) */
+        transition: width 0.3s cubic-bezier(0.16,1,0.3,1),
+                    left  0.3s cubic-bezier(0.16,1,0.3,1),
+                    transform 0.3s cubic-bezier(0.16,1,0.3,1);
     }
 
     /* Decorative ambient gradient */
@@ -338,7 +342,6 @@
         z-index: 2;
         overflow-y: auto;
         overflow-x: hidden;
-        /* FIX: ensure scrollbar doesn't break collapsed layout */
         scrollbar-width: thin;
         scrollbar-color: var(--surface-3) transparent;
     }
@@ -373,11 +376,9 @@
         white-space: nowrap;
         overflow: hidden;
         flex-shrink: 0;
-        /* FIX: use nth-of-type so label span doesn't throw off count */
         animation: navIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
     }
 
-    /* Staggered entry — applied via JS to avoid nth-child conflicts with the label span */
     .sidebar nav a:hover {
         color: var(--text-1);
         background: var(--surface-3);
@@ -426,9 +427,6 @@
     }
 
     /* ── RAM Widget ── */
-    /* FIX: Removed margin-top:auto (conflicts when nav has flex:1).
-       Widget is placed after nav in the flex column, which naturally pushes it down.
-       We use a small top separator instead. */
     .server-ram-widget {
         margin: 0 12px 12px;
         background: var(--surface-2);
@@ -440,7 +438,7 @@
         z-index: 2;
         flex-shrink: 0;
         overflow: hidden;
-        transition: opacity 0.2s;
+        transition: opacity 0.2s, height 0.3s, padding 0.3s, margin 0.3s;
     }
 
     .server-ram-widget::before {
@@ -478,9 +476,9 @@
         overflow: hidden;
     }
 
-    .srw-used { color: var(--brand); }
-    .srw-sep  { color: var(--text-3); font-weight: 400; }
-    .srw-total{ color: var(--text-2); font-weight: 400; font-size: 11px; }
+    .srw-used  { color: var(--brand); }
+    .srw-sep   { color: var(--text-3); font-weight: 400; }
+    .srw-total { color: var(--text-2); font-weight: 400; font-size: 11px; }
 
     .srw-track {
         width: 100%;
@@ -497,8 +495,8 @@
         transition: width 0.6s cubic-bezier(0.34,1,0.64,1);
     }
 
-    .srw-bar.warn  { background: linear-gradient(90deg, #f59e0b, #d97706); }
-    .srw-bar.crit  { background: linear-gradient(90deg, #f87171, #dc2626); }
+    .srw-bar.warn { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .srw-bar.crit { background: linear-gradient(90deg, #f87171, #dc2626); }
 
     .srw-warning {
         margin-top: 8px;
@@ -561,9 +559,7 @@
     .logout-text { transition: opacity 0.2s; }
 
     /* ══════════════════════════════════════
-       COLLAPSED STATE
-       FIX: was using body.sidebar-collapsed — JS never sets that class.
-            All collapsed styles go on .sidebar.collapsed.
+       COLLAPSED STATE  (desktop only)
     ══════════════════════════════════════ */
     .sidebar.collapsed {
         width: var(--sidebar-collapsed-w);
@@ -603,7 +599,6 @@
     .sidebar.collapsed .server-ram-widget {
         opacity: 0;
         pointer-events: none;
-        overflow: hidden;
         height: 0;
         padding: 0;
         margin: 0 12px;
@@ -623,8 +618,6 @@
         transition: margin-left 0.3s cubic-bezier(0.16,1,0.3,1),
                     width      0.3s cubic-bezier(0.16,1,0.3,1);
     }
-
-    /* FIX: main adjusts based on sidebar state via direct style in JS */
 
     /* ── Topbar ── */
     .topbar {
@@ -802,9 +795,10 @@
 
     /* ══════════════════════════════════════
        MOBILE MENU BUTTON
+       Hidden on desktop, shown on mobile via media query
     ══════════════════════════════════════ */
     .mobile-menu-btn {
-        display: none;
+        display: none; /* shown in mobile media query */
         align-items: center;
         justify-content: center;
         width: 34px;
@@ -818,6 +812,8 @@
         transition: background 0.2s, color 0.2s, border-color 0.2s;
         flex-shrink: 0;
         font-family: var(--font-body);
+        line-height: 1;
+        padding: 0;
     }
     .mobile-menu-btn:hover {
         background: var(--brand-light);
@@ -826,42 +822,167 @@
     }
 
     /* ══════════════════════════════════════
-       RESPONSIVE — MOBILE ≤ 1200px
+       RESPONSIVE — TABLET  769px – 1100px
+       Sidebar collapses to icon-only strip;
+       no drawer, no overlay needed.
     ══════════════════════════════════════ */
-    @media (max-width: 1200px) {
-        /* Use responsive collapsed-sidebar instead of converting to a drawer */
+    @media (max-width: 1100px) and (min-width: 769px) {
         .sidebar {
             width: var(--sidebar-collapsed-w);
         }
-
+        .sidebar .logo-text-group,
+        .sidebar .logo-rule,
+        .sidebar .nav-section-label,
+        .sidebar .nav-label,
+        .sidebar .logout-text {
+            opacity: 0;
+            overflow: hidden;
+            width: 0;
+            pointer-events: none;
+        }
+        .sidebar .logo {
+            padding: 18px 14px;
+        }
+        .sidebar .logo-mark {
+            justify-content: center;
+            gap: 0;
+        }
+        .sidebar nav a {
+            justify-content: center;
+            padding: 10px 0;
+            gap: 0;
+        }
+        .sidebar .logout-btn {
+            justify-content: center;
+            padding: 10px 0;
+            gap: 0;
+        }
+        .sidebar .server-ram-widget {
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            padding: 0;
+            margin: 0 12px;
+            border: none;
+        }
+        /* Disable the desktop collapse toggle on tablet — sidebar is already minimal */
+        .sidebar-toggle-row {
+            display: none;
+        }
         .main {
             margin-left: var(--sidebar-collapsed-w);
             width: calc(100% - var(--sidebar-collapsed-w));
         }
+    }
 
-        .sidebar .logo-text-group,
-        .sidebar .logo-rule,
-        .sidebar .nav-label,
-        .sidebar .nav-section-label,
-        .sidebar .logout-text {
+    /* ══════════════════════════════════════
+       RESPONSIVE — MOBILE  ≤ 768px
+       Sidebar becomes a drawer that slides
+       in from the left over the content.
+    ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+        /* ── Sidebar: off-screen by default ── */
+        .sidebar {
+            left: calc(-1 * var(--sidebar-w) - 10px); /* fully hidden + shadow clearance */
+            width: var(--sidebar-w);
+            box-shadow: none;
+        }
+
+        /* ── When opened via JS: slides in ── */
+        .sidebar.open {
+            left: 0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ── On mobile, never allow desktop collapsed state ── */
+        .sidebar.collapsed {
+            width: var(--sidebar-w);
+            left: calc(-1 * var(--sidebar-w) - 10px);
+        }
+        .sidebar.collapsed.open {
+            left: 0;
+        }
+        /* Restore text in collapsed sidebar when open on mobile */
+        .sidebar.collapsed .logo-text-group,
+        .sidebar.collapsed .logo-rule,
+        .sidebar.collapsed .nav-section-label,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .logout-text {
+            opacity: 1;
+            overflow: visible;
+            width: auto;
+            pointer-events: auto;
+        }
+        .sidebar.collapsed nav a {
+            justify-content: flex-start;
+            padding: 10px 12px;
+            gap: 11px;
+        }
+        .sidebar.collapsed nav a.active::before {
+            display: block;
+        }
+        .sidebar.collapsed .logout-btn {
+            justify-content: flex-start;
+            padding: 10px 13px;
+            gap: 10px;
+        }
+        .sidebar.collapsed .server-ram-widget {
+            opacity: 1;
+            pointer-events: auto;
+            height: auto;
+            padding: 14px 15px;
+            margin: 0 12px 12px;
+            border: 1px solid var(--border);
+        }
+        /* Hide the desktop collapse toggle on mobile — use hamburger instead */
+        .sidebar-toggle-row {
             display: none;
         }
 
-        .sidebar nav a {
-            justify-content: center;
+        /* ── Main: full-width, no left offset ── */
+        .main {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        /* ── Show hamburger button ── */
+        .mobile-menu-btn {
+            display: flex;
+        }
+
+        /* ── Topbar adjustments ── */
+        .topbar {
+            padding: 0 16px;
+        }
+        .topbar-breadcrumb,
+        .topbar-sep {
+            display: none;
+        }
+        .status-badge {
+            display: none; /* save space on very small screens */
+        }
+        .content {
+            padding: 16px;
         }
     }
 
-    @media (max-width: 480px) {
-        .topbar-breadcrumb,
-        .topbar-sep { display: none; }
-        .content { padding: 16px; }
+    /* ══════════════════════════════════════
+       EXTRA SMALL  ≤ 380px
+    ══════════════════════════════════════ */
+    @media (max-width: 380px) {
+        .user-pill span:not(.user-avatar) {
+            display: none;
+        }
+        .user-pill {
+            padding: 4px;
+            border-radius: 50%;
+        }
     }
     </style>
 </head>
 
 <body>
-<!-- Overlay (for mobile sidebar) -->
+<!-- Overlay (tap to close mobile sidebar) -->
 <div class="overlay" id="sidebar-overlay"></div>
 
 <div class="layout">
@@ -870,7 +991,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-shimmer"></div>
 
-        <!-- Desktop collapse toggle -->
+        <!-- Desktop collapse toggle (hidden on mobile via CSS) -->
         <div class="sidebar-toggle-row">
             <button id="sidebar-toggle-btn" title="Collapse sidebar" aria-label="Toggle sidebar">&#xAB;</button>
         </div>
@@ -886,9 +1007,7 @@
                 </div>
                 <div class="logo-text-group">
                     <span class="logo-top">S P J Associates</span>
-                    <span class="logo-sub">Aluminium <br>
-                                           Glass<br>
-                                           UPVC</span>
+                    <span class="logo-sub">Aluminium &amp; Glass &amp; UPVC</span>
                 </div>
             </div>
             <span class="logo-rule"></span>
@@ -1008,8 +1127,8 @@
         <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-left">
-                <!-- Mobile hamburger — only visible on small screens -->
-                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open navigation menu">
+                <!-- Hamburger — only visible on mobile (≤768px) via CSS -->
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
                     &#x2630;
                 </button>
                 <span class="topbar-breadcrumb">Satyam Paras Jayshree Associates</span>
@@ -1026,7 +1145,7 @@
                     <div class="user-avatar">
                         {{ request.user.username|slice:":2"|upper }}
                     </div>
-                    {{ request.user.username }}
+                    <span>{{ request.user.username }}</span>
                 </div>
             </div>
         </header>
@@ -1042,7 +1161,7 @@
 <!-- ═══════ SCRIPTS ═══════ -->
 <script>
 /* ──────────────────────────────────────────
-   RAM BAR WIDTH  (set via JS to keep Django tags out of CSS contexts)
+   RAM BAR WIDTH
 ────────────────────────────────────────── */
 (function () {
     const bar = document.getElementById('srw-bar-fill');
@@ -1050,20 +1169,20 @@
 })();
 
 /* ──────────────────────────────────────────
-   TOPBAR TITLE  (FIX: only update if Django hasn't already set active via template tag)
+   TOPBAR TITLE + NAV ANIMATION STAGGER
 ────────────────────────────────────────── */
 (function () {
     const titleEl = document.getElementById('topbar-page-title');
-    if (!titleEl) return;
-    const active = document.querySelector('.sidebar nav a.active');
-    if (active) {
-        const label = active.querySelector('.nav-label');
-        titleEl.textContent = label ? label.textContent.trim() : active.textContent.trim();
+    if (titleEl) {
+        const active = document.querySelector('.sidebar nav a.active');
+        if (active) {
+            const label = active.querySelector('.nav-label');
+            titleEl.textContent = label ? label.textContent.trim() : active.textContent.trim();
+        }
     }
 
     /* Stagger nav link animation delays */
-    const links = document.querySelectorAll('.sidebar nav a');
-    links.forEach((a, i) => {
+    document.querySelectorAll('.sidebar nav a').forEach(function (a, i) {
         a.style.animationDelay = (0.08 + i * 0.05) + 's';
     });
 })();
@@ -1092,7 +1211,9 @@ function showToast(type, title) {
     Toast.fire({ icon: type, title });
 }
 
-function showConfirm(title = 'Are you sure?', text = 'This action cannot be undone.') {
+function showConfirm(title, text) {
+    title = title || 'Are you sure?';
+    text  = text  || 'This action cannot be undone.';
     return Swal.fire({
         title, text, icon: 'warning',
         showCancelButton: true,
@@ -1110,22 +1231,26 @@ document.addEventListener('submit', async function (e) {
     if (!form.classList.contains('ajax-form')) return;
     e.preventDefault();
 
-    const btn = form.querySelector('button[type=submit], input[type=submit]');
+    const btn      = form.querySelector('button[type=submit], input[type=submit]');
     const origText = btn ? (btn.innerText || btn.value) : '';
-    if (btn) { btn.disabled = true; if ('innerText' in btn) btn.innerText = 'Processing…'; else btn.value = 'Processing…'; }
+    if (btn) {
+        btn.disabled = true;
+        if ('innerText' in btn) btn.innerText = 'Processing…';
+        else btn.value = 'Processing…';
+    }
 
-    const url    = form.action || window.location.href;
-    const method = (form.method || 'POST').toUpperCase();
+    const url         = form.action || window.location.href;
+    const method      = (form.method || 'POST').toUpperCase();
     const isMultipart = form.enctype === 'multipart/form-data';
-    const body   = isMultipart ? new FormData(form) : new URLSearchParams(new FormData(form));
-    const headers = {
+    const body        = isMultipart ? new FormData(form) : new URLSearchParams(new FormData(form));
+    const headers     = {
         'X-Requested-With': 'XMLHttpRequest',
         'X-CSRFToken': getCookie('csrftoken'),
     };
     if (!isMultipart) headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
 
     let fetchUrl = url;
-    const opts = { method, headers };
+    const opts   = { method, headers };
     if (method === 'GET') {
         const qs = body.toString();
         if (qs) fetchUrl += (url.includes('?') ? '&' : '?') + qs;
@@ -1149,15 +1274,13 @@ document.addEventListener('submit', async function (e) {
             }
             if (form.dataset.resetOnSuccess === 'true') form.reset();
             if (data.redirect) {
-                // If server suggests a redirect, navigate there after a short delay
-                setTimeout(() => { window.location = data.redirect; }, 450);
+                setTimeout(function () { window.location = data.redirect; }, 450);
                 return;
             }
             if (form.dataset.afterSuccess === 'reload') {
-                setTimeout(() => location.reload(), 700);
+                setTimeout(function () { location.reload(); }, 700);
             } else if (form.dataset.afterSuccess) {
-                // If data-after-success contains a URL, navigate there
-                setTimeout(() => { window.location = form.dataset.afterSuccess; }, 700);
+                setTimeout(function () { window.location = form.dataset.afterSuccess; }, 700);
             }
         } else {
             showToast('error', data.message || 'An error occurred.');
@@ -1181,7 +1304,7 @@ document.addEventListener('click', function (e) {
     const el = e.target.closest('[data-delete-url]');
     if (!el) return;
     e.preventDefault();
-    showConfirm('Delete this item?', 'This cannot be undone.').then(async result => {
+    showConfirm('Delete this item?', 'This cannot be undone.').then(async function (result) {
         if (!result.isConfirmed) return;
         try {
             const res  = await fetch(el.dataset.deleteUrl, {
@@ -1198,7 +1321,7 @@ document.addEventListener('click', function (e) {
                     const rem = document.querySelector(el.dataset.removeOnSuccess);
                     if (rem) rem.remove();
                 } else {
-                    setTimeout(() => location.reload(), 600);
+                    setTimeout(function () { location.reload(); }, 600);
                 }
             } else {
                 showToast('error', data.message || 'Delete failed.');
@@ -1212,27 +1335,38 @@ document.addEventListener('click', function (e) {
 
 /* ──────────────────────────────────────────
    SIDEBAR TOGGLE LOGIC
-   FIX: removed body.sidebar-collapsed class approach.
-        All state is managed via sidebar.classList + direct main style changes.
+   ─────────────────────────────────────────
+   Three states:
+     Desktop (>1100px)  — full sidebar or collapsed icon strip
+                          controlled by .sidebar.collapsed
+                          main gets inline margin-left to match
+     Tablet (769-1100px)— always icon-strip (CSS handles it),
+                          JS collapse toggle hidden
+     Mobile (≤768px)    — sidebar is off-screen drawer
+                          .sidebar.open slides it in
+                          overlay dims the rest
 ────────────────────────────────────────── */
 (function () {
-    const COLLAPSED_KEY  = 'satyam_sidebar_collapsed';
-    const ARROW_COLLAPSE = '\u00AB'; /* « */
-    const ARROW_EXPAND   = '\u00BB'; /* » */
+    var COLLAPSED_KEY  = 'satyam_sidebar_collapsed';
+    var ARROW_COLLAPSE = '\u00AB'; /* « */
+    var ARROW_EXPAND   = '\u00BB'; /* » */
 
-    const sidebar   = document.getElementById('sidebar');
-    const mainEl    = document.getElementById('main-content');
-    const toggleBtn = document.getElementById('sidebar-toggle-btn');
-    const mobileBtn = document.getElementById('mobile-menu-btn');
-    const overlay   = document.getElementById('sidebar-overlay');
+    var sidebar   = document.getElementById('sidebar');
+    var mainEl    = document.getElementById('main-content');
+    var toggleBtn = document.getElementById('sidebar-toggle-btn');
+    var mobileBtn = document.getElementById('mobile-menu-btn');
+    var overlay   = document.getElementById('sidebar-overlay');
 
-    const isMobile = () => window.innerWidth <= 1024;
+    /* ── Breakpoints must match CSS ── */
+    var MOBILE_BP = 768;   /* drawer mode at ≤ 768 */
+    var TABLET_BP = 1100;  /* icon-strip mode at 769–1100 */
 
-    /* Sidebar width values */
-    const W_FULL      = 'var(--sidebar-w)';
-    const W_COLLAPSED = 'var(--sidebar-collapsed-w)';
+    function isMobile() { return window.innerWidth <= MOBILE_BP; }
+    function isTablet() { return window.innerWidth > MOBILE_BP && window.innerWidth <= TABLET_BP; }
+    function isDesktop(){ return window.innerWidth > TABLET_BP; }
 
-    function applyDesktopState(collapsed) {
+    /* ── Desktop: apply collapsed/expanded state ── */
+    function applyDesktopCollapsed(collapsed) {
         if (collapsed) {
             sidebar.classList.add('collapsed');
             mainEl.style.marginLeft = '68px';
@@ -1242,7 +1376,7 @@ document.addEventListener('click', function (e) {
             localStorage.setItem(COLLAPSED_KEY, '1');
         } else {
             sidebar.classList.remove('collapsed');
-            mainEl.style.marginLeft = '';   /* falls back to CSS var */
+            mainEl.style.marginLeft = '';
             mainEl.style.width      = '';
             toggleBtn.textContent   = ARROW_COLLAPSE;
             toggleBtn.title         = 'Collapse sidebar';
@@ -1250,64 +1384,100 @@ document.addEventListener('click', function (e) {
         }
     }
 
+    /* ── Mobile: open drawer ── */
     function openMobile() {
         sidebar.classList.add('open');
         overlay.classList.add('show');
-        document.body.style.overflow = 'hidden'; /* prevent bg scroll */
+        document.body.style.overflow = 'hidden';
+        if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'true');
     }
 
+    /* ── Mobile: close drawer ── */
     function closeMobile() {
         sidebar.classList.remove('open');
         overlay.classList.remove('show');
         document.body.style.overflow = '';
+        if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'false');
     }
 
-    /* Restore desktop state on load */
-    if (!isMobile() && localStorage.getItem(COLLAPSED_KEY) === '1') {
-        applyDesktopState(true);
+    /* ── Reset inline styles applied by JS (used when switching breakpoints) ── */
+    function clearInlineMain() {
+        mainEl.style.marginLeft = '';
+        mainEl.style.width      = '';
     }
 
-    /* Desktop toggle button */
-    toggleBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (isMobile()) {
-            closeMobile();
-        } else {
-            applyDesktopState(!sidebar.classList.contains('collapsed'));
-        }
-    });
+    /* ── On load: restore desktop collapsed state if applicable ── */
+    if (isDesktop() && localStorage.getItem(COLLAPSED_KEY) === '1') {
+        applyDesktopCollapsed(true);
+    }
 
-    /* Mobile hamburger */
-    if (mobileBtn) {
-        mobileBtn.addEventListener('click', function (e) {
+    /* ── Desktop collapse toggle button ── */
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            try { console.debug && console.debug('Mobile menu clicked'); } catch (er) {}
-            openMobile();
+            if (isDesktop()) {
+                applyDesktopCollapsed(!sidebar.classList.contains('collapsed'));
+            }
+            /* On mobile/tablet this button is hidden via CSS so click is irrelevant */
         });
     }
 
-    /* Overlay click */
-    overlay.addEventListener('click', closeMobile);
+    /* ── Mobile hamburger ── */
+    if (mobileBtn) {
+        mobileBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (isMobile()) {
+                if (sidebar.classList.contains('open')) {
+                    closeMobile();
+                } else {
+                    openMobile();
+                }
+            }
+        });
+    }
 
-    /* Handle viewport resize */
-    let prevMobile = isMobile();
-    window.addEventListener('resize', function () {
-        const nowMobile = isMobile();
-        if (prevMobile === nowMobile) return;
-        prevMobile = nowMobile;
+    /* ── Overlay tap: close mobile drawer ── */
+    overlay.addEventListener('click', function () {
+        if (isMobile()) closeMobile();
+    });
 
-        if (!nowMobile) {
-            /* Switched to desktop */
+    /* ── Close mobile drawer on nav link click (good UX) ── */
+    sidebar.querySelectorAll('nav a').forEach(function (a) {
+        a.addEventListener('click', function () {
+            if (isMobile()) closeMobile();
+        });
+    });
+
+    /* ── Escape key closes mobile drawer ── */
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('open')) {
             closeMobile();
-            sidebar.classList.remove('open');
-            const wasCollapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
-            applyDesktopState(wasCollapsed);
+        }
+    });
+
+    /* ── Handle viewport resize ── */
+    var prevState = isMobile() ? 'mobile' : (isTablet() ? 'tablet' : 'desktop');
+
+    window.addEventListener('resize', function () {
+        var nowState = isMobile() ? 'mobile' : (isTablet() ? 'tablet' : 'desktop');
+        if (nowState === prevState) return;
+        prevState = nowState;
+
+        if (nowState === 'desktop') {
+            /* Coming from mobile/tablet: close drawer, restore desktop state */
+            closeMobile();
+            clearInlineMain();
+            var wasCollapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+            applyDesktopCollapsed(wasCollapsed);
+        } else if (nowState === 'tablet') {
+            /* Tablet: close drawer, clear inline styles (CSS handles icon-strip) */
+            closeMobile();
+            clearInlineMain();
+            sidebar.classList.remove('collapsed'); /* CSS handles appearance at this breakpoint */
         } else {
-            /* Switched to mobile */
-            sidebar.classList.remove('collapsed');
-            mainEl.style.marginLeft = '';
-            mainEl.style.width      = '';
-            toggleBtn.textContent   = ARROW_COLLAPSE;
+            /* Mobile: close drawer if open, clear any desktop inline styles */
+            closeMobile();
+            clearInlineMain();
         }
     });
 })();
