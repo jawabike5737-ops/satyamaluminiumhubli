@@ -1649,8 +1649,8 @@ def create_quotation(request):
     ).order_by('-id')[:50]
     terms_qs = TermCondition.objects.order_by('id')[:20]
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
-    # NOTE: load all services ordered by service_name (replacing previous empty placeholder)
-    initial_services = Service.objects.all().order_by('service_name')
+    # Do NOT eagerly load all services — use AJAX search. Provide no initial services.
+    initial_services = []
 
     if request.method == "POST":
         company_id = request.POST.get('company')
@@ -2021,16 +2021,59 @@ def search_customers(request):
 @login_required
 def search_services(request):
     q = (request.GET.get('q') or '').strip()
-    qs = Service.objects.all()
-    if q:
-        qs = qs.filter(Q(service_name__icontains=q) | Q(name__icontains=q) | Q(description__icontains=q))
-    qs = qs.only('id', 'service_name', 'name').order_by('service_name')[:20]
-    results = []
-    for s in qs:
-        text = (s.service_name or s.name) if (s.service_name or s.name) else str(s.id)
-        results.append({'id': s.id, 'text': text})
-    return JsonResponse({'results': results})
 
+    qs = Service.objects.filter(
+        status=Service.STATUS_ACTIVE
+    )
+
+    if q:
+        qs = qs.filter(
+            Q(service_name__icontains=q) |
+            Q(name__icontains=q) |
+            Q(description__icontains=q)
+        )
+
+    qs = qs.only(
+        'id',
+        'service_name',
+        'name',
+        'description',
+        'default_rate',
+        'unit',
+        'image'
+    ).order_by('service_name')[:20]
+
+
+    results = []
+
+    for s in qs:
+
+        text = s.service_name or s.name or str(s.id)
+
+        results.append({
+
+            'id': s.id,
+
+            'text': text,
+
+            'description': s.description or '',
+
+            'price': float(s.default_rate),
+
+            'unit': s.unit or 'Nos',
+
+            'image_url': (
+                s.image.url
+                if s.image
+                else ''
+            )
+
+        })
+
+
+    return JsonResponse({
+        'results': results
+    })
 
 @login_required
 def search_companies(request):
@@ -2423,25 +2466,7 @@ def edit_quotation(request, id):
         except Exception as e:
             logger.exception('Unhandled exception: %s', e)
             t.selected_order = ''
-    # Build minimal initial services list for editing (only services used in this quotation)
-    svc_ids = [itm.service.id for itm in items if getattr(itm, 'service', None)]
-    initial_services = []
-    if svc_ids:
-        svcs = Service.objects.filter(id__in=svc_ids).only('id', 'name', 'service_name', 'description', 'image', 'price', 'unit')
-        for s in svcs:
-            try:
-                img = s.image.url if s.image else ''
-            except Exception:
-                img = ''
-            initial_services.append({
-                'id': s.id,
-                'name': s.name,
-                'service_name': getattr(s, 'service_name', '') or s.name,
-                'description': getattr(s, 'description', '') or getattr(s, 'service_name', '') or s.name,
-                'img': img,
-                'price': float(getattr(s, 'price', getattr(s, 'default_rate', 0) or 0)),
-                'unit': getattr(s, 'unit', 'Nos') or 'Nos',
-            })
+    # Do NOT preload services for edit mode either; leave `initial_services` empty.
 
     selected_payment_id = q.payment_details.id if getattr(q, 'payment_details', None) else ''
 
@@ -5144,3 +5169,4 @@ def edit_term(request, id):
     term.text = text
     term.save()
     return JsonResponse({'id': term.id, 'text': term.text})
+

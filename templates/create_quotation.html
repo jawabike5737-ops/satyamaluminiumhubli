@@ -955,17 +955,6 @@
                       <!-- Hidden select for form submission -->
                     <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
                       <option value="">— select service —</option>
-                      {% for s in initial_services %}
-                        <option value="{{ s.id }}"
-                          data-img="{{ s.img|default:'' }}"
-                          data-price="{{ s.price|default:0 }}"
-                          data-unit="{{ s.unit|default:'Sq Ft' }}"
-                          data-service-name="{{ s.service_name|default:s.name|escape }}"
-                          data-description="{{ s.description|default:s.service_name|default:s.name|escape }}"
-                        >
-                          {{ s.service_name|default:s.name }}
-                        </option>
-                      {% endfor %}
                     </select>
                     </div>
 
@@ -1063,16 +1052,6 @@
                     <!-- Hidden select for form submission -->
                     <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
                       <option value="">— select service —</option>
-                      {% for s in initial_services %}
-                        <option value="{{ s.id }}"
-                          data-img="{{ s.img|default:'' }}"
-                          data-price="{{ s.price|default:0 }}"
-                          data-unit="{{ s.unit|default:'Sq Ft' }}"
-                          data-service-name="{{ s.service_name|default:s.name|escape }}"
-                          data-description="{{ s.description|default:s.service_name|default:s.name|escape }}">
-                          {{ s.service_name|default:s.name }}
-                        </option>
-                      {% endfor %}
                     </select>
                   </div>
 
@@ -1632,22 +1611,7 @@
 <!-- ═══════════════════════════════════════════════════════════
      DATA ISLANDS
 ════════════════════════════════════════════════════════════ -->
-<script id="services-json" type="application/json">
-[
-  {"id": "", "name": "\u2014 select service \u2014", "img": "", "price": 0, "unit": "Nos"}
-  {% for s in initial_services %}
-  ,{
-    "id":    "{{ s.id }}",
-    "name":  "{{ s.name|escapejs }}",
-    "service_name": "{{ s.service_name|default:s.name|escapejs }}",
-    "description": "{{ s.description|default:s.service_name|default:s.name|escapejs }}",
-    "img": "{{ s.img|default:'' }}",
-    "price": {{ s.price|default:0 }},
-    "unit":  "{{ s.unit|default:'Sq Ft' }}"
-  }
-  {% endfor %}
-]
-</script>
+<script id="services-json" type="application/json">[]</script>
 
 <script id="page-config-json" type="application/json">
 {
@@ -1656,11 +1620,7 @@
 }
 </script>
 
-<datalist id="services-list">
-  {% for s in initial_services %}
-    <option value="{{ s.name }}"></option>
-  {% endfor %}
-</datalist>
+<datalist id="services-list"></datalist>
 
 <!-- ═══════════════════════════════════════════════════════════
      JAVASCRIPT
@@ -1675,6 +1635,9 @@
   try { window.PAGE_CONFIG = JSON.parse(document.getElementById('page-config-json').textContent); }
   catch (e) { window.PAGE_CONFIG = { isEdit: false, prefillPaymentId: '' }; }
 })();
+
+// Client-side cache for service search results (term -> array of service objects)
+var SVC_CACHE = {};
 
 /* ── Toast ── */
 var Toast = Swal.mixin({
@@ -1878,9 +1841,21 @@ function selectOption(wrap, optEl) {
 
   // Update hidden select value
   if (hidden) {
+    // Ensure a corresponding option exists in the hidden select so form submission works
+    var existing = Array.from(hidden.options).find(function (o) { return String(o.value) === String(val); });
+    if (!existing) {
+      var newOpt = document.createElement('option');
+      newOpt.value = val; newOpt.text = label || '';
+      // copy data attributes from the clicked element
+      if (optEl && optEl.dataset) {
+        Object.keys(optEl.dataset).forEach(function (k) { newOpt.setAttribute('data-' + k.replace(/[A-Z]/g, function (m) { return '-' + m.toLowerCase(); }), optEl.dataset[k]); });
+      }
+      hidden.appendChild(newOpt);
+      existing = newOpt;
+    }
     hidden.value = val;
     // Sync the option's selected state so form submission picks it up
-    Array.from(hidden.options).forEach(function (o) { o.selected = (o.value === val); });
+    Array.from(hidden.options).forEach(function (o) { o.selected = (String(o.value) === String(val)); });
   }
 
   // Update trigger display
@@ -1892,7 +1867,9 @@ function selectOption(wrap, optEl) {
   closePanel(wrap);
 
   // Trigger downstream auto-fill (image, price, unit, description)
-  if (hidden) onServiceChange(hidden);
+  // Use the clicked option's dataset directly to apply data to the row
+  var tr = wrap.closest('tr');
+  if (tr) applyServiceDataToRow(tr, optEl);
 }
 
 /**
@@ -1923,13 +1900,60 @@ function initDropdown(wrap) {
     if (e.key === 'Escape') closePanel(wrap);
   });
 
-  // Live search filtering
+  // Live search filtering with AJAX, debounce and caching
   search.addEventListener('input', function () {
-    var term = search.value;
+    var term = (search.value || '').trim();
     var hidden = wrap.querySelector('.svc-hidden-select');
     var selectedId = hidden ? hidden.value : '';
-    renderOptions(panel, term, selectedId);
     updateClearBtn(wrap);
+
+    // Clear previous timer
+    if (wrap._svcDdTimer) clearTimeout(wrap._svcDdTimer);
+
+    // If term too short, clear results client-side
+    if (!term || term.length < 2) {
+      // render empty results (no preloaded services)
+      window.SERVICES_DATA = [];
+      renderOptions(panel, '', selectedId);
+      return;
+    }
+
+    // Debounce AJAX
+    wrap._svcDdTimer = setTimeout(function () {
+      var key = term.toLowerCase();
+      if (SVC_CACHE[key]) {
+        window.SERVICES_DATA = SVC_CACHE[key];
+        renderOptions(panel, term, selectedId);
+        return;
+      }
+
+      // Fetch search results from server
+      fetch('/api/search-services/?q=' + encodeURIComponent(term), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var results = (data && data.results) ? data.results : [];
+          // Map results to internal format expected by buildOptionsList
+          var mapped = results.map(function (it) {
+            return {
+              id: it.id,
+              name: it.text || it.name || '',
+              service_name: it.text || it.service_name || it.name || '',
+              description: it.description || it.service_name || it.name || '',
+              img: it.image_url || it.image || it.img || '',
+              price: it.price || 0,
+              unit: it.unit || 'Nos'
+            };
+          });
+          SVC_CACHE[key] = mapped;
+          window.SERVICES_DATA = mapped;
+          renderOptions(panel, term, selectedId);
+        })
+        .catch(function (err) {
+          console.error('Service search error', err);
+          window.SERVICES_DATA = [];
+          renderOptions(panel, term, selectedId);
+        });
+    }, 300);
   });
 
   // Clear button
@@ -2180,11 +2204,12 @@ function onServiceChange(sel) {
 
 function applyServiceDataToRow(tr, opt) {
   if (!tr || !opt) return;
-  var imgUrl  = opt.dataset.img || '';
-  var price   = parseFloat(opt.dataset.price || '0') || 0;
-  var unit    = opt.dataset.unit || 'Nos';
-  var desc    = decodeServiceDescription(opt.dataset.description || '');
-  var svcName = opt.dataset.serviceName || opt.text || '';
+  var ds = (opt && opt.dataset) ? opt.dataset : opt || {};
+  var imgUrl  = ds.img || ds.image || '';
+  var price   = parseFloat(ds.price || '0') || 0;
+  var unit    = ds.unit || 'Nos';
+  var desc    = decodeServiceDescription(ds.description || ds.serviceName || '');
+  var svcName = ds.serviceName || ds.service_name || ds.name || '';
 
   setRowImage(tr, imgUrl);
 
