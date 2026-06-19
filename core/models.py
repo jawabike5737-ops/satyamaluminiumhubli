@@ -13,7 +13,7 @@ from .utils import compress_image_file, optimize_image
 # ================= CUSTOMER =================
 class Customer(models.Model):
     name = models.TextField(db_index=True)
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=15, db_index=True)
     address = models.TextField()
 
     def __str__(self):
@@ -52,7 +52,7 @@ class Company(models.Model):
     logo_path = models.CharField(max_length=255, blank=True,
                                  help_text="Static path or filename to company logo (e.g. 'logo.png' or 'static/jglogo.png')")
     address = models.TextField(blank=True)
-    phone = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=100, blank=True, db_index=True)
     email = models.CharField(max_length=200, blank=True)
     gstin = models.CharField(max_length=32, blank=True)
     bank_details = models.TextField(blank=True)
@@ -155,16 +155,16 @@ class PaymentDetails(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payment_details')
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, default=BUSINESS)
-    account_name = models.CharField(max_length=100, blank=True, help_text='Custom name like "Shop Account"')
+    account_name = models.CharField(max_length=100, blank=True, help_text='Custom name like "Shop Account"', db_index=True)
 
-    holder_name = models.CharField(max_length=100, blank=True)
+    holder_name = models.CharField(max_length=100, blank=True, db_index=True)
     bank_name = models.CharField(max_length=100, blank=True)
-    account_number = models.CharField(max_length=50, blank=True)
+    account_number = models.CharField(max_length=50, blank=True, db_index=True)
     ifsc_code = models.CharField(max_length=20, blank=True)
     branch = models.CharField(max_length=100, blank=True)
 
-    upi_id = models.CharField(max_length=100, blank=True)
-    phone_number = models.CharField(max_length=15, blank=True)
+    upi_id = models.CharField(max_length=100, blank=True, db_index=True)
+    phone_number = models.CharField(max_length=15, blank=True, db_index=True)
 
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True, null=True)
@@ -566,7 +566,7 @@ class Bill(models.Model):
 # ================= EMPLOYEE =================
 class Employee(models.Model):
     name = models.CharField(max_length=100, db_index=True)
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=15, db_index=True)
     role = models.CharField(max_length=100)
     # Manual salary fields
     daily_salary = models.DecimalField(max_digits=10, decimal_places=2)

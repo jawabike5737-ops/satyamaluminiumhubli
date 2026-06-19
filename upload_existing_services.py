@@ -12,7 +12,7 @@ failed = 0
 
 MEDIA_DIR = os.path.join(os.getcwd(), "media", "services")
 
-for service in Service.objects.all():
+for service in Service.objects.only('id', 'image', 'name'):
 
     if not service.image:
         continue

@@ -12,7 +12,7 @@ from django.core.files import File
 
 folder = "media/services"
 
-for service in Service.objects.all():
+for service in Service.objects.only('id', 'image', 'name'):
 
     if not service.image:
         continue

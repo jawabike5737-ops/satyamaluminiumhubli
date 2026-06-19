@@ -990,7 +990,7 @@ def delete_customer(request, id):
 @login_required(login_url='/login/')
 def example_ajax_form(request):
     return render(request, 'example_ajax_form.html', {
-        'customers': Customer.objects.all().order_by('-id')[:50]
+        'customers': Customer.objects.only('id', 'name').order_by('-id')[:50]
     })
 
 
@@ -1643,12 +1643,14 @@ def delete_service(request, id):
 # ================= QUOTATIONS =================
 @login_required(login_url='/login/')
 def create_quotation(request):
-    customers = Customer.objects.order_by('name')[:50]
     companies = Company.objects.order_by('name')
-    quotations = Quotation.objects.all().order_by('-id')[:50]
+    quotations = Quotation.objects.select_related('customer', 'company').only(
+        'id', 'date', 'total', 'customer__name', 'company__name'
+    ).order_by('-id')[:50]
     terms_qs = TermCondition.objects.order_by('id')[:20]
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
-    services_qs = Service.objects.order_by('name')
+    # NOTE: load all services ordered by service_name (replacing previous empty placeholder)
+    initial_services = Service.objects.all().order_by('service_name')
 
     if request.method == "POST":
         company_id = request.POST.get('company')
@@ -1673,10 +1675,10 @@ def create_quotation(request):
 
         if not customer_id:
             return render(request, 'create_quotation.html', {
-                'customers': customers, 'companies': companies, 'quotations': quotations,
+                'companies': companies, 'quotations': quotations,
                 'terms': terms_qs, 'error': 'Select a customer',
-                'payment_accounts': PaymentDetails.objects.filter(user=request.user),
-                'services': services_qs,
+                'terms_default': default_terms_text,
+                'initial_services': initial_services,
             })
 
         customer = get_object_or_404(Customer, id=customer_id)
@@ -1949,13 +1951,11 @@ def create_quotation(request):
                     pd_obj.save()
                 else:
                     return render(request, 'create_quotation.html', {
-                        'customers': customers,
                         'companies': companies,
                         'quotations': quotations,
                         'terms': terms_qs,
                         'terms_default': default_terms_text,
-                        'payment_accounts': PaymentDetails.objects.filter(user=request.user),
-                        'services': services_qs,
+                        'initial_services': initial_services,
                         'error': form.errors.as_text()
                     })
 
@@ -1975,13 +1975,11 @@ def create_quotation(request):
                         pd_obj = None
                 else:
                     return render(request, 'create_quotation.html', {
-                        'customers': customers,
                         'companies': companies,
                         'quotations': quotations,
                         'terms': terms_qs,
                         'terms_default': default_terms_text,
-                        'payment_accounts': PaymentDetails.objects.filter(user=request.user),
-                        'services': services_qs,
+                        'initial_services': initial_services,
                         'error': form.errors.as_text()
                     })
 
@@ -1997,15 +1995,112 @@ def create_quotation(request):
         return redirect('view_quotation', id=quotation.id)
 
     return render(request, 'create_quotation.html', {
-        'customers': customers,
         'companies': companies,
         'quotations': quotations,
         'terms': terms_qs,
         'terms_default': default_terms_text,
-        'payment_accounts': PaymentDetails.objects.filter(user=request.user)
-    ,
-        'services': services_qs,
+        'initial_services': initial_services,
     })
+
+
+@login_required
+def search_customers(request):
+    """AJAX endpoint for Select2 customer search.
+
+    Returns JSON in Select2 format: {"results": [{"id":..., "text":...}, ...]}
+    """
+    query = (request.GET.get('q') or '').strip()
+    qs = Customer.objects.all()
+    if query:
+        qs = qs.filter(name__icontains=query)
+    qs = qs.only('id', 'name').order_by('name')[:20]
+    results = [{'id': c.id, 'text': c.name} for c in qs]
+    return JsonResponse({'results': results})
+
+
+@login_required
+def search_services(request):
+    q = (request.GET.get('q') or '').strip()
+    qs = Service.objects.all()
+    if q:
+        qs = qs.filter(Q(service_name__icontains=q) | Q(name__icontains=q) | Q(description__icontains=q))
+    qs = qs.only('id', 'service_name', 'name').order_by('service_name')[:20]
+    results = []
+    for s in qs:
+        text = (s.service_name or s.name) if (s.service_name or s.name) else str(s.id)
+        results.append({'id': s.id, 'text': text})
+    return JsonResponse({'results': results})
+
+
+@login_required
+def search_companies(request):
+    q = (request.GET.get('q') or '').strip()
+    qs = Company.objects.all()
+    if q:
+        qs = qs.filter(name__icontains=q)
+    qs = qs.only('id', 'name').order_by('name')[:20]
+    results = [{'id': c.id, 'text': c.name} for c in qs]
+    return JsonResponse({'results': results})
+
+
+@login_required
+def search_payment_accounts(request):
+    q = (request.GET.get('q') or '').strip()
+    qs = PaymentDetails.objects.filter(user=request.user)
+    if q:
+        qs = qs.filter(Q(account_name__icontains=q) | Q(holder_name__icontains=q) | Q(upi_id__icontains=q) | Q(account_number__icontains=q))
+    qs = qs.only('id', 'account_name', 'account_type').order_by('account_name')[:20]
+    results = []
+    for p in qs:
+        text = p.account_name or getattr(p, 'get_account_type_display', lambda: 'Account')()
+        results.append({'id': p.id, 'text': text})
+    return JsonResponse({'results': results})
+
+
+@login_required
+def search_terms(request):
+    q = (request.GET.get('q') or '').strip()
+    qs = TermCondition.objects.all()
+    if q:
+        qs = qs.filter(text__icontains=q)
+    qs = qs.only('id', 'text').order_by('id')[:20]
+    results = [{'id': t.id, 'text': (t.text[:80] + '...' if len(t.text) > 80 else t.text)} for t in qs]
+    return JsonResponse({'results': results})
+
+
+@login_required
+def search_quotations(request):
+    """AJAX endpoint returning paginated quotations for the Create Quotation page.
+
+    Accepts `q` (search string) and `page` (1-based). Returns JSON:
+    { results: [{id, customer_name, total}], total: <int>, page: <int> }
+    """
+    q = (request.GET.get('q') or '').strip()
+    page = int(request.GET.get('page') or 1)
+    per_page = 20
+
+    qs = Quotation.objects.select_related('customer').only('id', 'total', 'customer__name').order_by('-id')
+    if q:
+        # allow search by customer name or quotation id
+        try:
+            int_q = int(q)
+        except Exception:
+            int_q = None
+        filters = Q(customer__name__icontains=q)
+        if int_q is not None:
+            filters = filters | Q(id=int_q)
+        qs = qs.filter(filters)
+
+    total = qs.count()
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_qs = qs[start:end]
+
+    results = []
+    for qobj in page_qs:
+        results.append({'id': qobj.id, 'customer': getattr(qobj.customer, 'name', ''), 'total': float(getattr(qobj, 'total', 0))})
+
+    return JsonResponse({'results': results, 'total': total, 'page': page})
 
 
 # ================= VIEW QUOTATION =================
@@ -2273,17 +2368,18 @@ def edit_quotation(request, id):
                         q.include_payment_details = False
                         q.save()
                         return render(request, 'create_quotation.html', {
-                            'customers': Customer.objects.all(),
                             'companies': companies,
                             'items': items,
                             'edit': True,
                             'q': q,
-                            'quotations': Quotation.objects.all().order_by('-id')[:50],
+                            'quotations': Quotation.objects.select_related('customer', 'company').only(
+                                'id', 'date', 'total', 'customer__name', 'company__name'
+                            ).order_by('-id')[:50],
                             'terms': terms_qs,
                             'terms_default': default_terms_text,
                             'term_orders': {qt.term_id: qt.order for qt in q.quotation_terms.all()},
                             'selected_terms': [qt.term_id for qt in q.quotation_terms.all()],
-                            'payment_accounts': PaymentDetails.objects.filter(user=request.user),
+                            'initial_services': [],
                             'error': 'Invalid payment details for selected Account Type. Please fill required fields.'
                         })
 
@@ -2327,20 +2423,42 @@ def edit_quotation(request, id):
         except Exception as e:
             logger.exception('Unhandled exception: %s', e)
             t.selected_order = ''
+    # Build minimal initial services list for editing (only services used in this quotation)
+    svc_ids = [itm.service.id for itm in items if getattr(itm, 'service', None)]
+    initial_services = []
+    if svc_ids:
+        svcs = Service.objects.filter(id__in=svc_ids).only('id', 'name', 'service_name', 'description', 'image', 'price', 'unit')
+        for s in svcs:
+            try:
+                img = s.image.url if s.image else ''
+            except Exception:
+                img = ''
+            initial_services.append({
+                'id': s.id,
+                'name': s.name,
+                'service_name': getattr(s, 'service_name', '') or s.name,
+                'description': getattr(s, 'description', '') or getattr(s, 'service_name', '') or s.name,
+                'img': img,
+                'price': float(getattr(s, 'price', getattr(s, 'default_rate', 0) or 0)),
+                'unit': getattr(s, 'unit', 'Nos') or 'Nos',
+            })
+
+    selected_payment_id = q.payment_details.id if getattr(q, 'payment_details', None) else ''
 
     return render(request, 'create_quotation.html', {
-        'customers': Customer.objects.all(),
         'items': items,
         'edit': True,
         'q': q,
-        'quotations': Quotation.objects.all().order_by('-id')[:50],
+        'quotations': Quotation.objects.select_related('customer', 'company').only(
+            'id', 'date', 'total', 'customer__name', 'company__name'
+        ).order_by('-id')[:50],
         'terms': terms_qs,
         'terms_default': default_terms_text,
         'term_orders': term_orders_map,
         'selected_terms': [qt.term_id for qt in q.quotation_terms.all()],
-        'payment_accounts': PaymentDetails.objects.filter(user=request.user),
         'companies': companies,
-        'services': Service.objects.order_by('name'),
+        'initial_services': initial_services,
+        'selected_payment_id': selected_payment_id,
     })
 
 
@@ -4472,7 +4590,11 @@ def add_order_payment(request, order_id):
 # ================= EMPLOYEES =================
 @login_required(login_url='/login/')
 def employees(request):
-    return render(request, 'employees.html', {'data': Employee.objects.all()})
+    return render(request, 'employees.html', {
+        'data': Employee.objects.only(
+            'id', 'name', 'phone', 'role', 'daily_salary', 'half_day_salary', 'overtime_salary'
+        )
+    })
 
 
 @login_required(login_url='/login/')

@@ -6,6 +6,9 @@
   <title>Create Quotation — S P J Associates</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <style>
     :root {
       --gold: #C9A84C;
@@ -418,6 +421,7 @@
       box-shadow: none !important;
       outline: none !important;
       -webkit-appearance: none;
+      appearance: none;
     }
     .svc-dd-search::placeholder { color: var(--text-3); font-size: 12.5px; }
     .svc-dd-search-clear {
@@ -522,8 +526,7 @@
       background: var(--surface);
       outline: none;
       transition: border-color .2s, box-shadow .2s;
-      -moz-appearance: textfield; appearance: textfield;
-      -webkit-appearance: none;
+      -webkit-appearance: textfield; -moz-appearance: textfield; appearance: textfield;
     }
     .inp-table::-webkit-inner-spin-button,
     .inp-table::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -771,26 +774,20 @@
         <div class="form-row-auto customer-type-row" style="max-width:920px;">
           <div>
             <label class="field-label">Select Customer</label>
-            <select name="customer" required class="field-select">
+            <select id="customer-select" name="customer" style="width:100%" required>
               <option value="">— Select a customer —</option>
-              {% for c in customers %}
-                <option value="{{ c.id }}" {% if edit and q.customer.id == c.id %}selected{% endif %}>
-                  {{ c.name }}{% if c.phone %} ({{ c.phone }}){% endif %}
-                </option>
-              {% empty %}
-                <option disabled>No customers found</option>
-              {% endfor %}
+              {% if edit and q.customer %}
+                <option value="{{ q.customer.id }}" selected>{{ q.customer.name }}{% if q.customer.phone %} ({{ q.customer.phone }}){% endif %}</option>
+              {% endif %}
             </select>
           </div>
           <div>
             <label class="field-label">Select Firm</label>
-            <select name="company" class="field-select">
+            <select id="company-select" name="company" style="width:100%">
               <option value="">— Select firm (optional) —</option>
-              {% for comp in companies %}
-                <option value="{{ comp.id }}" {% if edit and q.company and q.company.id == comp.id %}selected{% endif %}>
-                  {{ comp.name|upper }}
-                </option>
-              {% endfor %}
+              {% if edit and q.company %}
+                <option value="{{ q.company.id }}" selected>{{ q.company.name|upper }}</option>
+              {% endif %}
             </select>
           </div>
           <div>
@@ -956,20 +953,20 @@
                         </div>
                       </div>
                       <!-- Hidden select for form submission -->
-                      <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
-                        <option value="">— select service —</option>
-                        {% for s in services %}
-                          <option value="{{ s.id }}"
-                            {% if s.image %}data-img="{{ s.image.url }}"{% else %}data-img=""{% endif %}
-                            data-price="{{ s.price|default:0 }}"
-                            data-unit="{{ s.unit|default:'Sq Ft' }}"
-                            data-service-name="{{ s.service_name|default:s.name|escape }}"
-                            data-description="{{ s.description|default:s.service_name|default:s.name|escape }}"
-                            {% if item.service_id and item.service_id == s.id %}selected{% endif %}>
-                            {{ s.service_name|default:s.name }}
-                          </option>
-                        {% endfor %}
-                      </select>
+                    <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
+                      <option value="">— select service —</option>
+                      {% for s in initial_services %}
+                        <option value="{{ s.id }}"
+                          data-img="{{ s.img|default:'' }}"
+                          data-price="{{ s.price|default:0 }}"
+                          data-unit="{{ s.unit|default:'Sq Ft' }}"
+                          data-service-name="{{ s.service_name|default:s.name|escape }}"
+                          data-description="{{ s.description|default:s.service_name|default:s.name|escape }}"
+                        >
+                          {{ s.service_name|default:s.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
                     </div>
 
                     <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
@@ -1066,9 +1063,9 @@
                     <!-- Hidden select for form submission -->
                     <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
                       <option value="">— select service —</option>
-                      {% for s in services %}
+                      {% for s in initial_services %}
                         <option value="{{ s.id }}"
-                          {% if s.image %}data-img="{{ s.image.url }}"{% else %}data-img=""{% endif %}
+                          data-img="{{ s.img|default:'' }}"
                           data-price="{{ s.price|default:0 }}"
                           data-unit="{{ s.unit|default:'Sq Ft' }}"
                           data-service-name="{{ s.service_name|default:s.name|escape }}"
@@ -1276,19 +1273,10 @@
           <div class="account-select-wrapper" style="display:flex;align-items:center;gap:10px;margin-top:6px;">
             <select id="savedPaymentSelect" name="selected_payment_id" onchange="onSelectExisting(this)" style="flex:1;">
               <option value="">— Select saved account —</option>
-              {% for p in payment_accounts %}
-              <option value="{{ p.id }}"
-                data-account-type="{{ p.account_type|lower }}"
-                data-account-name="{{ p.account_name|escape }}"
-                data-holder-name="{{ p.holder_name|escape }}"
-                data-bank-name="{{ p.bank_name|escape }}"
-                data-account-number="{{ p.account_number|escape }}"
-                data-ifsc="{{ p.ifsc_code|escape }}"
-                data-branch="{{ p.branch|escape }}"
-                data-upi="{{ p.upi_id|escape }}"
-                data-phone="{{ p.phone_number|escape }}"
-              >{{ p.account_name|default:p.get_account_type_display }}</option>
-              {% endfor %}
+              {% if edit and selected_payment_id %}
+                {% comment %}Preselect single account; full list is loaded via AJAX.{% endcomment %}
+                <option value="{{ selected_payment_id }}" selected>Selected account</option>
+              {% endif %}
             </select>
             <button type="button" id="deleteSelectedAccountBtn" class="delete-account-btn" onclick="deleteSelectedAccount()" title="Delete selected account" style="width:44px;height:44px;border:none;border-radius:8px;background:#dc3545;color:#fff;cursor:pointer">🗑️</button>
           </div>
@@ -1415,11 +1403,11 @@
   </div>
 
   <div class="card quotation-history">
-    <div class="card-header">
+      <div class="card-header">
       <div class="card-title"><span class="card-title-dot"></span>All Quotations</div>
       <div style="display:flex; gap:8px; align-items:center;">
-        <a href="{% url 'quotations' %}" class="btn btn-primary btn-sm">QUOTATIONS</a>
-        <span class="badge badge-blue">{{ quotations|length }} total</span>
+        <a href="{% url "quotations" %}" class="btn btn-primary btn-sm">QUOTATIONS</a>
+        <span class="badge badge-blue" id="qh-total">—</span>
       </div>
     </div>
     <div class="card-body" style="padding:0;">
@@ -1433,57 +1421,8 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {% for q in quotations %}
-            <tr>
-              <td>
-                <span style="font-family:'Syne',sans-serif; font-weight:700; color:var(--gold); font-size:13px;">#{{ q.id }}</span>
-              </td>
-              <td style="font-weight:500;">{{ q.customer.name }}</td>
-              <td>
-                <span style="font-weight:600; color:var(--text-1);">₹ {{ q.total }}</span>
-              </td>
-              <td>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <a href="{% url 'view_quotation' q.id %}" class="btn btn-primary btn-sm">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    View
-                  </a>
-                  <a href="{% url 'edit_quotation' q.id %}" class="btn btn-warning btn-sm">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    Edit
-                  </a>
-                  <a href="{% url 'delete_quotation' q.id %}" class="btn btn-danger btn-sm">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6l-1 14H6L5 6"/>
-                      <path d="M10 11v6M14 11v6"/>
-                      <path d="M9 6V4h6v2"/>
-                    </svg>
-                    Delete
-                  </a>
-                  <a href="{% url 'convert_to_order' q.id %}" class="btn btn-success btn-sm">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Convert
-                  </a>
-                </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" style="text-align:center; padding:48px; color:var(--text-3); font-size:14px;">
-                No quotations yet. Create your first one above.
-              </td>
-            </tr>
-            {% endfor %}
+          <tbody id="qh-body">
+            <!-- loaded via AJAX -->
           </tbody>
         </table>
         <div class="qh-footer" aria-hidden="false">
@@ -1498,8 +1437,8 @@
   (function () {
     const table = document.querySelector('.quotation-history-table');
     if (!table) return;
-    const tbody = table.tBodies[0];
-    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const qh_tbody = table.tBodies[0];
+    const rows = Array.from(qh_tbody.querySelectorAll('tr'));
     const pageSize = 7;
     let current = 1;
 
@@ -1557,8 +1496,81 @@
       wrap.appendChild(makeBtn('Next', '', current === totalPages, () => renderPage(current + 1)));
     }
 
-    // Initialize
-    renderPage(1);
+    // AJAX-loaded quotations (20 per page)
+    (function () {
+      const perPage = 20;
+      let current = 1;
+
+      const body = document.getElementById('qh-body');
+      const info = document.getElementById('qh-info');
+      const totalBadge = document.getElementById('qh-total');
+      const pager = document.getElementById('qh-pagination');
+
+      const viewTpl = '{% url "view_quotation" 0 %}';
+      const editTpl = '{% url "edit_quotation" 0 %}';
+      const deleteTpl = '{% url "delete_quotation" 0 %}';
+      const convertTpl = '{% url "convert_to_order" 0 %}';
+
+      function renderRows(results) {
+        body.innerHTML = '';
+        if (!results || results.length === 0) {
+          body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:48px; color:var(--text-3); font-size:14px;">No quotations yet. Create your first one above.</td></tr>';
+          return;
+        }
+        results.forEach(function (r) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td><span style="font-family:\'Syne\',sans-serif; font-weight:700; color:var(--gold); font-size:13px;">#' + r.id + '</span></td>' +
+                         '<td style="font-weight:500;">' + (r.customer || '') + '</td>' +
+                         '<td><span style="font-weight:600; color:var(--text-1);">₹ ' + (r.total || 0) + '</span></td>' +
+                         '<td><div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+                           '<a href="' + viewTpl.replace('0', r.id) + '" class="btn btn-primary btn-sm">View</a>' +
+                           '<a href="' + editTpl.replace('0', r.id) + '" class="btn btn-warning btn-sm">Edit</a>' +
+                           '<a href="' + deleteTpl.replace('0', r.id) + '" class="btn btn-danger btn-sm">Delete</a>' +
+                           '<a href="' + convertTpl.replace('0', r.id) + '" class="btn btn-success btn-sm">Convert</a>' +
+                         '</div></td>';
+          body.appendChild(tr);
+        });
+      }
+
+      function renderPager(total, page) {
+        const totalPages = Math.max(1, Math.ceil(total / perPage));
+        pager.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        function btn(label, disabled, onClick) {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (disabled) b.disabled = true; b.addEventListener('click', onClick); return b;
+        }
+
+        pager.appendChild(btn('Prev', page === 1, () => fetchPage(page - 1)));
+        const maxButtons = 5;
+        let start = Math.max(1, page - Math.floor(maxButtons / 2));
+        let end = Math.min(totalPages, start + maxButtons - 1);
+        if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+        if (start > 1) { pager.appendChild(btn('1', false, () => fetchPage(1))); if (start > 2) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; pager.appendChild(s); } }
+        for (let i = start; i <= end; i++) { const b = btn(String(i), false, () => fetchPage(i)); if (i === page) { b.classList.add('active'); b.disabled = true; } pager.appendChild(b); }
+        if (end < totalPages) { if (end < totalPages - 1) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; pager.appendChild(s); } pager.appendChild(btn(String(totalPages), false, () => fetchPage(totalPages))); }
+        pager.appendChild(btn('Next', page === totalPages, () => fetchPage(page + 1)));
+      }
+
+      function fetchPage(page) {
+        if (page < 1) page = 1;
+        current = page;
+        const url = new URL('{% url "search_quotations" %}', window.location.origin);
+        url.searchParams.set('page', page);
+        // optional search box could be wired here later
+        fetch(url.toString(), { credentials: 'same-origin' }).then(r => r.json()).then(function (data) {
+          renderRows(data.results || []);
+          totalBadge.textContent = (data.total || 0) + ' total';
+          if (info) info.textContent = (data.total || 0) === 0 ? 'No quotations' : ('Showing ' + ((page - 1) * perPage + 1) + '–' + Math.min(page * perPage, data.total) + ' of ' + data.total);
+          renderPager(data.total || 0, page);
+        }).catch(function () {
+          body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-3);">Could not load quotations</td></tr>';
+        });
+      }
+
+      // initial load
+      fetchPage(1);
+    })();
   })();
   </script>
 
@@ -1566,8 +1578,8 @@
 
 <!-- ── Term Modal ── -->
 <div id="termModal" class="modal-overlay" role="dialog" aria-modal="true"
-  data-add-term-url="{% url 'add_term' %}"
-  data-edit-term-url="{% url 'edit_term' 0 %}">
+  data-add-term-url="{% url "add_term" %}"
+  data-edit-term-url="{% url "edit_term" 0 %}">
   <div class="modal-card">
     <div class="modal-header">
       <div class="modal-title">
@@ -1623,13 +1635,13 @@
 <script id="services-json" type="application/json">
 [
   {"id": "", "name": "\u2014 select service \u2014", "img": "", "price": 0, "unit": "Nos"}
-  {% for s in services %}
+  {% for s in initial_services %}
   ,{
     "id":    "{{ s.id }}",
     "name":  "{{ s.name|escapejs }}",
     "service_name": "{{ s.service_name|default:s.name|escapejs }}",
     "description": "{{ s.description|default:s.service_name|default:s.name|escapejs }}",
-    "img": "{% if s.image %}{{ s.image.url }}{% endif %}",
+    "img": "{{ s.img|default:'' }}",
     "price": {{ s.price|default:0 }},
     "unit":  "{{ s.unit|default:'Sq Ft' }}"
   }
@@ -1640,12 +1652,12 @@
 <script id="page-config-json" type="application/json">
 {
   "isEdit": {% if edit %}true{% else %}false{% endif %},
-  "prefillPaymentId": "{% if edit and q.include_payment_details and q.payment_details %}{{ q.payment_details.id }}{% endif %}"
+  "prefillPaymentId": "{% if selected_payment_id %}{{ selected_payment_id }}{% elif edit and q.include_payment_details and q.payment_details %}{{ q.payment_details.id }}{% else %}{% endif %}"
 }
 </script>
 
 <datalist id="services-list">
-  {% for s in services %}
+  {% for s in initial_services %}
     <option value="{{ s.name }}"></option>
   {% endfor %}
 </datalist>
@@ -2081,8 +2093,9 @@ function buildServiceDropdownHtml(selectedId) {
     '</div>'
   );
 }
+</script>
 
-/* ── Add Row ── */
+<script>
 function addRow() {
   var tbody = document.getElementById('tableBody');
   var n = tbody.querySelectorAll('tr').length + 1;
@@ -2373,7 +2386,7 @@ function insertMeasRow(desc, imgUrl, qty, unit, price, serviceId, rawQty) {
     '  </td>' +
     '  <td class="td-qty">' +
     '    <input type="number" name="quantity" class="inp-table inp-qty"' +
-    '      step="any" min="0" value="' + escapeAttr(String(qty)) + '" oninput="(function(e){ calculate(); try{ var r=e.target.closest(\'tr\'); if(r){ r.dataset.manual = \"1\"; var raw=r.querySelector(\'[name=\\"raw_quantity\\"]\'); if(raw) raw.value=e.target.value; var mf=r.querySelector(\'[name=\\"manual_quantity\\"]\'); if(mf) mf.value = "1";} }catch(err){} })(event)">' +
+    '      step="any" min="0" value="' + escapeAttr(String(qty)) + '" oninput="calculate()">' +
     '  </td>' +
     '  <td class="td-unit">' +
     '    <select name="unit" class="sel-unit">' + unitOptions(unit) + '</select>' +
@@ -2941,6 +2954,74 @@ if (tableBody) {
     } catch (err) { /* ignore */ }
   });
 })();
+</script>
+
+<script>
+  // Initialize Select2 for customer search (AJAX)
+  (function () {
+    // small spinner styling for Select2 searching state
+    var css = '\n@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }\n.select2-searching-spinner { display:inline-block; width:14px; height:14px; border:2px solid #e5e7eb; border-top-color:#9a7a2a; border-radius:50%; margin-right:8px; animation: spin .8s linear infinite; }\n';
+    var s = document.createElement('style'); s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
+
+    function initCustomerSelect() {
+      if (!window.jQuery || !jQuery().select2) return;
+      $('#customer-select').select2({
+        placeholder: 'Search customer...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+          url: "{% url 'search_customers' %}",
+          dataType: 'json',
+          delay: 250,
+          data: function (params) { return { q: params.term }; },
+          processResults: function (data) { return { results: data.results || [] }; },
+          cache: true
+        },
+        language: {
+          searching: function () { return '<span class="select2-searching-spinner"></span>Searching...'; },
+          inputTooShort: function () { return 'Type at least 2 characters'; }
+        },
+        escapeMarkup: function (m) { return m; }
+      });
+      // Company select2 (AJAX)
+      $('#company-select').select2({
+        placeholder: 'Search firm...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+          url: "{% url 'search_companies' %}",
+          dataType: 'json',
+          delay: 250,
+          data: function (params) { return { q: params.term }; },
+          processResults: function (data) { return { results: data.results || [] }; },
+          cache: true
+        },
+        language: { searching: function () { return '<span class="select2-searching-spinner"></span>Searching...'; } },
+        escapeMarkup: function (m) { return m; }
+      });
+
+      // Saved payment accounts select2 (AJAX, per-user)
+      $('#savedPaymentSelect').select2({
+        placeholder: 'Search saved account...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+          url: "{% url 'search_payment_accounts' %}",
+          dataType: 'json',
+          delay: 250,
+          data: function (params) { return { q: params.term }; },
+          processResults: function (data) { return { results: data.results || [] }; },
+          cache: true
+        },
+        language: { searching: function () { return '<span class="select2-searching-spinner"></span>Searching...'; } },
+        escapeMarkup: function (m) { return m; }
+      });
+    }
+
+    // Initialize when DOM ready; try again if Select2 not yet loaded
+    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(initCustomerSelect, 0);
+    else document.addEventListener('DOMContentLoaded', initCustomerSelect);
+  })();
 </script>
 
 </body>
