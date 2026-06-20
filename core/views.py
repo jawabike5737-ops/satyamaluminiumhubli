@@ -2198,6 +2198,8 @@ def edit_quotation(request, id):
     terms_qs = TermCondition.objects.all()
     default_terms_text = "\n\n".join((t.text for t in terms_qs)) if terms_qs.exists() else ''
     companies = Company.objects.order_by('name')
+    # Keep services list empty for edit mode (services are loaded via AJAX)
+    initial_services = []
 
     if request.method == "POST":
         customer_id = request.POST.get('customer')
@@ -2899,7 +2901,6 @@ def delete_quotation(request, id):
         return redirect('quotations')
     return render(request, 'confirm_delete.html', {'obj': q})
 
-
 # ================= QUOTATION PDF =================
 
 @login_required(login_url='/login/')
@@ -2930,12 +2931,16 @@ def quotation_pdf(request, id):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     # ── Page setup ────────────────────────────────────────────────────────────
+    # NOTE: top/bottom margins tightened (was 40/40). The custom canvas already
+    # draws a footer band inside bottomMargin, and the header band is the first
+    # flowable (not a margin-area decoration), so large margins here were pure
+    # wasted whitespace that pushed content down before it even started.
     PAGE_SIZE = landscape(A4)
     doc = SimpleDocTemplate(
         response,
         pagesize=PAGE_SIZE,
         leftMargin=24, rightMargin=24,
-        topMargin=40, bottomMargin=40,   # extra bottom for footer
+        topMargin=18, bottomMargin=34,   # was 40, 40 — recovered ~28pt of dead space
     )
     page_w     = doc.width
     page_full_w = PAGE_SIZE[0]           # real page width (including margins)
@@ -2975,7 +2980,7 @@ def quotation_pdf(request, id):
     # Also keep existing unicode font for item descriptions (guaranteed to render)
     unicode_font, _ = _load_unicode_font()
 
-# Image download cache and PIL for thumbnails
+    # Image download cache and PIL for thumbnails
     import requests
     from PIL import Image as PILImage
     from io import BytesIO
@@ -3021,18 +3026,20 @@ def quotation_pdf(request, id):
     # ═══════════════════════════════════════════════════════════════════════════
 
     # ── Header ────────────────────────────────────────────────────────────────
-    s_co_name   = ps('co_name',   co_name_font,  28, _WHITE, TA_LEFT,  33)
-    s_tagline   = ps('tagline',   F_SUBHEAD,     9,  ACCENT_PALE, TA_LEFT, 13, spaceBefore=1)
-    s_info_hdr  = ps('info_hdr',  F_BODY,        8.5, colors.HexColor('#C4B5A8'), TA_LEFT, 13)
-    s_doc_title = ps('doc_title', F_HEADING,     24, _WHITE, TA_RIGHT, 28)
-    s_doc_sub   = ps('doc_sub',   F_SUBHEAD,     9,  ACCENT_PALE, TA_RIGHT, 13)
+    # Sizes trimmed slightly (28->24, leading 33->28 etc.) so the header band
+    # itself is shorter without looking cramped — frees vertical room for items.
+    s_co_name   = ps('co_name',   co_name_font,  24, _WHITE, TA_LEFT,  28)
+    s_tagline   = ps('tagline',   F_SUBHEAD,     8.5, ACCENT_PALE, TA_LEFT, 12, spaceBefore=1)
+    s_info_hdr  = ps('info_hdr',  F_BODY,        8, colors.HexColor('#C4B5A8'), TA_LEFT, 12)
+    s_doc_title = ps('doc_title', F_HEADING,     20, _WHITE, TA_RIGHT, 24)
+    s_doc_sub   = ps('doc_sub',   F_SUBHEAD,     8.5,  ACCENT_PALE, TA_RIGHT, 12)
     s_doc_meta  = ps('doc_meta',  F_BODY,        9,  _WHITE, TA_RIGHT, 14)
 
     # ── Client card ───────────────────────────────────────────────────────────
     s_sec_lbl   = ps('sec_lbl',   F_HEADING,  7.5, ACCENT, TA_LEFT, 11,
                      spaceAfter=3, letterSpacing=1.8)
-    s_client_n  = ps('client_n',  F_BODY_BOLD, 14, TEXT,   TA_LEFT, 19)
-    s_client_s  = ps('client_s',  F_BODY,      9.5, TEXT2, TA_LEFT, 14)
+    s_client_n  = ps('client_n',  F_BODY_BOLD, 13, TEXT,   TA_LEFT, 17)
+    s_client_s  = ps('client_s',  F_BODY,      9.5, TEXT2, TA_LEFT, 13)
     s_pill_lbl  = ps('pill_lbl',  F_BODY,      7.5, TEXT2, TA_LEFT, 11)
     s_pill_val  = ps('pill_val',  F_BODY_BOLD, 10,  TEXT,  TA_LEFT, 14)
 
@@ -3097,7 +3104,8 @@ def quotation_pdf(request, id):
         email_txt   = 'satyamaluminiumhubli@gmail.com'
         gst_txt     = '29ADRPR1399D1ZX'
 
-    logo_img = _load_logo_image(logo_name, width=1.0 * inch, height=1.0 * inch, circular=True)
+    # Logo slightly smaller to match the trimmed header band height.
+    logo_img = _load_logo_image(logo_name, width=0.85 * inch, height=0.85 * inch, circular=True)
 
     # ══════════════════════════════════════════════════════════════════════════
     # CUSTOM CANVAS — watermark & footer drawn AFTER page content (on top)
@@ -3188,8 +3196,8 @@ def quotation_pdf(request, id):
                 self.setFillAlpha(1.0)
             except Exception:
                 pass
-            foot_h = 26
-            foot_y = 8
+            foot_h = 24
+            foot_y = 7
             self.setFillColor(_BROWN)
             try:
                 self.roundRect(lm, foot_y, pw - lm * 2, foot_h, 3, fill=1, stroke=0)
@@ -3204,13 +3212,13 @@ def quotation_pdf(request, id):
             # Left: company name
             self.setFillColor(_WHITE_c)
             self.setFont(_F_HEADING, 7.5)
-            self.drawString(lm + 10, foot_y + 10, _wm_text)
+            self.drawString(lm + 10, foot_y + 9, _wm_text)
 
             tag_display = _wm_tagline.strip() if _wm_tagline else ""
             if tag_display:
                 self.setFillColor(_ACCENT_PALE)
                 self.setFont(_F_BODY, 6.5)
-                self.drawString(lm + 10, foot_y + 3.5, tag_display)
+                self.drawString(lm + 10, foot_y + 3, tag_display)
 
             # Centre: system note
             self.setFillColor(colors.HexColor('#C4B5A8'))
@@ -3218,14 +3226,14 @@ def quotation_pdf(request, id):
             note = (f"System-generated quotation \u2014 no signature required"
                     f"  |  GSTIN: {_wm_gst}")
             note_w = self.stringWidth(note, _F_BODY, 6.5)
-            self.drawString((pw - note_w) / 2, foot_y + 7, note)
+            self.drawString((pw - note_w) / 2, foot_y + 6.5, note)
 
             # Right: page number
             self.setFillColor(_ACCENT_PALE)
             self.setFont(_F_HEADING, 7.5)
             pg_txt = f"Page {page_num} of {total_pages}"
             pg_w = self.stringWidth(pg_txt, _F_HEADING, 7.5)
-            self.drawString(pw - lm - pg_w - 10, foot_y + 10, pg_txt)
+            self.drawString(pw - lm - pg_w - 10, foot_y + 9, pg_txt)
 
             self.restoreState()
 
@@ -3240,15 +3248,13 @@ def quotation_pdf(request, id):
         # ══════════════════════════════════════════════════════════════════════
 
         # ── Left: logo + company info ─────────────────────────────────────────
-        # (divider column removed) — kept layout without the vertical gold line
-
         company_text = Table([
             [P(co_name_txt, s_co_name)],
-            [P(tagline_txt, s_tagline)] if tagline_txt else [Spacer(1, 2)],
-            [Spacer(1, 6)],
-            [P(f"<font size='8.5' color='#C4B5A8'>"
+            [P(tagline_txt, s_tagline)] if tagline_txt else [Spacer(1, 1)],
+            [Spacer(1, 4)],
+            [P(f"<font size='8' color='#C4B5A8'>"
                f"\u00A0{address_txt}</font>", s_info_hdr)],
-            [P(f"<font size='8.5' color='#C4B5A8'>"
+            [P(f"<font size='8' color='#C4B5A8'>"
                f"&#9990;\u00A0{contact_txt}"
                f"\u2002\u00B7\u2002"
                f"&#9993;\u00A0{email_txt}</font>", s_info_hdr)],
@@ -3276,8 +3282,8 @@ def quotation_pdf(request, id):
         meta_rows.setStyle(TableStyle([
             ('LEFTPADDING',  (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING',   (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
+            ('TOPPADDING',   (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
             ('VALIGN',       (0, 0), (-1, -1), 'MIDDLE'),
             ('ALIGN', (1,0), (1,-1), 'RIGHT'),
         ]))
@@ -3285,23 +3291,23 @@ def quotation_pdf(request, id):
         right_doc = Table([
             [P("QUOTATION", s_doc_title)],
             [P(f"<font color='#A67C52'>&#9670;</font> #{q.id:04d}", s_doc_sub)],
-            [Spacer(1, 8)],
+            [Spacer(1, 5)],
             [meta_rows],
         ], colWidths=[meta_w])
         right_doc.setStyle(TableStyle([
             ('LEFTPADDING',  (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ('TOPPADDING',   (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
             ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
             ('ALIGN',        (0, 0), (-1, -1), 'RIGHT'),
         ]))
 
         # ── Assemble header inner: logo | divider | company text | right doc ──
         header_inner = Table(
-            [[logo_img, Spacer(18, 1),
+            [[logo_img, Spacer(14, 1),
               company_text, right_doc]],
-            colWidths=[1.05 * inch, 18,
+            colWidths=[0.95 * inch, 14,
                        page_w * 0.56, meta_w]
         )
         header_inner.setStyle(TableStyle([
@@ -3315,15 +3321,19 @@ def quotation_pdf(request, id):
         header_band = Table([[header_inner]], colWidths=[page_w])
         header_band.setStyle(TableStyle([
             ('BACKGROUND',    (0, 0), (-1, -1), BROWN),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 18),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 18),
-            ('TOPPADDING',    (0, 0), (-1, -1), 14),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 14),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 16),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 16),
+            # Top/bottom padding inside the band trimmed (was 14/14) —
+            # this band's height was the single biggest space-eater above
+            # the fold; shrinking padding here keeps it crisp but compact.
+            ('TOPPADDING',    (0, 0), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 9),
             ('ROUNDEDCORNERS', [8]),
             ('LINEBELOW',     (0, 0), (-1, -1), 3, ACCENT),
         ]))
         elems.append(header_band)
-        elems.append(Spacer(1, 12))
+        # Spacer trimmed (was 12) — still a clean visual gap, no wasted band.
+        elems.append(Spacer(1, 7))
 
         # ══════════════════════════════════════════════════════════════════════
         # 2. CLIENT / QUOTATION INFO CARD
@@ -3355,7 +3365,7 @@ def quotation_pdf(request, id):
             ('LEFTPADDING',  (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ('TOPPADDING',   (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
             ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
         ]))
 
@@ -3368,8 +3378,8 @@ def quotation_pdf(request, id):
         details_inner.setStyle(TableStyle([
             ('LEFTPADDING',  (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING',   (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
+            ('TOPPADDING',   (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 1),
             ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
         ]))
 
@@ -3381,7 +3391,7 @@ def quotation_pdf(request, id):
             ('LEFTPADDING',  (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ('TOPPADDING',   (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 2),
             ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
         ]))
 
@@ -3392,35 +3402,44 @@ def quotation_pdf(request, id):
             ('LINEABOVE',    (0, 0), (-1, 0),  2.5,  ACCENT),
             ('BACKGROUND',   (0, 0), (0, -1),  _WHITE),
             ('BACKGROUND',   (1, 0), (1, -1),  CREAM_CARD),
-            ('LEFTPADDING',  (0, 0), (-1, -1), 16),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 16),
-            ('TOPPADDING',   (0, 0), (-1, -1), 12),
-            ('BOTTOMPADDING',(0, 0), (-1, -1), 12),
+            ('LEFTPADDING',  (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            # Card padding trimmed (was 12/12) — card was taller than its
+            # content needed, which is exactly the "wasted space" reported.
+            ('TOPPADDING',   (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING',(0, 0), (-1, -1), 8),
             ('VALIGN',       (0, 0), (-1, -1), 'TOP'),
             ('ROUNDEDCORNERS', [4]),
         ]))
         elems.append(info_card)
-        elems.append(Spacer(1, 14))
+        # Spacer trimmed (was 14) — keeps clean separation without the gap.
+        elems.append(Spacer(1, 8))
 
         # ══════════════════════════════════════════════════════════════════════
         # 3. ITEMS TABLE SECTION HEADING
         # ══════════════════════════════════════════════════════════════════════
         elems.append(Paragraph(
             "ITEMS &amp; SERVICES",
-            ps('sh', F_HEADING, 10, ACCENT, TA_CENTER, 14,
-               spaceBefore=2, spaceAfter=2, letterSpacing=2.5)
+            ps('sh', F_HEADING, 10, ACCENT, TA_CENTER, 13,
+               spaceBefore=0, spaceAfter=1, letterSpacing=2.5)
         ))
-        elems.append(HRFlowable(width="100%", thickness=0.6, color=BORDER, spaceAfter=8))
+        elems.append(HRFlowable(width="100%", thickness=0.6, color=BORDER, spaceAfter=5))
 
         # ══════════════════════════════════════════════════════════════════════
         # 4. ITEMS TABLE
         # ══════════════════════════════════════════════════════════════════════
         col_sl   = 30
-        col_img  = 150
+        col_img  = 140
         col_qty  = 72
         col_rate = 82
         col_tot  = 94
         col_desc = page_w - col_sl - col_img - col_qty - col_rate - col_tot
+
+        # Image cell sizing now derives from col_img directly rather than a
+        # hardcoded "row height minus padding" constant, so it stays correct
+        # now that rows are no longer forced to a fixed 90pt height.
+        IMG_CELL_W = col_img - 12
+        IMG_CELL_H = 78  # generous but content-driven cap, not a per-row floor
 
         tbl_data = [[
             P("NO",         s_th),
@@ -3482,10 +3501,7 @@ def quotation_pdf(request, id):
                                 pass
 
                             # Auto-fit the image into the image cell while preserving aspect ratio
-                            CELL_W = col_img - 12  # leave small padding inside column
-                            CELL_H = 90 - 12       # row height (ROWHEIGHT) minus padding
-
-                            ratio = min(CELL_W / img_w, CELL_H / img_h)
+                            ratio = min(IMG_CELL_W / img_w, IMG_CELL_H / img_h)
                             new_w = img_w * ratio
                             new_h = img_h * ratio
 
@@ -3498,8 +3514,8 @@ def quotation_pdf(request, id):
                                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                                 ('LEFTPADDING', (0,0), (-1,-1), 6),
                                 ('RIGHTPADDING', (0,0), (-1,-1), 6),
-                                ('TOPPADDING', (0,0), (-1,-1), 6),
-                                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+                                ('TOPPADDING', (0,0), (-1,-1), 4),
+                                ('BOTTOMPADDING', (0,0), (-1,-1), 4),
                             ]))
 
                             img_flowable = img_table
@@ -3543,8 +3559,8 @@ def quotation_pdf(request, id):
             ('BACKGROUND',    (0, 0), (-1, 0),  BROWN),
             ('TEXTCOLOR',     (0, 0), (-1, 0),  _WHITE),
             ('ALIGN',         (0, 0), (-1, 0),  'CENTER'),
-            ('TOPPADDING',    (0, 0), (-1, 0),  9),
-            ('BOTTOMPADDING', (0, 0), (-1, 0),  9),
+            ('TOPPADDING',    (0, 0), (-1, 0),  8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0),  8),
             ('LINEBELOW',     (0, 0), (-1, 0),  2.5,  ACCENT),
             ('FONTNAME',      (0, 1), (-1, -1), unicode_font),
             ('FONTSIZE',      (0, 1), (-1, -1), 9),
@@ -3555,11 +3571,20 @@ def quotation_pdf(request, id):
             ('ALIGN',         (3, 1), (5, -1),  'CENTER'),
             ('ALIGN',         (4, 1), (5, -1),  'RIGHT'),
             ('WORDWRAP',      (2, 1), (2, -1),  'CJK'),
-            ('TOPPADDING',    (0, 1), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+            ('TOPPADDING',    (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
             ('LEFTPADDING',   (0, 0), (-1, -1), 8),
             ('RIGHTPADDING',  (0, 0), (-1, -1), 8),
-            ('ROWHEIGHT',     (0, 1), (-1, -1), 90),
+            # NOTE: the fixed ROWHEIGHT=90 directive has been REMOVED.
+            # That single line was the main cause of the wasted space:
+            # ReportLab reserved a 90pt floor for every row regardless of
+            # actual content, so a page with ~300-330pt of room below the
+            # heading could only ever fit one row before the *next* row
+            # (also needing 90pt) didn't fit and the whole table broke to
+            # page 2 — stranding the remaining ~240pt as blank space.
+            # Without it, each row sizes to its real content (description
+            # line count / image height), so far more rows pack onto page 1
+            # and the break only happens when content actually runs out.
             ('BOX',           (0, 0), (-1, -1), 0.75, BORDER),
             ('LINEBELOW',     (0, 1), (-1, -1), 0.35, BORDER),
             ('LINEAFTER',     (0, 0), (4, -1),  0.35, BORDER),
@@ -3576,7 +3601,7 @@ def quotation_pdf(request, id):
         )
         items_tbl.setStyle(TableStyle(row_styles))
         elems.append(items_tbl)
-        elems.append(Spacer(1, 16))
+        elems.append(Spacer(1, 12))
 
         # ══════════════════════════════════════════════════════════════════════
         # 5. SUMMARY
@@ -3634,15 +3659,15 @@ def quotation_pdf(request, id):
             sum_tbl.setStyle(TableStyle([
                 ('ALIGN',         (1, 0), (-1, -1), 'RIGHT'),
                 ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING',    (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('TOPPADDING',    (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
                 ('LEFTPADDING',   (0, 0), (-1, -1), 14),
                 ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
                 ('LINEBELOW',     (0, 0), (-1, gt_idx - 2), 0.35, BORDER),
                 ('BACKGROUND',    (0, gt_idx), (-1, gt_idx), BROWN),
                 ('LINEABOVE',     (0, gt_idx), (-1, gt_idx), 2.5, ACCENT),
-                ('TOPPADDING',    (0, gt_idx), (-1, gt_idx), 10),
-                ('BOTTOMPADDING', (0, gt_idx), (-1, gt_idx), 10),
+                ('TOPPADDING',    (0, gt_idx), (-1, gt_idx), 9),
+                ('BOTTOMPADDING', (0, gt_idx), (-1, gt_idx), 9),
                 ('BOX',           (0, 0), (-1, -1), 0.75, BORDER),
                 ('ROUNDEDCORNERS', [4]),
             ]))
@@ -3688,7 +3713,7 @@ def quotation_pdf(request, id):
             ]))
 
         elems.append(sum_wrapper)
-        elems.append(Spacer(1, 12))
+        elems.append(Spacer(1, 10))
 
         # ══════════════════════════════════════════════════════════════════════
         # 6. WHY CHOOSE US  (inserted before Terms & Conditions)
@@ -3701,11 +3726,11 @@ def quotation_pdf(request, id):
         ]
 
         wcu_heading_style = ps('wcu_h', F_HEADING, 10, BROWN, TA_CENTER, 14,
-                               spaceAfter=8, letterSpacing=2)
+                               spaceAfter=6, letterSpacing=2)
         wcu_block = []
 
         # Heading row
-        wcu_block.append(HRFlowable(width="100%", thickness=1.2, color=ACCENT, spaceAfter=8))
+        wcu_block.append(HRFlowable(width="100%", thickness=1.2, color=ACCENT, spaceAfter=6))
         wcu_block.append(Paragraph(
             f"WHY CHOOSE {co_name_txt}?",
             wcu_heading_style
@@ -3729,8 +3754,8 @@ def quotation_pdf(request, id):
             ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING',   (0, 0), (-1, -1), 14),
             ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
-            ('TOPPADDING',    (0, 0), (-1, -1), 5),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
             ('LINEAFTER',     (0, 0), (0, -1),  0.4, BORDER),
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), [CREAM_CARD, _WHITE]),
         ]))
@@ -3748,7 +3773,7 @@ def quotation_pdf(request, id):
         ]))
 
         wcu_block.append(wcu_card)
-        wcu_block.append(Spacer(1, 6))
+        wcu_block.append(Spacer(1, 5))
 
         # ══════════════════════════════════════════════════════════════════════
         # 7. TERMS & PAYMENT
@@ -3759,12 +3784,12 @@ def quotation_pdf(request, id):
             terms_block = []
 
             terms_block.append(HRFlowable(
-                width="100%", thickness=1.2, color=ACCENT, spaceAfter=8
+                width="100%", thickness=1.2, color=ACCENT, spaceAfter=6
             ))
             terms_block.append(Paragraph(
                 "TERMS &amp; CONDITIONS",
                 ps('tc_h', F_HEADING, 10, BROWN, TA_LEFT, 14,
-                   spaceAfter=6, letterSpacing=2)
+                   spaceAfter=5, letterSpacing=2)
             ))
 
             def _add_terms_lines(lines_iter, start_idx=0):
@@ -3823,14 +3848,14 @@ def quotation_pdf(request, id):
                         and getattr(q, 'payment_details', None):
                     pd = q.payment_details
 
-                    payment_block.append(Spacer(1, 10))
+                    payment_block.append(Spacer(1, 8))
                     payment_block.append(HRFlowable(
-                        width="100%", thickness=1, color=ACCENT, spaceAfter=6
+                        width="100%", thickness=1, color=ACCENT, spaceAfter=5
                     ))
                     payment_block.append(Paragraph(
                         "PAYMENT DETAILS",
                         ps('pd_h', F_HEADING, 10, BROWN, TA_LEFT, 14,
-                           spaceAfter=6, letterSpacing=2)
+                           spaceAfter=5, letterSpacing=2)
                     ))
 
                     rows = []
@@ -3879,12 +3904,12 @@ def quotation_pdf(request, id):
                 if getattr(q, 'company', None) \
                         and getattr(q.company, 'bank_details', None):
                     bank_block.append(HRFlowable(
-                        width="100%", thickness=1, color=ACCENT, spaceAfter=6
+                        width="100%", thickness=1, color=ACCENT, spaceAfter=5
                     ))
                     bank_block.append(Paragraph(
                         "BANK / PAYMENT DETAILS",
                         ps('bd_h', F_HEADING, 10, BROWN, TA_LEFT, 14,
-                           spaceAfter=6, letterSpacing=2)
+                           spaceAfter=5, letterSpacing=2)
                     ))
                     for line in q.company.bank_details.split("\n"):
                         if line.strip():
@@ -4049,7 +4074,7 @@ def quotation_pdf(request, id):
         logger.exception('PDF build failed: %s', e)
         raise
 
-
+    
 # ──────────────────────────────────────────────
 # Small paragraph helpers (used by salary_pdf)
 # ──────────────────────────────────────────────
