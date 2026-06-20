@@ -806,6 +806,12 @@
           </div>
         </div>
 
+        <div id="gstin_container" style="display:none; margin-top:12px;">
+          <label class="field-label">Customer GSTIN</label>
+          <input type="text" name="customer_gstin" id="customer_gstin" maxlength="15" placeholder="Enter Customer GSTIN (Optional)"
+                 value="{% if edit %}{{ q.customer_gstin }}{% endif %}">
+        </div>
+
         <div style="margin-top:18px;">
           <label class="field-label">Quotation Type</label>
           <div class="gst-toggle">
@@ -855,6 +861,21 @@
             }
           } catch (e) { console.error('Prefill customer error', e); }
         })();
+        </script>
+
+        <script>
+        // Toggle visibility of GSTIN input based on selected tax type
+        function toggleGSTIN(){
+          try{
+            const sel = document.querySelector('input[name="tax_type"]:checked');
+            const box = document.getElementById('gstin_container');
+            if(!box) return;
+            box.style.display = (sel && (sel.value === 'gst' || sel.value === 'igst')) ? 'block' : 'none';
+          }catch(e){console.error(e)}
+        }
+        document.querySelectorAll('input[name="tax_type"]').forEach(r=>{ r.addEventListener('change', toggleGSTIN); });
+        // ensure initial state
+        try{ toggleGSTIN(); }catch(e){}
         </script>
 
         <div class="discount-row">

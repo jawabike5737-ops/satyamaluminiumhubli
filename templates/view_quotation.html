@@ -615,6 +615,9 @@
                     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 {{ q.customer.name }}
+                {% if q.customer_gstin %}
+                    <div style="font-size:0.75rem; color:var(--text-4); margin-left:8px;">GSTIN: {{ q.customer_gstin }}</div>
+                {% endif %}
             </div>
 
             <a href="{% url 'quotation_pdf' q.id %}" class="btn btn-outline">

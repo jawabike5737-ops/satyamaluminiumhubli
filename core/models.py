@@ -113,6 +113,10 @@ class Quotation(models.Model):
         default='none'
     )
 
+    # Preserve GSTIN used when creating this quotation. Stored per-quotation
+    # so historical quotes keep the value even if customer record changes.
+    customer_gstin = models.CharField(max_length=15, blank=True, null=True)
+
     def __str__(self):
         return f"Quotation {self.id}"
 

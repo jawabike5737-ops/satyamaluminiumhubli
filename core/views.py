@@ -1988,6 +1988,12 @@ def create_quotation(request):
         else:
             quotation.include_payment_details = False
 
+        # Persist customer GSTIN if provided (optional)
+        try:
+            quotation.customer_gstin = (request.POST.get('customer_gstin') or '').strip()
+        except Exception:
+            quotation.customer_gstin = ''
+
         quotation.save()
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -2365,6 +2371,11 @@ def edit_quotation(request, id):
         else:
             if not (q.terms_and_conditions and q.terms_and_conditions != default_terms_text):
                 q.terms_and_conditions = ''
+        # Persist customer GSTIN from edit form if provided
+        try:
+            q.customer_gstin = (request.POST.get('customer_gstin') or '').strip()
+        except Exception:
+            q.customer_gstin = q.customer_gstin or ''
         q.save()
 
         # --- Payment details handling for edit ---
@@ -2751,6 +2762,11 @@ def save_quotation_draft(request):
     if total_calc < 0:
         total_calc = Decimal('0.00')
     q.total = total_calc
+    # Draft API may include customer_gstin
+    try:
+        q.customer_gstin = (data.get('customer_gstin') or '').strip()
+    except Exception:
+        q.customer_gstin = q.customer_gstin or ''
     q.save()
 
     return JsonResponse({'status': 'success', 'quotation_id': q.id, 'subtotal': str(q.subtotal), 'total': str(q.total)})
@@ -3326,11 +3342,15 @@ def quotation_pdf(request, id):
         left_w  = page_w * 0.60
         right_w = page_w * 0.40
 
-        bill_block = Table([
+        # Build bill-to block, include customer GSTIN when present
+        bill_rows = [
             [P("BILL TO", s_sec_lbl)],
             [P(q.customer.name, s_client_n)],
             [P(q.customer.address or "\u2014", s_client_s)],
-        ], colWidths=[left_w - 32])
+        ]
+        if getattr(q, 'customer_gstin', None):
+            bill_rows.append([P(f"GSTIN: {q.customer_gstin}", s_client_s)])
+        bill_block = Table(bill_rows, colWidths=[left_w - 32])
         bill_block.setStyle(TableStyle([
             ('LEFTPADDING',  (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
