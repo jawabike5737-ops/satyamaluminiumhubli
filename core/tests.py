@@ -225,6 +225,25 @@ class MeasurementTests(BaseTestCase):
         payload = response.json()
         self.assertIn('items', payload)
 
+        quotation_response = self.client.post(
+            reverse('create_quotation'),
+            {
+                'customer': self.customer.id,
+                'tax_type': 'none',
+                'description': [payload['items'][0]['description']],
+                'quantity': [payload['items'][0]['quantity']],
+                'unit': [payload['items'][0]['unit']],
+                'price': [payload['items'][0]['price_per_unit']],
+                'service_id': [str(payload['items'][0]['service_id'])],
+                'service_name': [payload['items'][0]['service_name'] or ''],
+            },
+        )
+        self.assertEqual(quotation_response.status_code, 302)
+        quotation = Quotation.objects.latest('id')
+        quotation_pdf_response = self.client.get(reverse('quotation_pdf', args=[quotation.id]))
+        self.assertEqual(quotation_pdf_response.status_code, 200)
+        self.assertEqual(quotation_pdf_response['Content-Type'], 'application/pdf')
+
         response = self.client.post(reverse('delete_measurement_item'), {'item_id': item.id})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(MeasurementItem.objects.filter(id=item.id).exists())
@@ -240,6 +259,60 @@ class MeasurementTests(BaseTestCase):
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_measurement_item_code_is_canonical_for_service_and_blank_for_custom(self):
+        measurement = Measurement.objects.create(customer=self.customer)
+
+        linked_item = MeasurementItem.objects.create(
+            measurement=measurement,
+            service=self.service,
+            service_code='stale-code',
+            description='Window',
+        )
+        self.assertEqual(linked_item.service_code, self.service.service_code)
+
+        custom_item = MeasurementItem.objects.create(
+            measurement=measurement,
+            service=None,
+            service_code=None,
+            custom_item_name='Custom panel',
+            description='Custom panel',
+        )
+        self.assertEqual(custom_item.service_code, '')
+
+    def test_save_measurements_persists_service_code_for_linked_and_custom_items(self):
+        payload = {
+            'items': [
+                {
+                    'description': 'Window',
+                    'service_id': self.service.id,
+                    'price_per_unit': '120',
+                    'subs': [{'height': '2', 'width': '3', 'quantity': '1'}],
+                },
+                {
+                    'description': 'Custom panel',
+                    'custom_item_name': 'Custom panel',
+                    'price_per_unit': '50',
+                    'subs': [{'quantity': '2'}],
+                },
+            ]
+        }
+
+        response = self.client.post(
+            reverse('save_measurements', args=[self.customer.id]),
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+
+        measurement = Measurement.objects.get(id=response.json()['measurement_id'])
+        linked_item = measurement.items.get(service=self.service)
+        custom_item = measurement.items.get(service__isnull=True)
+        self.assertEqual(linked_item.service_code, self.service.service_code)
+        self.assertEqual(custom_item.service_code, '')
+
+        json_items = self.client.get(reverse('get_measurements_json', args=[self.customer.id])).json()['items']
+        self.assertEqual({item['service_code'] for item in json_items}, {self.service.service_code, None})
 
     def test_measurement_save_is_snapshot_and_idempotent(self):
         def item(description, height, width, service_id=self.service.id):

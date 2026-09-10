@@ -467,6 +467,7 @@ class MeasurementItem(models.Model):
             self.total = 0
 
     def save(self, *args, **kwargs):
+        self.service_code = self.service.service_code if self.service_id and self.service else ''
         self.recalc()
         super().save(*args, **kwargs)
 
