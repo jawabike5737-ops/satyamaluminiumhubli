@@ -188,6 +188,12 @@ class ServiceTests(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['service_name'], 'Door Frame')
 
+    def test_service_without_code_gets_a_persistent_code(self):
+        service = Service.objects.create(name='No Code Service', service_name='No Code Service')
+        self.assertTrue(service.service_code)
+        service.refresh_from_db()
+        self.assertTrue(service.service_code)
+
 
 class MeasurementTests(BaseTestCase):
     def setUp(self):
@@ -279,6 +285,14 @@ class MeasurementTests(BaseTestCase):
             description='Custom panel',
         )
         self.assertEqual(custom_item.service_code, '')
+
+        self.service.service_code = ''
+        linked_item.service_code = ''
+        linked_item.save()
+        self.service.refresh_from_db()
+        linked_item.refresh_from_db()
+        self.assertEqual(linked_item.service_code, self.service.service_code)
+        self.assertTrue(linked_item.service_code)
 
     def test_save_measurements_persists_service_code_for_linked_and_custom_items(self):
         payload = {

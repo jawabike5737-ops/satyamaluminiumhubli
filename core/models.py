@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
 from decimal import Decimal
+import uuid
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -189,7 +190,7 @@ class Service(models.Model):
         (STATUS_INACTIVE, 'Inactive'),
     ]
 
-    service_code = models.CharField(max_length=50, unique=True, db_index=True, null=True, blank=True)
+    service_code = models.CharField(max_length=50, unique=True, db_index=True)
     name = models.CharField(max_length=200, db_index=True)
     category = models.CharField(max_length=100, blank=True, db_index=True)
     description = models.TextField(blank=True)
@@ -211,6 +212,11 @@ class Service(models.Model):
         return f"{self.service_code or ''} - {display}"
 
     def save(self, *args, **kwargs):
+        if not (self.service_code or '').strip():
+            self.service_code = f'SVC-{self.pk or uuid.uuid4().hex[:12].upper()}'
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = set(kwargs['update_fields']) | {'service_code'}
+
         # If an image is present and is a new upload, compress it before saving
         old_name = None
         try:
@@ -467,7 +473,13 @@ class MeasurementItem(models.Model):
             self.total = 0
 
     def save(self, *args, **kwargs):
-        self.service_code = self.service.service_code if self.service_id and self.service else ''
+        if self.service_id:
+            service = self.service
+            if not (service.service_code or '').strip():
+                service.save(update_fields={'service_code'})
+            self.service_code = service.service_code
+        else:
+            self.service_code = ''
         self.recalc()
         super().save(*args, **kwargs)
 
