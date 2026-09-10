@@ -1,0 +1,3213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Quotation — S P J Associates</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-lt: #E2C97E;
+      --gold-dim: rgba(201,168,76,.25);
+      --gold-glow: rgba(201,168,76,.08);
+      --blue: #1D4ED8;
+      --blue-lt: #EFF6FF;
+      --red: #DC2626;
+      --red-lt: #FEF2F2;
+      --green: #059669;
+      --green-lt: #ECFDF5;
+      --orange: #D97706;
+      --orange-lt: #FFFBEB;
+      --text-1: #111827;
+      --text-2: #4B5563;
+      --text-3: #9CA3AF;
+      --surface: #FFFFFF;
+      --surface-2: #F9FAFB;
+      --surface-3: #F3F4F6;
+      --border: #E5E7EB;
+      --border-f: var(--gold);
+      --r: 10px;
+      --r-lg: 14px;
+      --sh-gold: 0 2px 12px rgba(201,168,76,.18);
+      --sh-lg: 0 10px 40px rgba(0,0,0,.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F5;
+      color: var(--text-1);
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      height: 56px;
+      background: linear-gradient(135deg, #0A0E12, #1A2030);
+      border-bottom: 1px solid rgba(201,168,76,.2);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      box-shadow: 0 2px 16px rgba(0,0,0,.25);
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 12px; }
+    .topbar-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 12px rgba(201,168,76,.3);
+    }
+    .topbar-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 700; letter-spacing: .04em;
+      color: var(--gold-lt);
+    }
+    .topbar-badge {
+      font-size: 11px; font-weight: 600; letter-spacing: .08em;
+      color: rgba(201,168,76,.7);
+      background: rgba(201,168,76,.08);
+      border: 1px solid rgba(201,168,76,.2);
+      border-radius: 20px; padding: 4px 12px;
+    }
+
+    /* ── Page ── */
+    .page { width: 98%; max-width: 1800px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-heading { margin-bottom: 28px; }
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px; font-weight: 700; color: var(--text-1);
+    }
+    .page-title span { color: var(--gold); }
+    .page-breadcrumb { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px; font-weight: 700; color: var(--text-1);
+      display: flex; align-items: center; gap: 9px;
+    }
+    .card-title-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+      box-shadow: 0 0 6px var(--gold-dim);
+    }
+    .card-body { padding: 24px; }
+
+    /* ── Form helpers ── */
+    .field-label {
+      display: block;
+      font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--text-2); margin-bottom: 7px;
+    }
+    input, select, textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-1);
+      background: var(--surface);
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      outline: none; -webkit-appearance: none; appearance: none;
+    }
+    input:hover, select:hover, textarea:hover { border-color: rgba(201,168,76,.4); }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--border-f);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+      background: #FFFDF5;
+    }
+    input::placeholder, textarea::placeholder { color: var(--text-3); }
+    input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 38px;
+    }
+    .desc-box {
+      min-height: 200px; width: 100%;
+      resize: vertical; overflow-y: auto;
+      line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+      font-size: 13px; padding: 12px;
+    }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-row-auto { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+
+    /* Customer & Type — tuned widths and responsive flex layout */
+    .customer-type-row { display: flex; gap: 16px; align-items: end; flex-wrap: wrap; }
+    .customer-type-row > div { flex: 0 0 auto; }
+    .customer-type-row .field-select {
+      flex: 1 1 320px; min-width: 260px; max-width: 420px;
+      white-space: normal;
+    }
+    .customer-type-row .actions { display: flex; gap: 10px; align-items: center; }
+    .customer-type-row .actions .btn { height: 44px; }
+
+    @media (max-width: 768px) {
+      .customer-type-row { flex-direction: column; align-items: stretch; }
+      .customer-type-row .field-select { width: 100%; min-width: 0; max-width: none; flex: 1 1 auto; }
+      .customer-type-row .actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+    }
+
+    /* ── GST Toggle ── */
+    .gst-toggle {
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      background: linear-gradient(135deg, #FFFDF5, #FFF8E1);
+      border: 1.5px solid var(--gold-dim); border-radius: var(--r);
+      padding: 14px 18px;
+    }
+    .gst-toggle-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--gold); white-space: nowrap;
+    }
+    .radio-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .radio-option {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      cursor: pointer; font-size: 13px; color: var(--text-2);
+      user-select: none; transition: all .2s;
+    }
+    .radio-option:has(input:checked) {
+      border-color: var(--gold); background: var(--gold-glow);
+      color: var(--gold); font-weight: 500; box-shadow: var(--sh-gold);
+    }
+    .radio-option input[type="radio"] {
+      width: 14px; height: 14px; accent-color: var(--gold); cursor: pointer;
+    }
+    .discount-row {
+      display: flex; align-items: flex-end; gap: 16px;
+      margin-top: 18px; flex-wrap: wrap;
+    }
+    .discount-row .field-wrap { flex: 0 0 220px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--r); border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .18s; white-space: nowrap;
+      text-decoration: none; line-height: 1; vertical-align: middle;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, #1A3FC4, var(--blue));
+      color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,.25);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(29,78,216,.35); transform: translateY(-1px); }
+    .btn-gold {
+      background: linear-gradient(135deg, #8A6A1F, var(--gold), var(--gold-lt));
+      color: #0A0E12; font-weight: 600; box-shadow: var(--sh-gold);
+    }
+    .btn-gold:hover { box-shadow: 0 6px 24px rgba(201,168,76,.35); transform: translateY(-1px); }
+    .btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid #FECACA; }
+    .btn-danger:hover { background: #FEE2E2; }
+    .btn-success { background: var(--green-lt); color: var(--green); border: 1px solid #A7F3D0; }
+    .btn-success:hover { background: #D1FAE5; }
+    .btn-warning { background: var(--orange-lt); color: var(--orange); border: 1px solid #FDE68A; }
+    .btn-warning:hover { background: #FEF3C7; }
+    .btn-ghost { background: var(--surface-3); color: var(--text-2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-sm  { padding: 6px 12px; font-size: 12px; }
+    .btn-lg  { padding: 12px 24px; font-size: 15px; font-weight: 600; }
+    .btn-icon { padding: 7px; border-radius: 7px; }
+
+    /* ── Line Items Table ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+    thead th {
+      background: var(--surface-2);
+      padding: 11px 10px;
+      text-align: left; font-size: 11px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--text-3);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    thead th.th-center { text-align: center; }
+    tbody tr { transition: background .15s; animation: rowIn .3s ease both; }
+    @keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+    tbody tr:hover { background: #FAFAFA; }
+    tbody td {
+      padding: 8px 8px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .td-sl {
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px; font-weight: 700;
+      color: var(--gold);
+      width: 50px; min-width: 50px;
+    }
+    .td-img { width: 8%; min-width: 88px; }
+    .img-thumb-wrap {
+      position: relative;
+      width: 88px; height: 66px;
+      border-radius: 8px;
+      border: 1.5px dashed var(--border);
+      background: var(--surface-3);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s;
+      flex-shrink: 0;
+    }
+    .img-thumb-wrap:hover { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.1); }
+    .img-thumb-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+      position: absolute; inset: 0;
+      display: none;
+      border-radius: 6px;
+    }
+    .img-thumb-wrap img.loaded { display: block; }
+    .img-placeholder {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      pointer-events: none;
+    }
+    .img-placeholder svg { opacity: .4; }
+    .img-placeholder span { font-size: 9px; color: var(--text-3); text-align: center; line-height: 1.2; }
+    .img-thumb-wrap input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+      width: 100%; height: 100%; padding: 0; border: none; background: none;
+    }
+
+    .td-service { min-width: 300px; width: 58%; }
+
+    /* ─────────────────────────────────────────────
+       CUSTOM SERVICE SEARCH DROPDOWN
+       ───────────────────────────────────────────── */
+
+    /* The wrapper must be position:relative so the panel anchors to it */
+    .svc-dd-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    /* Visible trigger button — mimics a <select> */
+    .svc-dd-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 7px 10px 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12.5px;
+      color: var(--text-1);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      gap: 6px;
+    }
+    .svc-dd-trigger:hover {
+      border-color: rgba(201,168,76,.5);
+    }
+    .svc-dd-trigger.open {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.14);
+      background: #FFFDF5;
+    }
+    .svc-dd-trigger .trigger-label {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-3);
+    }
+    .svc-dd-trigger .trigger-label.has-value {
+      color: var(--text-1);
+    }
+    .svc-dd-trigger .trigger-arrow {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      transition: transform .2s;
+    }
+    .svc-dd-trigger.open .trigger-arrow {
+      transform: rotate(180deg);
+    }
+    .svc-dd-trigger .trigger-arrow svg {
+      width: 13px; height: 13px;
+      stroke: var(--text-3);
+      fill: none; stroke-width: 2.5;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* Dropdown panel — absolute, above other content */
+    .svc-dd-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 100%;
+      width: max-content;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1.5px solid var(--gold);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(10,14,18,.14), 0 2px 8px rgba(201,168,76,.12);
+      z-index: 9999;
+      overflow: hidden;
+      animation: ddOpen .18s cubic-bezier(.16,1,.3,1) both;
+    }
+    .svc-dd-panel.open { display: block; }
+
+    @keyframes ddOpen {
+      from { opacity: 0; transform: translateY(-6px) scale(.98); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* Search row — sticky at top */
+    .svc-dd-search-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface);
+      padding: 10px 10px 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .svc-dd-search-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #F9FAFB;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 11px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .svc-dd-search-inner:focus-within {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+      background: #FFFDF5;
+    }
+    .svc-dd-search-inner svg {
+      flex-shrink: 0;
+      width: 14px; height: 14px;
+      stroke: var(--gold);
+      fill: none; stroke-width: 2.2;
+      stroke-linecap: round; stroke-linejoin: round;
+      opacity: .85;
+    }
+    .svc-dd-search {
+      flex: 1;
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      font-size: 13px;
+      color: var(--text-1);
+      box-shadow: none !important;
+      outline: none !important;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .svc-dd-search::placeholder { color: var(--text-3); font-size: 12.5px; }
+    .svc-dd-search-clear {
+      flex-shrink: 0;
+      cursor: pointer;
+      display: none;
+      padding: 2px;
+      border-radius: 4px;
+      color: var(--text-3);
+      transition: color .15s;
+    }
+    .svc-dd-search-clear:hover { color: var(--red); }
+    .svc-dd-search-clear svg {
+      width: 13px; height: 13px;
+      stroke: currentColor; fill: none; stroke-width: 2.5;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* Options list */
+    .svc-dd-list {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 6px 0;
+      scroll-behavior: smooth;
+    }
+    /* Custom scrollbar */
+    .svc-dd-list::-webkit-scrollbar { width: 5px; }
+    .svc-dd-list::-webkit-scrollbar-track { background: transparent; }
+    .svc-dd-list::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+    .svc-dd-list::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+    /* Individual option */
+    .svc-dd-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      border-radius: 0;
+      user-select: none;
+    }
+    .svc-dd-option:hover,
+    .svc-dd-option.focused {
+      background: linear-gradient(135deg, #FFFDF5, #FFF8E1);
+      color: var(--text-1);
+    }
+    .svc-dd-option.selected {
+      background: linear-gradient(135deg, #FFF8E1, #FFF3C4);
+      color: #7A5F10;
+      font-weight: 600;
+    }
+    .svc-dd-option.selected::after {
+      content: '';
+      display: block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .svc-dd-option.placeholder-opt {
+      color: var(--text-3);
+      font-style: italic;
+      font-size: 12px;
+    }
+
+    /* Highlight matched text */
+    .svc-dd-option mark {
+      background: rgba(201,168,76,.28);
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    /* No results */
+    .svc-dd-empty {
+      padding: 18px 14px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-3);
+      display: none;
+    }
+    .svc-dd-empty svg {
+      display: block;
+      margin: 0 auto 6px;
+      width: 20px; height: 20px;
+      stroke: var(--text-3);
+      fill: none; stroke-width: 1.6;
+    }
+
+    /* ── Remaining table cells ── */
+    .td-qty, .td-unit, .td-price { white-space: nowrap; }
+    .inp-table {
+      padding: 7px 9px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: var(--text-1);
+      background: var(--surface);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: textfield; -moz-appearance: textfield; appearance: textfield;
+    }
+    .inp-table::-webkit-inner-spin-button,
+    .inp-table::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .inp-table:hover { border-color: rgba(201,168,76,.4); }
+    .inp-table:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.12); background: #FFFDF5; }
+    .inp-qty { width: 90px; }
+    .inp-price { width: 120px; }
+
+    .sel-unit {
+      padding: 7px 30px 7px 9px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: var(--text-1);
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239CA3AF' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 8px center;
+      -webkit-appearance: none; appearance: none;
+      outline: none; cursor: pointer; width: 90px;
+      transition: border-color .2s;
+    }
+    .sel-unit:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,.12); }
+
+    .row-total {
+      font-weight: 600; color: var(--text-1);
+      white-space: nowrap; min-width: 100px; width: 8%;
+      font-size: 13px;
+    }
+    .td-del { text-align: center; width: 44px; }
+    .del-btn {
+      width: 30px; height: 30px;
+      background: var(--red-lt); color: var(--red);
+      border: 1px solid #FECACA;
+      border-radius: 7px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .del-btn:hover { background: #FEE2E2; }
+    .del-btn:active { transform: scale(.95); }
+
+    .table-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0 16px; flex-wrap: wrap; gap: 8px;
+    }
+
+    /* ── Totals panel ── */
+    .totals-panel {
+      margin-top: 20px; margin-left: auto;
+      max-width: 380px;
+      background: linear-gradient(135deg, var(--surface-2), #FFFDF5);
+      border: 1.5px solid var(--gold-dim); border-radius: var(--r-lg);
+      padding: 22px 28px;
+      box-shadow: var(--sh-gold);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .totals-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 32px; }
+    .totals-label { font-size: 13px; color: var(--text-2); }
+    .totals-value { font-size: 14px; font-weight: 500; color: var(--text-1); font-variant-numeric: tabular-nums; }
+    #discountRow .totals-value { color: var(--red); font-weight: 700; }
+    .totals-divider { width: 100%; height: 1px; background: var(--gold-dim); margin: 4px 0; }
+    .totals-grand-label { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-1); }
+    .totals-grand-value {
+      font-family: 'Times New Roman', serif;
+      font-size: 24px; font-weight: 800; color: #000000;
+    }
+
+    /* ── Terms ── */
+    .terms-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 280px; overflow-y: auto; padding-right: 4px;
+    }
+    .terms-list::-webkit-scrollbar { width: 4px; }
+    .terms-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .term-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface-3); border: 1px solid var(--border); border-radius: var(--r);
+      transition: all .15s;
+    }
+    .term-row:hover { border-color: var(--gold-dim); background: #FFFDF5; }
+    .term-row label {
+      display: flex; align-items: center; gap: 10px;
+      flex: 1; cursor: pointer; font-size: 13.5px; color: var(--text-2);
+    }
+    /* Custom tick-style checkbox */
+    .term-row input[type="checkbox"],
+    .payment-inline-check input[type="checkbox"] {
+      -webkit-appearance: none; appearance: none;
+      width: 18px; height: 18px; min-width:18px; min-height:18px;
+      border: 1.5px solid var(--border); border-radius: 6px;
+      background: transparent; display:inline-grid; place-items:center;
+      cursor: pointer; transition: all .12s ease;
+    }
+    .term-row input[type="checkbox"]:hover,
+    .payment-inline-check input[type="checkbox"]:hover { border-color: var(--gold-dim); }
+    .term-row input[type="checkbox"]:checked,
+    .payment-inline-check input[type="checkbox"]:checked {
+      background: linear-gradient(180deg, var(--gold), var(--gold-dim));
+      border-color: var(--gold-dim); box-shadow: 0 1px 0 rgba(0,0,0,.06) inset;
+    }
+    .term-row input[type="checkbox"]:checked::after,
+    .payment-inline-check input[type="checkbox"]:checked::after {
+      content: '';
+      width: 10px; height: 10px; display:block; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>');
+      background-size: 10px 10px; background-repeat: no-repeat; background-position: center;
+    }
+    .term-row:has(input:checked) { background: linear-gradient(135deg, #FFFDF5, #FFF8E1); border-color: var(--gold-dim); }
+    .term-row:has(input:checked) label { color: var(--text-1); font-weight: 500; }
+
+    /* ── Payment ── */
+    .payment-inline-check {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; color: var(--text-2); margin: 12px 0; cursor: pointer;
+    }
+
+    /* Custom radio-style (tax selector) */
+    .radio-group { display:flex; gap:10px; align-items:center; }
+    .radio-option { display:flex; align-items:center; gap:8px; cursor:pointer; }
+    .radio-option input[type="radio"] {
+      -webkit-appearance: none; appearance: none;
+      width: 18px; height: 18px; min-width:18px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: transparent; display:inline-grid; place-items:center;
+      cursor: pointer; transition: all .12s ease;
+    }
+    .radio-option input[type="radio"]:hover { border-color: var(--gold-dim); }
+    .radio-option input[type="radio"]:checked {
+      background: linear-gradient(180deg, var(--gold), var(--gold-dim)); border-color: var(--gold-dim);
+    }
+    .radio-option input[type="radio"]:checked::after {
+      content: '';
+      width: 8px; height: 8px; border-radius: 50%; background: white; display:block;
+    }
+
+    /* ── History badges ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: .04em;
+    }
+    .badge-green { background: var(--green-lt); color: var(--green); border: 1px solid #A7F3D0; }
+    .badge-blue  { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #BFDBFE; }
+    .section-divider {
+      display: flex; align-items: center; gap: 16px; margin: 36px 0 28px;
+    }
+    .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .section-divider-text {
+      font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--text-3);
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(17,24,39,.55); backdrop-filter: blur(4px);
+      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; animation: mfade .2s ease both; }
+    @keyframes mfade { from { opacity: 0; } to { opacity: 1; } }
+    .modal-card {
+      background: var(--surface); width: 100%; max-width: 520px;
+      border-radius: var(--r-lg); box-shadow: var(--sh-lg); border: 1px solid var(--border);
+      overflow: hidden; animation: mslide .25s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes mslide {
+      from { opacity: 0; transform: translateY(20px) scale(.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+    }
+    .modal-title {
+      font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-1);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--surface-3); border: 1px solid var(--border);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text-2); font-size: 20px; line-height: 1; transition: all .15s;
+    }
+    .modal-close:hover { background: var(--red-lt); color: var(--red); border-color: #FECACA; }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-2);
+    }
+
+    /* ── Submit bar ── */
+    .submit-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 12px; padding-top: 8px; flex-wrap: wrap;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SELECT2 — CUSTOM THEME (Customer / Firm / Saved Account)
+       Matches the gold / dark luxury design language used
+       everywhere else on this page.
+       ═══════════════════════════════════════════════════════ */
+    .select2-container { width: 100% !important; font-family: 'DM Sans', sans-serif; }
+
+    /* Closed box look-alike of a normal input */
+    .select2-container--default .select2-selection--single {
+      height: 46px;
+      display: flex;
+      align-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      background: var(--surface);
+      padding: 0 38px 0 14px;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .select2-container--default .select2-selection--single:hover {
+      border-color: rgba(201,168,76,.5);
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.14);
+      background: #FFFDF5;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      padding: 0;
+      line-height: 1.3;
+      font-size: 14px;
+      color: var(--text-1);
+      width: 100%;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+      color: var(--text-3);
+    }
+    /* Hide default arrow, draw our own gold chevron */
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: 44px;
+      width: 32px;
+      right: 4px;
+      top: 0;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+      display: none;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 9px; height: 9px;
+      border-right: 2px solid var(--text-3);
+      border-bottom: 2px solid var(--text-3);
+      transform: translate(-50%, -65%) rotate(45deg);
+      transition: transform .2s, border-color .2s;
+    }
+    .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow::after {
+      transform: translate(-50%, -35%) rotate(-135deg);
+      border-color: var(--gold);
+    }
+    /* Clear ("x") button */
+    .select2-container--default .select2-selection--single .select2-selection__clear {
+      color: var(--text-3);
+      font-size: 18px;
+      margin-right: 6px;
+      transition: color .15s;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+      color: var(--red);
+    }
+
+    /* Dropdown panel */
+    .select2-dropdown {
+      border: 1.5px solid var(--gold) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 32px rgba(10,14,18,.14), 0 2px 8px rgba(201,168,76,.12);
+      overflow: hidden;
+      margin-top: 4px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .select2-container--default .select2-search--dropdown {
+      padding: 10px;
+      background: var(--surface);
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 11px;
+      font-size: 13px;
+      outline: none;
+      background: #F9FAFB;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+      background: #FFFDF5;
+    }
+    .select2-results__options {
+      max-height: 240px;
+      padding: 6px 0;
+    }
+    .select2-results__options::-webkit-scrollbar { width: 5px; }
+    .select2-results__options::-webkit-scrollbar-track { background: transparent; }
+    .select2-results__options::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+    .select2-results__options::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+    .select2-container--default .select2-results__option {
+      padding: 9px 14px;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+      background: linear-gradient(135deg, #FFFDF5, #FFF8E1);
+      color: var(--text-1);
+    }
+    .select2-container--default .select2-results__option[aria-selected="true"] {
+      background: linear-gradient(135deg, #FFF8E1, #FFF3C4);
+      color: #7A5F10;
+      font-weight: 600;
+    }
+    .select2-container--default .select2-results__message {
+      color: var(--text-3);
+      font-size: 12.5px;
+      padding: 16px 14px;
+      text-align: center;
+    }
+    .select2-results__option .select2-searching-spinner {
+      vertical-align: middle;
+    }
+
+    /* Disabled state (e.g. before customer chosen, if ever used) */
+    .select2-container--default.select2-container--disabled .select2-selection--single {
+      background: var(--surface-3);
+      cursor: not-allowed;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+      .form-row-auto { grid-template-columns: 1fr; }
+      .topbar { padding: 0 16px; }
+      .page { padding: 20px 14px 60px; }
+      .card-body { padding: 16px; }
+      .totals-panel { max-width: 100%; }
+      .page-title { font-size: 22px; }
+    }
+    @media (max-width: 480px) {
+      .gst-toggle { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-icon">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="14,2 26,9 26,21 14,28 2,21 2,9" fill="rgba(10,14,18,0.4)" stroke="rgba(10,14,18,0.6)" stroke-width="0.5"/>
+        <line x1="14" y1="2" x2="14" y2="28" stroke="rgba(10,14,18,0.5)" stroke-width="0.8"/>
+        <line x1="2"  y1="9" x2="26" y2="21" stroke="rgba(10,14,18,0.5)" stroke-width="0.8"/>
+        <line x1="26" y1="9" x2="2"  y2="21" stroke="rgba(10,14,18,0.5)" stroke-width="0.8"/>
+      </svg>
+    </div>
+    <span class="topbar-name">Satyam Paras Jayshree Associates</span>
+  </div>
+  <span class="topbar-badge">Enterprise Portal</span>
+</header>
+
+<!-- ── Page ── -->
+<div class="page">
+
+  <div class="page-heading">
+    <h1 class="page-title">Create <span>Quotation</span></h1>
+    <p class="page-breadcrumb">Dashboard → Quotations → New</p>
+  </div>
+
+  <form id="quotationForm" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" id="prefillPaymentId" value="{% if edit and q.include_payment_details and q.payment_details %}{{ q.payment_details.id }}{% endif %}">
+
+    <!-- ── 1. Customer & Type ── -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="card-title-dot"></span>Customer &amp; Type</div>
+      </div>
+      <div class="card-body">
+
+        <div class="form-row-auto customer-type-row" style="max-width:920px;">
+          <div class="field-select">
+            <label class="field-label">Select Customer</label>
+            <select id="customer-select" name="customer" style="width:100%" required>
+              <option value="">— Select a customer —</option>
+              {% if edit and q.customer %}
+                <option value="{{ q.customer.id }}" selected>{{ q.customer.name }}{% if q.customer.phone %} ({{ q.customer.phone }}){% endif %}</option>
+              {% endif %}
+            </select>
+          </div>
+          <div class="field-select">
+            <label class="field-label">Select Firm</label>
+            <select id="company-select" name="company" style="width:100%">
+              <option value="">— Select firm (optional) —</option>
+              {% if edit and q.company %}
+                <option value="{{ q.company.id }}" selected>{{ q.company.name|upper }}</option>
+              {% endif %}
+            </select>
+          </div>
+          <div>
+            <label class="field-label">&nbsp;</label>
+            <div class="actions">
+              <button type="button" class="btn btn-ghost" onclick="previewMeasurements()">
+                Preview Mapping
+              </button>
+              <button type="button" class="btn btn-warning" onclick="loadMeasurements()">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                Load Measurements
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="gstin_container" style="display:none; margin-top:12px;">
+          <label class="field-label">Customer GSTIN</label>
+          <input type="text" name="customer_gstin" id="customer_gstin" maxlength="15" placeholder="Enter Customer GSTIN (Optional)"
+                 value="{% if edit %}{{ q.customer_gstin }}{% endif %}">
+        </div>
+
+        <div style="margin-top:18px;">
+          <label class="field-label">Quotation Type</label>
+          <div class="gst-toggle">
+            <span class="gst-toggle-label">Tax</span>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="tax_type" value="none"
+                  {% if not edit or q.tax_type == 'none' %}checked{% endif %}
+                  onchange="calculate()">
+                Without Tax
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="tax_type" value="gst"
+                  {% if edit and q.tax_type == 'gst' %}checked{% endif %}
+                  onchange="calculate()">
+                GST 18%
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="tax_type" value="igst"
+                  {% if edit and q.tax_type == 'igst' %}checked{% endif %}
+                  onchange="calculate()">
+                IGST 18%
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        (function () {
+          // Prefill customer selection when redirected with ?customer_id=...
+          try {
+            const params = new URLSearchParams(window.location.search);
+            const cid = params.get('customer_id');
+            if (cid) {
+              const sel = document.querySelector('select[name="customer"]');
+              if (sel) {
+                const opt = sel.querySelector('option[value="' + cid + '"]');
+                if (opt) {
+                  sel.value = cid;
+                  sel.dispatchEvent(new Event('change'));
+                  // remove param from URL to avoid repeated actions
+                  const url = new URL(window.location);
+                  url.searchParams.delete('customer_id');
+                  window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                }
+              }
+            }
+          } catch (e) { console.error('Prefill customer error', e); }
+        })();
+        </script>
+
+        <script>
+        // Toggle visibility of GSTIN input based on selected tax type
+        function toggleGSTIN(){
+          try{
+            const sel = document.querySelector('input[name="tax_type"]:checked');
+            const box = document.getElementById('gstin_container');
+            if(!box) return;
+            box.style.display = (sel && (sel.value === 'gst' || sel.value === 'igst')) ? 'block' : 'none';
+          }catch(e){console.error(e)}
+        }
+        document.querySelectorAll('input[name="tax_type"]').forEach(r=>{ r.addEventListener('change', toggleGSTIN); });
+        // ensure initial state
+        try{ toggleGSTIN(); }catch(e){}
+        </script>
+
+        <div class="discount-row">
+          <div class="field-wrap">
+            <label class="field-label">Special Discount (₹)</label>
+            <input type="number" name="discount" id="discount"
+              step="0.01" min="0"
+              value="{% if edit %}{{ q.discount }}{% else %}0{% endif %}"
+              oninput="calculate()" placeholder="0.00">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 2. Line Items ── -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="card-title-dot"></span>Line Items</div>
+        <span id="rowCount" style="font-size:12px; color:var(--text-3);">1 item</span>
+      </div>
+      <div class="card-body" style="padding-bottom:0;">
+
+        <div class="table-wrap">
+          <table id="lineItemsTable">
+            <colgroup>
+              <col style="width:44px;">
+              <col style="width:8%;">
+              <col style="width:58%;">
+              <col style="width:8%;">
+              <col style="width:8%;">
+              <col style="width:10%;">
+              <col style="width:8%;">
+              <col style="width:44px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="th-center">Sl</th>
+                <th>Image</th>
+                <th>Service / Description</th>
+                <th>Qty / Area</th>
+                <th>Unit</th>
+                <th>Unit Price (₹)</th>
+                <th>Total (₹)</th>
+                <th class="th-center">Del</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              {% if edit and items %}
+                {% for item in items %}
+                <tr data-service-id="{{ item.service_id|default:'' }}" data-image-url="{% if item.service and item.service.image %}{{ item.service.image.url }}{% else %}{{ item.service_image_url|default:'' }}{% endif %}">
+                  <td class="td-sl">{{ forloop.counter }}</td>
+                  <td class="td-img">
+                    <div class="img-thumb-wrap" title="Click to upload image">
+                      <img data-src="{% if item.service and item.service.image %}{{ item.service.image.url }}{% else %}{{ item.service_image_url|default:'' }}{% endif %}"
+                        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+                        alt=""
+                        class="lazy-img {% if item.service and item.service.image %}has-data{% endif %}">
+                      <div class="img-placeholder" {% if item.service and item.service.image %}style="display:none;"{% elif item.service_image_url %}style="display:none;"{% endif %}>
+                        <svg width="18" height="18" fill="none" stroke="#9CA3AF" stroke-width="1.8" viewBox="0 0 24 24">
+                          <rect x="3" y="3" width="18" height="18" rx="3"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span>Auto/<br>Upload</span>
+                      </div>
+                      <input type="file" name="row_image_{{ forloop.counter0 }}" class="row-file" accept="image/*" onchange="handleImgUpload(this)" title="">
+                      <input type="hidden" name="service_image_url" value="{% if item.service and item.service.image %}{{ item.service.image.url }}{% else %}{{ item.service_image_url|default:'' }}{% endif %}">
+                    </div>
+                  </td>
+                  <td class="td-service">
+                    <!-- CUSTOM SEARCH DROPDOWN -->
+                    <div class="svc-dd-wrap">
+                      <div class="svc-dd-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                        <span class="trigger-label {% if item.service_id %}has-value{% endif %}">
+                          {% if item.service %}{{ item.service.service_name|default:item.service.name }}{% else %}— select service —{% endif %}
+                        </span>
+                        <span class="trigger-arrow">
+                          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
+                      </div>
+                      <div class="svc-dd-panel" role="listbox">
+                        <div class="svc-dd-search-wrap">
+                          <div class="svc-dd-search-inner">
+                            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" class="svc-dd-search" placeholder="Search service..." autocomplete="off" spellcheck="false">
+                            <span class="svc-dd-search-clear" title="Clear">
+                              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </span>
+                          </div>
+                        </div>
+                        <div class="svc-dd-list"></div>
+                        <div class="svc-dd-empty">
+                          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                          No services found
+                        </div>
+                      </div>
+                      <!-- Hidden select for form submission -->
+                    <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
+                      <option value="">— select service —</option>
+                    </select>
+                    </div>
+
+                    <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
+                      <button type="button" class="btn btn-ghost btn-sm" onclick="toggleServiceInput(this)">Add / Type</button>
+                      <small style="color:var(--text-3);">or select from list</small>
+                    </div>
+                    <div class="service-type-wrapper" style="display:none; margin-top:6px; width:100%;">
+                      <input type="text" name="service_name" list="services-list" class="service-input" placeholder="Type new service"
+                        value="{% if item.service %}{{ item.service.name }}{% endif %}" style="width:100%;">
+                    </div>
+                    <textarea name="description" class="desc-box description-input" rows="1"
+                      style="margin-top:5px;"
+                      oninput="autoResize(this)">{{ item.description }}</textarea>
+                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                  </td>
+                  <td class="td-qty">
+                    <input type="number" name="quantity" class="inp-table inp-qty"
+                      step="any" min="0" value="{{ item.quantity|floatformat:'-3' }}"
+                      oninput="calculate()" placeholder="0">
+                    <input type="hidden" name="raw_quantity" value="{{ item.quantity|floatformat:'-3' }}">
+                  </td>
+                  <td class="td-unit">
+                    <select name="unit" class="sel-unit">
+                      <option {% if item.unit == 'Nos' %}selected{% endif %}>Nos</option>
+                      <option {% if item.unit == 'Sq Ft' %}selected{% endif %}>Sq Ft</option>
+                      <option {% if item.unit == 'Feet' %}selected{% endif %}>Feet</option>
+                      <option {% if item.unit == 'Metre' %}selected{% endif %}>Metre</option>
+                      <option {% if item.unit == 'Sq Mtr' %}selected{% endif %}>Sq Mtr</option>
+                      <option {% if item.unit == 'Kg' %}selected{% endif %}>Kg</option>
+                      <option {% if item.unit == 'inch' %}selected{% endif %}>inch</option>
+                      <option {% if item.unit == 'Sets' %}selected{% endif %}>Sets</option>
+                      <option {% if item.unit == 'RFT' %}selected{% endif %}>RFT</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="number" name="price" class="inp-table inp-price"
+                      step="0.01" min="0" value="{{ item.price }}"
+                      oninput="calculate()" placeholder="0.00">
+                  </td>
+                  <td class="rowTotal row-total">₹ {{ item.total }}</td>
+                  <td class="td-del">
+                    <button type="button" class="del-btn" onclick="removeRow(this)" title="Remove row">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+              <tr>
+                <td class="td-sl">1</td>
+                <td class="td-img">
+                  <div class="img-thumb-wrap" title="Click to upload image">
+                    <img src="" alt="">
+                    <div class="img-placeholder">
+                      <svg width="18" height="18" fill="none" stroke="#9CA3AF" stroke-width="1.8" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span>Auto/<br>Upload</span>
+                    </div>
+                    <input type="file" name="row_image_0" class="row-file" accept="image/*" onchange="handleImgUpload(this)" title="">
+                    <input type="hidden" name="service_image_url" value="">
+                  </div>
+                </td>
+                <td class="td-service">
+                  <!-- CUSTOM SEARCH DROPDOWN -->
+                  <div class="svc-dd-wrap">
+                    <div class="svc-dd-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                      <span class="trigger-label">— select service —</span>
+                      <span class="trigger-arrow">
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                      </span>
+                    </div>
+                    <div class="svc-dd-panel" role="listbox">
+                      <div class="svc-dd-search-wrap">
+                        <div class="svc-dd-search-inner">
+                          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                          <input type="text" class="svc-dd-search" placeholder="Search service..." autocomplete="off" spellcheck="false">
+                          <span class="svc-dd-search-clear" title="Clear">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="svc-dd-list"></div>
+                      <div class="svc-dd-empty">
+                        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        No services found
+                      </div>
+                    </div>
+                    <!-- Hidden select for form submission -->
+                    <select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">
+                      <option value="">— select service —</option>
+                    </select>
+                  </div>
+
+                  <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="toggleServiceInput(this)">Add / Type</button>
+                    <small style="color:var(--text-3);">or select from list</small>
+                  </div>
+                  <div class="service-type-wrapper" style="display:none; margin-top:6px; width:100%;">
+                    <input type="text" name="service_name" list="services-list" class="service-input" placeholder="Type new service" style="width:100%;">
+                  </div>
+                  <textarea name="description" class="desc-box description-input" rows="1"
+                    placeholder="Item description…"
+                    style="margin-top:5px;"
+                    oninput="autoResize(this)"></textarea>
+                  <input type="hidden" name="raw_quantity" value="1">
+                </td>
+                <td class="td-qty">
+                  <input type="number" name="quantity" class="inp-table inp-qty"
+                    step="any" min="0" value="1"
+                    oninput="calculate()" placeholder="0">
+                </td>
+                <td class="td-unit">
+                  <select name="unit" class="sel-unit">
+                    <option selected>Nos</option>
+                    <option>Sq Ft</option>
+                    <option>Feet</option>
+                    <option>Metre</option>
+                    <option>Sq Mtr</option>
+                    <option>Kg</option>
+                    <option>inch</option>
+                    <option>Sets</option>
+                    <option>RFT</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" name="price" class="inp-table inp-price"
+                    step="0.01" min="0" value="0"
+                    oninput="calculate()" placeholder="0.00">
+                </td>
+                <td class="rowTotal row-total">₹ 0.00</td>
+                <td class="td-del">
+                  <button type="button" class="del-btn" onclick="removeRow(this)" title="Remove row">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+  <script>
+  // Lazy-load images in the quotation editor: load when service dropdown is opened
+  document.addEventListener('DOMContentLoaded', function () {
+    function loadRowImage(row) {
+      try {
+        var img = row.querySelector('.img-thumb-wrap img.lazy-img');
+        if (!img) return;
+        var src = img.dataset.src;
+        if (!src) return;
+        if (img.src && img.src.indexOf('data:image') === 0 && src) {
+          img.src = src;
+          var ph = row.querySelector('.img-placeholder');
+          if (ph) ph.style.display = 'none';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    // When the user opens the service dropdown, load that row's image
+    document.querySelectorAll('.svc-dd-trigger').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var row = btn.closest('tr');
+        if (row) loadRowImage(row);
+      });
+    });
+
+    // Clicking thumbnail area should also load image (and open file selector)
+    document.querySelectorAll('.img-thumb-wrap').forEach(function (wrap) {
+      wrap.addEventListener('click', function (e) {
+        var row = wrap.closest('tr');
+        if (row) loadRowImage(row);
+      });
+    });
+  });
+  </script>
+
+        <div class="table-actions">
+          <button type="button" class="btn btn-ghost" onclick="addRow()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Row
+          </button>
+          <span style="font-size:12px; color:var(--text-3);">Tip: type in the search box to quickly find a service</span>
+        </div>
+
+        <!-- Totals -->
+        <div class="totals-panel">
+          <div class="totals-row">
+            <span class="totals-label">Subtotal</span>
+            <span class="totals-value">₹ <span id="subtotal">0.00</span></span>
+          </div>
+          <div class="totals-row" id="cgstRow">
+            <span class="totals-label">CGST (9%)</span>
+            <span class="totals-value">₹ <span id="cgst">0.00</span></span>
+          </div>
+          <div class="totals-row" id="sgstRow">
+            <span class="totals-label">SGST (9%)</span>
+            <span class="totals-value">₹ <span id="sgst">0.00</span></span>
+          </div>
+          <div class="totals-row" id="igstRow" style="display:none;">
+            <span class="totals-label">IGST (18%)</span>
+            <span class="totals-value">₹ <span id="igst">0.00</span></span>
+          </div>
+          <div class="totals-row" id="discountRow">
+            <span class="totals-label">Special Discount</span>
+            <span class="totals-value">− ₹ <span id="discountDisplay">0.00</span></span>
+          </div>
+          <div class="totals-divider"></div>
+          <div class="totals-row">
+            <span class="totals-grand-label">Grand Total</span>
+            <span class="totals-grand-value">₹ <span id="grandTotal">0.00</span></span>
+          </div>
+        </div>
+
+        <div style="height:24px;"></div>
+      </div>
+    </div>
+
+    <!-- ── 3. Terms & Conditions ── -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="card-title-dot"></span>Terms &amp; Conditions</div>
+        <button type="button" class="btn btn-success btn-sm" onclick="openTermModal()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Term
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="terms-list" id="termsList">
+          {% for term in terms %}
+          <div class="term-row">
+            <label>
+              <input type="checkbox" name="terms" value="{{ term.id }}"
+                onchange="onTermCheck(this)"
+                {% if edit and term.id in selected_terms %}checked{% endif %}>
+              <span class="term-text" data-term-id="{{ term.id }}">{{ term.text }}</span>
+            </label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="number" min="0" name="term_order_{{ term.id }}" placeholder="Order"
+                value="{% if term.selected_order %}{{ term.selected_order }}{% endif %}"
+                style="width:80px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); font-size:13px;">
+              <button type="button" class="btn btn-ghost btn-sm"
+                onclick="openEditTerm('{{ term.id }}', this.closest('.term-row').querySelector('.term-text').textContent.trim())">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </button>
+            </div>
+          </div>
+          {% empty %}
+          <div class="empty-state" style="text-align:center; padding:32px; color:var(--text-3);">
+            <p style="font-size:14px;">No terms yet. Add one above.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. Payment Details (optional) ── -->
+    <label class="payment-inline-check">
+      <input type="checkbox" id="includePaymentCheckbox" name="include_payment_details"
+        onchange="togglePaymentCard(this.checked)"
+        {% if edit and q.include_payment_details %}checked{% endif %}>
+      Add Payment Details to this Quotation
+    </label>
+
+    <div class="card" id="paymentCard" style="display:none;">
+      <div class="card-header">
+        <div class="card-title"><span class="card-title-dot"></span>Payment Details</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm" id="modeExistingBtn" onclick="showPaymentMode('existing')">Select Existing Account</button>
+          <button type="button" class="btn btn-sm btn-ghost" id="modeNewBtn" onclick="showPaymentMode('new')">+ Add New Account</button>
+        </div>
+        <div id="existingArea">
+          <label class="field-label">Select saved account</label>
+          <div class="account-select-wrapper" style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+            <select id="savedPaymentSelect" name="selected_payment_id" onchange="onSelectExisting(this)" style="flex:1;">
+              <option value="">— Select saved account —</option>
+              {% if edit and selected_payment_id %}
+                {% comment %}Preselect single account; full list is loaded via AJAX.{% endcomment %}
+                <option value="{{ selected_payment_id }}" selected>Selected account</option>
+              {% endif %}
+            </select>
+            <button type="button" id="deleteSelectedAccountBtn" class="delete-account-btn" onclick="deleteSelectedAccount()" title="Delete selected account" style="width:44px;height:44px;border:none;border-radius:8px;background:#dc3545;color:#fff;cursor:pointer">🗑️</button>
+          </div>
+          <div id="accountSummary" style="display:none; border:1px solid var(--border); padding:12px; border-radius:8px; margin-top:8px; background:var(--surface-2);">
+            <div style="font-weight:600; font-size:14px; margin-bottom:6px;" id="summaryAccountName"></div>
+            <div style="font-size:13px; color:var(--text-2);">Bank: <span id="summaryBank"></span></div>
+            <div style="font-size:13px; color:var(--text-2);">Account: <span id="summaryAccountNumber"></span></div>
+            <div style="font-size:13px; color:var(--text-2);">IFSC: <span id="summaryIfsc"></span></div>
+            <div style="font-size:13px; color:var(--text-2);">UPI / Phone: <span id="summaryPhone"></span></div>
+            <div style="margin-top:8px;">
+              <button type="button" class="btn btn-ghost btn-sm" id="editPaymentBtn" onclick="editSelectedPayment()">Edit Account</button>
+            </div>
+          </div>
+        </div>
+        <div id="newArea" style="display:none; margin-top:12px; border-top:1px dashed var(--border); padding-top:12px;">
+          <input type="hidden" name="payment_action" id="paymentAction" value="">
+          <input type="hidden" name="payment_id" id="paymentId" value="">
+          <input type="hidden" name="payment_account_type" id="paymentAccountType" value="business">
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button type="button" class="btn btn-sm" id="typeBankBtn" onclick="choosePaymentType('BUSINESS')">Bank Account</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="typeUpiBtn" onclick="choosePaymentType('UPI')">UPI Account</button>
+          </div>
+          <div id="bankFields" style="display:none;">
+            <div class="form-row-2">
+              <div>
+                <label class="field-label">Account Name *</label>
+                <input type="text" id="paymentAccountName" name="payment_account_name" placeholder="e.g. Satyam Aluminium SBI">
+                <div class="field-error" id="err_account_name" style="color:#c0392b; font-size:12px; display:none;"></div>
+              </div>
+              <div>
+                <label class="field-label">Account Holder Name *</label>
+                <input type="text" id="paymentHolderName" name="payment_holder_name">
+                <div class="field-error" id="err_holder_name" style="color:#c0392b; font-size:12px; display:none;"></div>
+              </div>
+            </div>
+            <div class="form-row-2" style="margin-top:12px;">
+              <div>
+                <label class="field-label">Bank Name *</label>
+                <input type="text" id="paymentBankName" name="payment_bank_name">
+                <div class="field-error" id="err_bank_name" style="color:#c0392b; font-size:12px; display:none;"></div>
+              </div>
+              <div>
+                <label class="field-label">Account Number *</label>
+                <input type="text" id="paymentAccountNumber" name="payment_account_number">
+                <div class="field-error" id="err_account_number" style="color:#c0392b; font-size:12px; display:none;"></div>
+              </div>
+            </div>
+            <div class="form-row-3" style="margin-top:12px;">
+              <div>
+                <label class="field-label">IFSC Code *</label>
+                <input type="text" id="paymentIfsc" name="payment_ifsc_code">
+                <div class="field-error" id="err_ifsc_code" style="color:#c0392b; font-size:12px; display:none;"></div>
+              </div>
+              <div>
+                <label class="field-label">Branch (Optional)</label>
+                <input type="text" id="paymentBranch" name="payment_branch">
+              </div>
+              <div>
+                <label class="field-label">Phone Number (Optional)</label>
+                <input type="text" id="paymentPhone" name="payment_phone_number">
+              </div>
+            </div>
+          </div>
+          <div id="upiFields" style="display:none; margin-top:8px;">
+            <div>
+              <label class="field-label">Account Holder Name *</label>
+              <input type="text" id="paymentUpiHolder" name="payment_holder_name_upi">
+              <div class="field-error" id="err_holder_upi" style="color:#c0392b; font-size:12px; display:none;"></div>
+            </div>
+            <div style="margin-top:8px;">
+              <label class="field-label">UPI ID / Phone Number *</label>
+              <input type="text" id="paymentUpi" name="payment_upi_id">
+              <div class="field-error" id="err_upi" style="color:#c0392b; font-size:12px; display:none;"></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; margin-top:12px;">
+            <button type="button" class="btn btn-gold btn-sm" id="savePaymentBtn" onclick="submitPaymentForm()">Save Account</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelNewPayment()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Submit ── -->
+    <div class="submit-bar">
+      <button type="button" class="btn btn-ghost" onclick="window.history.back()">Cancel</button>
+      <button type="submit" class="btn btn-gold btn-lg">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Generate Quotation
+      </button>
+    </div>
+
+  </form>
+
+  <!-- ── Quotation History ── -->
+  <style>
+  /* Quotation history: modern table + pagination */
+  .quotation-history { padding: 0; }
+  .quotation-history .table-wrap { border-radius: 10px; overflow: hidden; }
+  .quotation-history table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .quotation-history thead th { text-align: left; padding: 14px 16px; font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
+  .quotation-history tbody td { padding: 12px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
+  .quotation-history tbody tr:hover td { background: rgba(34,197,94,0.03); }
+  .quotation-history .card-header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; }
+  .qh-footer { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-top:1px solid var(--border); background:transparent; }
+  .pagination { display:flex; gap:8px; align-items:center; }
+  .pagination button { padding:6px 10px; border-radius:6px; border:1px solid var(--border-md); background:var(--surface); color:var(--text-2); cursor:pointer; font-weight:600; }
+  .pagination button:hover { transform:translateY(-1px); }
+  .pagination button:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
+  .pagination button.active, .pagination button.active:disabled { background:var(--brand); color:white; border-color:var(--brand-line); }
+  .qh-info { color:var(--text-3); font-size:13px; }
+  @media (max-width:800px) { .quotation-history thead th:nth-child(3), .quotation-history thead th:nth-child(2) { font-size:13px; } }
+  </style>
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <span class="section-divider-text">Quotation History</span>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="card quotation-history">
+      <div class="card-header">
+      <div class="card-title"><span class="card-title-dot"></span>All Quotations</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <a href="{% url "quotations" %}" class="btn btn-primary btn-sm">QUOTATIONS</a>
+        <span class="badge badge-blue" id="qh-total">—</span>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-wrap" style="border:none; border-radius:0;">
+        <table class="quotation-history-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Total</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="qh-body">
+            <!-- loaded via AJAX -->
+          </tbody>
+        </table>
+        <div class="qh-footer" aria-hidden="false">
+          <div class="qh-info" id="qh-info"></div>
+          <div class="pagination" id="qh-pagination" role="navigation" aria-label="Quotation pagination"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const table = document.querySelector('.quotation-history-table');
+    if (!table) return;
+    const qh_tbody = table.tBodies[0];
+    const rows = Array.from(qh_tbody.querySelectorAll('tr'));
+    const pageSize = 7;
+    let current = 1;
+
+    function renderPage(page) {
+      const total = rows.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      rows.forEach((r, i) => { r.style.display = (i >= start && i < end) ? 'table-row' : 'none'; });
+      current = page;
+      renderPagination(totalPages);
+      const info = document.getElementById('qh-info');
+      if (info) info.textContent = total === 0 ? 'No quotations' : ('Showing ' + (start + 1) + '–' + Math.min(end, total) + ' of ' + total);
+    }
+
+    function renderPagination(totalPages) {
+      const wrap = document.getElementById('qh-pagination');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      function makeBtn(label, cls, disabled, onClick) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = label; if (cls) b.className = cls;
+        if (disabled) b.disabled = true;
+        b.addEventListener('click', onClick);
+        return b;
+      }
+
+      wrap.appendChild(makeBtn('Prev', '', current === 1, () => renderPage(current - 1)));
+
+      const maxButtons = 5;
+      let start = Math.max(1, current - Math.floor(maxButtons / 2));
+      let end = Math.min(totalPages, start + maxButtons - 1);
+      if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+      if (start > 1) {
+        wrap.appendChild(makeBtn('1', '', false, () => renderPage(1)));
+        if (start > 2) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; wrap.appendChild(s); }
+      }
+
+      for (let i = start; i <= end; i++) {
+        const btn = makeBtn(String(i), '', false, () => renderPage(i));
+        if (i === current) { btn.classList.add('active'); btn.disabled = true; }
+        wrap.appendChild(btn);
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; wrap.appendChild(s); }
+        wrap.appendChild(makeBtn(String(totalPages), '', false, () => renderPage(totalPages)));
+      }
+
+      wrap.appendChild(makeBtn('Next', '', current === totalPages, () => renderPage(current + 1)));
+    }
+
+    // AJAX-loaded quotations (20 per page)
+    (function () {
+      const perPage = 20;
+      let current = 1;
+
+      const body = document.getElementById('qh-body');
+      const info = document.getElementById('qh-info');
+      const totalBadge = document.getElementById('qh-total');
+      const pager = document.getElementById('qh-pagination');
+
+      const viewTpl = '{% url "view_quotation" 0 %}';
+      const editTpl = '{% url "edit_quotation" 0 %}';
+      const deleteTpl = '{% url "delete_quotation" 0 %}';
+      const convertTpl = '{% url "convert_to_order" 0 %}';
+
+      function renderRows(results) {
+        body.innerHTML = '';
+        if (!results || results.length === 0) {
+          body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:48px; color:var(--text-3); font-size:14px;">No quotations yet. Create your first one above.</td></tr>';
+          return;
+        }
+        results.forEach(function (r) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td><span style="font-family:\'Syne\',sans-serif; font-weight:700; color:var(--gold); font-size:13px;">#' + r.id + '</span></td>' +
+                         '<td style="font-weight:500;">' + (r.customer || '') + '</td>' +
+                         '<td><span style="font-weight:600; color:var(--text-1);">₹ ' + (r.total || 0) + '</span></td>' +
+                         '<td><div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+                           '<a href="' + viewTpl.replace('0', r.id) + '" class="btn btn-primary btn-sm">View</a>' +
+                           '<a href="' + editTpl.replace('0', r.id) + '" class="btn btn-warning btn-sm">Edit</a>' +
+                           '<a href="' + deleteTpl.replace('0', r.id) + '" class="btn btn-danger btn-sm">Delete</a>' +
+                           '<a href="' + convertTpl.replace('0', r.id) + '" class="btn btn-success btn-sm">Convert</a>' +
+                         '</div></td>';
+          body.appendChild(tr);
+        });
+      }
+
+      function renderPager(total, page) {
+        const totalPages = Math.max(1, Math.ceil(total / perPage));
+        pager.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        function btn(label, disabled, onClick) {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (disabled) b.disabled = true; b.addEventListener('click', onClick); return b;
+        }
+
+        pager.appendChild(btn('Prev', page === 1, () => fetchPage(page - 1)));
+        const maxButtons = 5;
+        let start = Math.max(1, page - Math.floor(maxButtons / 2));
+        let end = Math.min(totalPages, start + maxButtons - 1);
+        if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+        if (start > 1) { pager.appendChild(btn('1', false, () => fetchPage(1))); if (start > 2) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; pager.appendChild(s); } }
+        for (let i = start; i <= end; i++) { const b = btn(String(i), false, () => fetchPage(i)); if (i === page) { b.classList.add('active'); b.disabled = true; } pager.appendChild(b); }
+        if (end < totalPages) { if (end < totalPages - 1) { const s = document.createElement('span'); s.textContent = '...'; s.style.padding = '0 6px'; pager.appendChild(s); } pager.appendChild(btn(String(totalPages), false, () => fetchPage(totalPages))); }
+        pager.appendChild(btn('Next', page === totalPages, () => fetchPage(page + 1)));
+      }
+
+      function fetchPage(page) {
+        if (page < 1) page = 1;
+        current = page;
+        const url = new URL('{% url "search_quotations" %}', window.location.origin);
+        url.searchParams.set('page', page);
+        // optional search box could be wired here later
+        fetch(url.toString(), { credentials: 'same-origin' }).then(r => r.json()).then(function (data) {
+          renderRows(data.results || []);
+          totalBadge.textContent = (data.total || 0) + ' total';
+          if (info) info.textContent = (data.total || 0) === 0 ? 'No quotations' : ('Showing ' + ((page - 1) * perPage + 1) + '–' + Math.min(page * perPage, data.total) + ' of ' + data.total);
+          renderPager(data.total || 0, page);
+        }).catch(function () {
+          body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-3);">Could not load quotations</td></tr>';
+        });
+      }
+
+      // initial load
+      fetchPage(1);
+    })();
+  })();
+  </script>
+
+</div><!-- /.page -->
+
+<!-- ── Term Modal ── -->
+<div id="termModal" class="modal-overlay" role="dialog" aria-modal="true"
+  data-add-term-url="{% url "add_term" %}"
+  data-edit-term-url="{% url "edit_term" 0 %}">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="16" height="16" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span id="termModalTitle">Add New Term</span>
+      </div>
+      <button class="modal-close" aria-label="Close" onclick="closeTermModal()">&#x00D7;</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Term Text</label>
+      <textarea id="newTermText" rows="4" style="resize:vertical;"
+        placeholder="e.g. 50% advance required to start work…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeTermModal()">Cancel</button>
+      <button type="button" class="btn btn-gold" id="termSaveBtn" onclick="submitTerm()">Save Term</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Mapping Preview Modal ── -->
+<div id="mappingModal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-card" style="max-width:820px;">
+    <div class="modal-header">
+      <div class="modal-title">Preview Measurement &#x2192; Quotation Mapping</div>
+      <button class="modal-close" aria-label="Close"
+        onclick="document.getElementById('mappingModal').classList.remove('show')">&#x00D7;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; gap:12px; align-items:center; margin-bottom:8px;">
+        <label style="display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer;">
+          <input id="mergeSubitems" type="checkbox" style="accent-color:var(--gold);">
+          Merge subitems into single row
+        </label>
+      </div>
+      <div id="mappingPreviewBody" style="max-height:360px; overflow:auto; padding-right:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost"
+        onclick="document.getElementById('mappingModal').classList.remove('show')">Cancel</button>
+      <button type="button" class="btn btn-gold"
+        onclick="applyMapping(document.getElementById('mergeSubitems').checked)">Apply Mapping</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     DATA ISLANDS
+════════════════════════════════════════════════════════════ -->
+<script id="services-json" type="application/json">[]</script>
+
+<script id="page-config-json" type="application/json">
+{
+  "isEdit": {% if edit %}true{% else %}false{% endif %},
+  "prefillPaymentId": "{% if selected_payment_id %}{{ selected_payment_id }}{% elif edit and q.include_payment_details and q.payment_details %}{{ q.payment_details.id }}{% else %}{% endif %}"
+}
+</script>
+
+<datalist id="services-list"></datalist>
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+// @ts-nocheck
+
+/* ── Bootstrap data ── */
+(function () {
+  try { window.SERVICES_DATA = JSON.parse(document.getElementById('services-json').textContent); }
+  catch (e) { window.SERVICES_DATA = [{ id: '', name: '— select service —', img: '', price: 0, unit: 'Nos' }]; }
+  try { window.PAGE_CONFIG = JSON.parse(document.getElementById('page-config-json').textContent); }
+  catch (e) { window.PAGE_CONFIG = { isEdit: false, prefillPaymentId: '' }; }
+})();
+
+// Client-side cache for service search results (term -> array of service objects)
+var SVC_CACHE = {};
+
+/* ── Toast ── */
+var Toast = Swal.mixin({
+  toast: true, position: 'top-end',
+  showConfirmButton: false, timer: 3000, timerProgressBar: true,
+  didOpen: function (t) {
+    t.addEventListener('mouseenter', Swal.stopTimer);
+    t.addEventListener('mouseleave', Swal.resumeTimer);
+  }
+});
+function toast(type, msg) { Toast.fire({ icon: type, title: msg }); }
+
+/* ── CSRF ── */
+function getCookie(name) {
+  var cv = null;
+  document.cookie.split(';').forEach(function (c) {
+    c = c.trim();
+    if (c.startsWith(name + '=')) cv = decodeURIComponent(c.slice(name.length + 1));
+  });
+  return cv;
+}
+
+/* ── Unit HTML ── */
+var UNIT_LIST = ['Nos', 'Sq Ft', 'Feet', 'Metre', 'Sq Mtr', 'Kg', 'inch', 'Sets', 'RFT'];
+function unitOptions(sel) {
+  sel = sel || 'Nos';
+  return UNIT_LIST.map(function (u) {
+    return '<option' + (u === sel ? ' selected' : '') + '>' + u + '</option>';
+  }).join('');
+}
+
+/* ── SVG icons ── */
+var IMG_PLACEHOLDER_SVG =
+  '<svg width="18" height="18" fill="none" stroke="#9CA3AF" stroke-width="1.8" viewBox="0 0 24 24">' +
+  '<rect x="3" y="3" width="18" height="18" rx="3"/>' +
+  '<circle cx="8.5" cy="8.5" r="1.5"/>' +
+  '<polyline points="21 15 16 10 5 21"/>' +
+  '</svg>';
+
+var DEL_BTN_SVG =
+  '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">' +
+  '<line x1="18" y1="6" x2="6" y2="18"/>' +
+  '<line x1="6" y1="6" x2="18" y2="18"/>' +
+  '</svg>';
+
+/* ─────────────────────────────────────────────────────────
+   CUSTOM SERVICE SEARCH DROPDOWN ENGINE
+   ───────────────────────────────────────────────────────── */
+
+/**
+ * Build the options list HTML for a given search term.
+ * Returns { html, count } where count is number of matching options.
+ */
+function buildOptionsList(term, selectedId) {
+  term = (term || '').trim().toLowerCase();
+  selectedId = String(selectedId || '');
+  var html = '';
+  var count = 0;
+
+  window.SERVICES_DATA.forEach(function (s) {
+    if (!s.id) return; // skip the empty placeholder entry
+
+    var label = (s.service_name || s.name || '');
+    var haystack = label.toLowerCase();
+
+    if (term && haystack.indexOf(term) === -1) return; // filter
+
+    count++;
+    var isSelected = (String(s.id) === selectedId);
+
+    // Highlight matched portion
+    var displayLabel = label;
+    if (term) {
+      var idx = haystack.indexOf(term);
+      displayLabel =
+        escapeHtml(label.slice(0, idx)) +
+        '<mark>' + escapeHtml(label.slice(idx, idx + term.length)) + '</mark>' +
+        escapeHtml(label.slice(idx + term.length));
+    } else {
+      displayLabel = escapeHtml(label);
+    }
+
+    html +=
+      '<div class="svc-dd-option' + (isSelected ? ' selected' : '') + '"' +
+      ' data-value="' + escapeAttr(String(s.id)) + '"' +
+      ' data-img="' + escapeAttr(s.img || '') + '"' +
+      ' data-price="' + (parseFloat(s.price) || 0) + '"' +
+      ' data-unit="' + escapeAttr(s.unit || 'Nos') + '"' +
+      ' data-service-name="' + escapeAttr(s.service_name || s.name || '') + '"' +
+      ' data-description="' + escapeAttr(s.description || s.service_name || s.name || '') + '"' +
+      ' role="option" aria-selected="' + isSelected + '">' +
+      displayLabel +
+      '</div>';
+  });
+
+  return { html: html, count: count };
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function escapeAttr(str) {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Decode service description strings that may contain escaped unicode sequences
+function decodeServiceDescription(str) {
+  if (!str && str !== '') return '';
+  try {
+    // If string contains literal backslash escapes like \uXXXX or \n, let JSON.parse decode them
+    if (/\\u[0-9a-fA-F]{4}|\\n|\\r/.test(str)) {
+      return JSON.parse('"' + String(str).replace(/"/g, '\\"') + '"');
+    }
+  } catch (e) {
+    // fall through to fallback replacements
+  }
+  // Replace escaped newlines if present
+  return String(str).replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+}
+
+/**
+ * Render (or re-render) the options list inside a panel.
+ */
+function renderOptions(panel, term, selectedId) {
+  var list  = panel.querySelector('.svc-dd-list');
+  var empty = panel.querySelector('.svc-dd-empty');
+  var result = buildOptionsList(term, selectedId);
+
+  list.innerHTML = result.html;
+
+  if (result.count === 0) {
+    list.style.display = 'none';
+    empty.style.display = 'block';
+  } else {
+    list.style.display = '';
+    empty.style.display = 'none';
+  }
+}
+
+/**
+ * Open a specific dropdown panel.
+ */
+function openPanel(wrap) {
+  // Close any other open panels first
+  document.querySelectorAll('.svc-dd-wrap').forEach(function (w) {
+    if (w !== wrap) closePanel(w);
+  });
+
+  var trigger = wrap.querySelector('.svc-dd-trigger');
+  var panel   = wrap.querySelector('.svc-dd-panel');
+  var search  = wrap.querySelector('.svc-dd-search');
+  var hidden  = wrap.querySelector('.svc-hidden-select');
+  var selectedId = hidden ? hidden.value : '';
+
+  trigger.classList.add('open');
+  trigger.setAttribute('aria-expanded', 'true');
+  panel.classList.add('open');
+
+  // Render full list
+  renderOptions(panel, '', selectedId);
+
+  // Focus search
+  if (search) {
+    search.value = '';
+    updateClearBtn(wrap);
+    setTimeout(function () { search.focus(); }, 40);
+  }
+}
+
+/**
+ * Close a specific dropdown panel.
+ */
+function closePanel(wrap) {
+  var trigger = wrap.querySelector('.svc-dd-trigger');
+  var panel   = wrap.querySelector('.svc-dd-panel');
+  if (trigger) { trigger.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); }
+  if (panel)   { panel.classList.remove('open'); }
+}
+
+function updateClearBtn(wrap) {
+  var search = wrap.querySelector('.svc-dd-search');
+  var clear  = wrap.querySelector('.svc-dd-search-clear');
+  if (!clear) return;
+  clear.style.display = (search && search.value.length > 0) ? 'flex' : 'none';
+}
+
+/**
+ * Select a service option — updates the hidden <select>, trigger label,
+ * and fires all the downstream auto-fill logic.
+ */
+function selectOption(wrap, optEl) {
+  var val     = optEl.dataset.value;
+  var label   = optEl.dataset.serviceName || optEl.textContent.trim();
+  var hidden  = wrap.querySelector('.svc-hidden-select');
+  var trigger = wrap.querySelector('.svc-dd-trigger');
+  var lbl     = trigger ? trigger.querySelector('.trigger-label') : null;
+
+  // Update hidden select value
+  if (hidden) {
+    // Ensure a corresponding option exists in the hidden select so form submission works
+    var existing = Array.from(hidden.options).find(function (o) { return String(o.value) === String(val); });
+    if (!existing) {
+      var newOpt = document.createElement('option');
+      newOpt.value = val; newOpt.text = label || '';
+      // copy data attributes from the clicked element
+      if (optEl && optEl.dataset) {
+        Object.keys(optEl.dataset).forEach(function (k) { newOpt.setAttribute('data-' + k.replace(/[A-Z]/g, function (m) { return '-' + m.toLowerCase(); }), optEl.dataset[k]); });
+      }
+      hidden.appendChild(newOpt);
+      existing = newOpt;
+    }
+    hidden.value = val;
+    // Sync the option's selected state so form submission picks it up
+    Array.from(hidden.options).forEach(function (o) { o.selected = (String(o.value) === String(val)); });
+  }
+
+  // Update trigger display
+  if (lbl) {
+    lbl.textContent = label;
+    lbl.classList.toggle('has-value', !!val);
+  }
+
+  closePanel(wrap);
+
+  // Trigger downstream auto-fill (image, price, unit, description)
+  // Use the clicked option's dataset directly to apply data to the row
+  var tr = wrap.closest('tr');
+  if (tr) applyServiceDataToRow(tr, optEl);
+}
+
+/**
+ * Wire up all event listeners for a single .svc-dd-wrap element.
+ * Safe to call multiple times (uses a flag to avoid double-binding).
+ */
+function initDropdown(wrap) {
+  if (wrap._svcDdInit) return;
+  wrap._svcDdInit = true;
+
+  var trigger = wrap.querySelector('.svc-dd-trigger');
+  var panel   = wrap.querySelector('.svc-dd-panel');
+  var search  = wrap.querySelector('.svc-dd-search');
+  var clear   = wrap.querySelector('.svc-dd-search-clear');
+  var list    = wrap.querySelector('.svc-dd-list');
+
+  // Open / close on trigger click
+  trigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var isOpen = panel.classList.contains('open');
+    if (isOpen) closePanel(wrap);
+    else        openPanel(wrap);
+  });
+
+  // Keyboard navigation on trigger
+  trigger.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(wrap); }
+    if (e.key === 'Escape') closePanel(wrap);
+  });
+
+  // Live search filtering with AJAX, debounce and caching
+  search.addEventListener('input', function () {
+    var term = (search.value || '').trim();
+    var hidden = wrap.querySelector('.svc-hidden-select');
+    var selectedId = hidden ? hidden.value : '';
+    updateClearBtn(wrap);
+
+    // Clear previous timer
+    if (wrap._svcDdTimer) clearTimeout(wrap._svcDdTimer);
+
+    // If term too short, clear results client-side
+    if (!term || term.length < 2) {
+      // render empty results (no preloaded services)
+      window.SERVICES_DATA = [];
+      renderOptions(panel, '', selectedId);
+      return;
+    }
+
+    // Debounce AJAX
+    wrap._svcDdTimer = setTimeout(function () {
+      var key = term.toLowerCase();
+      if (SVC_CACHE[key]) {
+        window.SERVICES_DATA = SVC_CACHE[key];
+        renderOptions(panel, term, selectedId);
+        return;
+      }
+
+      // Fetch search results from server
+      fetch('/api/search-services/?q=' + encodeURIComponent(term), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var results = (data && data.results) ? data.results : [];
+          // Map results to internal format expected by buildOptionsList
+          var mapped = results.map(function (it) {
+            return {
+              id: it.id,
+              name: it.text || it.name || '',
+              service_name: it.text || it.service_name || it.name || '',
+              description: it.description || it.service_name || it.name || '',
+              img: it.image_url || it.image || it.img || '',
+              price: it.price || 0,
+              unit: it.unit || 'Nos'
+            };
+          });
+          SVC_CACHE[key] = mapped;
+          window.SERVICES_DATA = mapped;
+          renderOptions(panel, term, selectedId);
+        })
+        .catch(function (err) {
+          console.error('Service search error', err);
+          window.SERVICES_DATA = [];
+          renderOptions(panel, term, selectedId);
+        });
+    }, 300);
+  });
+
+  // Clear button
+  clear.addEventListener('click', function (e) {
+    e.stopPropagation();
+    search.value = '';
+    updateClearBtn(wrap);
+    var hidden = wrap.querySelector('.svc-hidden-select');
+    renderOptions(panel, '', hidden ? hidden.value : '');
+    search.focus();
+  });
+
+  // Click on an option
+  list.addEventListener('click', function (e) {
+    var opt = e.target.closest('.svc-dd-option');
+    if (!opt) return;
+    e.stopPropagation();
+    selectOption(wrap, opt);
+  });
+
+  // Prevent search-area clicks from bubbling to document (which would close panel)
+  panel.addEventListener('click', function (e) { e.stopPropagation(); });
+
+  // Keyboard: arrow keys + Enter inside the list
+  search.addEventListener('keydown', function (e) {
+    var opts = Array.from(list.querySelectorAll('.svc-dd-option'));
+    var focused = list.querySelector('.svc-dd-option.focused');
+    var idx = focused ? opts.indexOf(focused) : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (focused) focused.classList.remove('focused');
+      idx = Math.min(idx + 1, opts.length - 1);
+      if (opts[idx]) { opts[idx].classList.add('focused'); opts[idx].scrollIntoView({ block: 'nearest' }); }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (focused) focused.classList.remove('focused');
+      idx = Math.max(idx - 1, 0);
+      if (opts[idx]) { opts[idx].classList.add('focused'); opts[idx].scrollIntoView({ block: 'nearest' }); }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focused) { selectOption(wrap, focused); }
+      else if (opts.length === 1) { selectOption(wrap, opts[0]); }
+    } else if (e.key === 'Escape') {
+      closePanel(wrap);
+      trigger.focus();
+    }
+  });
+}
+
+/**
+ * Init all existing dropdowns + observe for dynamically added rows.
+ */
+function initAllDropdowns() {
+  document.querySelectorAll('.svc-dd-wrap').forEach(initDropdown);
+}
+
+// Close all panels when clicking outside
+document.addEventListener('click', function () {
+  document.querySelectorAll('.svc-dd-wrap').forEach(closePanel);
+});
+
+/* ─────────────────────────────────────────────────────────
+   ROW HELPERS
+   ───────────────────────────────────────────────────────── */
+
+function updateRowCount() {
+  var n = document.querySelectorAll('#tableBody tr').length;
+  document.getElementById('rowCount').textContent = n + ' item' + (n !== 1 ? 's' : '');
+}
+function reIndex() {
+  document.querySelectorAll('#tableBody tr').forEach(function (tr, i) {
+    var sl = tr.querySelector('.td-sl');
+    if (sl) sl.textContent = i + 1;
+    // keep file input names indexed so server can map uploads to rows
+    try {
+      var file = tr.querySelector('input.row-file[type=file]');
+      if (file) file.name = 'row_image_' + i;
+      var hid = tr.querySelector('input[name="service_image_url"]');
+      if (hid) {
+        // keep hidden input name stable
+        hid.name = 'service_image_url_' + i;
+      }
+      var svcHidden = tr.querySelector('select.svc-hidden-select');
+      if (svcHidden) svcHidden.name = 'service_id';
+      var svcName = tr.querySelector('input[name="service_name"]');
+      if (svcName) svcName.name = 'service_name';
+      var desc = tr.querySelector('textarea[name="description"]');
+      if (desc) desc.name = 'description';
+      var qty = tr.querySelector('input[name="quantity"]');
+      if (qty) qty.name = 'quantity';
+      var price = tr.querySelector('input[name="price"]');
+      if (price) price.name = 'price';
+      var unit = tr.querySelector('select[name="unit"]');
+      if (unit) unit.name = 'unit';
+    } catch (e) { console.error('reIndex error', e); }
+  });
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+/* ── Service dropdown HTML for a new row ── */
+function buildServiceDropdownHtml(selectedId) {
+  selectedId = selectedId || '';
+  // Build the hidden select options
+  var optionsHtml = '<option value="">— select service —</option>';
+  window.SERVICES_DATA.forEach(function (s) {
+    if (!s.id) return;
+    optionsHtml +=
+      '<option value="' + escapeAttr(String(s.id)) + '"' +
+      ' data-img="' + escapeAttr(s.img || '') + '"' +
+      ' data-price="' + (parseFloat(s.price) || 0) + '"' +
+      ' data-unit="' + escapeAttr(s.unit || 'Nos') + '"' +
+      ' data-service-name="' + escapeAttr(s.service_name || s.name || '') + '"' +
+      ' data-description="' + escapeAttr(s.description || s.service_name || s.name || '') + '"' +
+      (String(s.id) === String(selectedId) ? ' selected' : '') +
+      '>' + escapeHtml(s.service_name || s.name) + '</option>';
+  });
+
+  // Find display label for selected
+  var displayLabel = '— select service —';
+  if (selectedId) {
+    var found = window.SERVICES_DATA.find(function (s) { return String(s.id) === String(selectedId); });
+    if (found) displayLabel = found.service_name || found.name;
+  }
+  var hasValue = !!selectedId;
+
+  return (
+    '<div class="svc-dd-wrap">' +
+      '<div class="svc-dd-trigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">' +
+        '<span class="trigger-label' + (hasValue ? ' has-value' : '') + '">' + escapeHtml(displayLabel) + '</span>' +
+        '<span class="trigger-arrow">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="6 9 12 15 18 9"/></svg>' +
+        '</span>' +
+      '</div>' +
+      '<div class="svc-dd-panel" role="listbox">' +
+        '<div class="svc-dd-search-wrap">' +
+          '<div class="svc-dd-search-inner">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            '<input type="text" class="svc-dd-search" placeholder="Search service..." autocomplete="off" spellcheck="false">' +
+            '<span class="svc-dd-search-clear" title="Clear">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+              '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="svc-dd-list"></div>' +
+        '<div class="svc-dd-empty">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+          'No services found' +
+        '</div>' +
+      '</div>' +
+      '<select name="service_id" class="svc-hidden-select" style="display:none;" aria-hidden="true">' +
+        optionsHtml +
+      '</select>' +
+    '</div>'
+  );
+}
+</script>
+
+<script>
+function addRow() {
+  var tbody = document.getElementById('tableBody');
+  var n = tbody.querySelectorAll('tr').length + 1;
+
+  tbody.insertAdjacentHTML('beforeend',
+    '<tr data-manual="0">' +
+    '  <td class="td-sl">' + n + '</td>' +
+    '  <td class="td-img">' +
+    '    <div class="img-thumb-wrap" title="Click to upload image">' +
+    '      <img src="" alt="">' +
+    '      <div class="img-placeholder">' + IMG_PLACEHOLDER_SVG +
+    '        <span>Auto/<br>Upload</span>' +
+    '      </div>' +
+    '      <input type="file" name="row_image_' + (n-1) + '" class="row-file" accept="image/*" onchange="handleImgUpload(this)" title="">' +
+    '      <input type="hidden" name="service_image_url" value="">' +
+    '    </div>' +
+    '  </td>' +
+    '  <td class="td-service">' +
+         buildServiceDropdownHtml() +
+    '    <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">' +
+    '      <button type="button" class="btn btn-ghost btn-sm" onclick="toggleServiceInput(this)">Add / Type</button>' +
+    '      <small style="color:var(--text-3);">or select from list</small>' +
+    '    </div>' +
+    '    <div class="service-type-wrapper" style="display:none; margin-top:6px; width:100%;">' +
+    '      <input type="text" name="service_name" list="services-list" class="service-input" placeholder="Type new service" style="width:100%;">' +
+    '    </div>' +
+    '    <textarea name="description" class="desc-box description-input" rows="1"' +
+    '      placeholder="Item description\u2026" style="margin-top:5px;"' +
+    '      oninput="autoResize(this)"></textarea>' +
+    '    <input type="hidden" name="raw_quantity" value="1">' +
+    '    <input type="hidden" name="manual_quantity" value="0">' +
+    '  </td>' +
+    '  <td class="td-qty">' +
+    '    <input type="number" name="quantity" class="inp-table inp-qty"' +
+    '      step="any" min="0" value="1" oninput="calculate()" placeholder="0">' +
+    '  </td>' +
+    '  <td class="td-unit">' +
+    '    <select name="unit" class="sel-unit">' + unitOptions() + '</select>' +
+    '  </td>' +
+    '  <td>' +
+    '    <input type="number" name="price" class="inp-table inp-price"' +
+    '      step="0.01" min="0" value="0" oninput="calculate()" placeholder="0.00">' +
+    '  </td>' +
+    '  <td class="rowTotal row-total">&#x20B9; 0.00</td>' +
+    '  <td class="td-del">' +
+    '    <button type="button" class="del-btn" onclick="removeRow(this)" title="Remove row">' +
+    DEL_BTN_SVG +
+    '    </button>' +
+    '  </td>' +
+    '</tr>'
+  );
+
+  // Wire up the new dropdown
+  var newRow = tbody.querySelectorAll('tr');
+  var lastRow = newRow[newRow.length - 1];
+  var newWrap = lastRow.querySelector('.svc-dd-wrap');
+  if (newWrap) initDropdown(newWrap);
+
+  reIndex();
+  calculate();
+  updateRowCount();
+  toast('success', 'Row added');
+}
+
+/* ── Remove Row ── */
+function removeRow(btn) {
+  btn.closest('tr').remove();
+  calculate();
+  updateRowCount();
+  reIndex();
+  toast('info', 'Row removed');
+}
+
+/* ── Service auto-fill (called when hidden select value changes) ── */
+function onServiceChange(sel) {
+  var opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  var tr = sel.closest('tr');
+  if (!tr) return;
+  applyServiceDataToRow(tr, opt);
+}
+
+function applyServiceDataToRow(tr, opt) {
+  if (!tr || !opt) return;
+  var ds = (opt && opt.dataset) ? opt.dataset : opt || {};
+  var imgUrl  = ds.img || ds.image || '';
+  var price   = parseFloat(ds.price || '0') || 0;
+  var unit    = ds.unit || 'Nos';
+  var desc    = decodeServiceDescription(ds.description || ds.serviceName || '');
+  var svcName = ds.serviceName || ds.service_name || ds.name || '';
+
+  setRowImage(tr, imgUrl);
+
+  var priceEl = tr.querySelector('[name="price"]');
+  if (priceEl) priceEl.value = price;
+
+  var unitEl = tr.querySelector('[name="unit"]');
+  if (unitEl) {
+    Array.from(unitEl.options).forEach(function (o, i) {
+      if (o.text === unit || o.value === unit) unitEl.selectedIndex = i;
+    });
+  }
+
+  var descEl = tr.querySelector('[name="description"]') || tr.querySelector('.description-input');
+  if (descEl) { descEl.value = desc || ''; autoResize(descEl); }
+
+  var svcNameEl = tr.querySelector('[name="service_name"]');
+  if (svcNameEl) svcNameEl.value = svcName;
+
+  var imgHidden = tr.querySelector('input[name="service_image_url"]');
+  if (imgHidden) imgHidden.value = imgUrl;
+
+  calculate();
+}
+
+function setRowImage(tr, url) {
+  var wrap = tr.querySelector('.img-thumb-wrap');
+  if (!wrap) return;
+  var img = wrap.querySelector('img');
+  var ph  = wrap.querySelector('.img-placeholder');
+  var hid = wrap.querySelector('[name="service_image_url"]');
+  if (url) {
+    img.src = url; img.classList.add('loaded'); img.style.display = 'block';
+    if (ph)  ph.style.display = 'none';
+    if (hid) hid.value = url;
+  } else {
+    img.src = ''; img.classList.remove('loaded'); img.style.display = 'none';
+    if (ph)  ph.style.display = 'flex';
+    if (hid) hid.value = '';
+  }
+}
+
+/* ── Manual image upload ── */
+function handleImgUpload(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (e) { setRowImage(input.closest('tr'), e.target.result); };
+  reader.readAsDataURL(file);
+}
+
+/* ── AJAX: auto-create service ── */
+var _svcSaveLock = {};
+function saveNewServiceIfNeeded(el) {
+  try {
+    var tr = el.closest('tr'); if (!tr) return;
+    var wrap   = tr.querySelector('.svc-dd-wrap');
+    var hidden = wrap ? wrap.querySelector('.svc-hidden-select') : null;
+    if (hidden && hidden.value) return;
+    var name = (el.value || '').trim(); if (!name) return;
+    var rowIndex = Array.prototype.indexOf.call(document.querySelectorAll('#tableBody tr'), tr);
+    if (_svcSaveLock[rowIndex]) return;
+    _svcSaveLock[rowIndex] = true;
+
+    var price = (tr.querySelector('[name="price"]') || { value: '0' }).value || '0';
+    var unit  = (tr.querySelector('[name="unit"]')  || { value: 'Nos' }).value || 'Nos';
+    var desc  = (tr.querySelector('[name="description"]') || { value: name }).value || name;
+    var fileInput = tr.querySelector('input.row-file[type=file]');
+    var fd = new FormData();
+    fd.append('name', name); fd.append('price', price); fd.append('unit', unit); fd.append('description', desc);
+    if (fileInput && fileInput.files && fileInput.files[0]) fd.append('image', fileInput.files[0]);
+
+    fetch('/api/create-service/', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: fd
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || data.error) { toast('error', data && data.error ? data.error : 'Could not save service'); return; }
+      var newSvc = {
+        id: String(data.id), name: data.name,
+        service_name: data.service_name || data.name,
+        description: data.description || '',
+        img: data.image || data.image_url || '',
+        price: parseFloat(data.price || 0), unit: unit
+      };
+      window.SERVICES_DATA.push(newSvc);
+
+      // Add to hidden select + sync custom dropdown
+      if (hidden) {
+        var opt = document.createElement('option');
+        opt.value = data.id; opt.text = data.name;
+        opt.setAttribute('data-img',          newSvc.img);
+        opt.setAttribute('data-price',        newSvc.price);
+        opt.setAttribute('data-unit',         newSvc.unit);
+        opt.setAttribute('data-service-name', newSvc.service_name);
+        opt.setAttribute('data-description',  newSvc.description);
+        hidden.appendChild(opt);
+        hidden.value = data.id;
+        onServiceChange(hidden);
+
+        // Update trigger label
+        if (wrap) {
+          var lbl = wrap.querySelector('.trigger-label');
+          if (lbl) { lbl.textContent = newSvc.service_name || newSvc.name; lbl.classList.add('has-value'); }
+        }
+      }
+      toast('success', 'Service saved');
+    })
+    .catch(function () { toast('error', 'Could not save service'); })
+    .finally(function () { delete _svcSaveLock[rowIndex]; });
+  } catch (e) { console.error(e); }
+}
+
+document.getElementById('tableBody').addEventListener('blur', function (e) {
+  if (e.target && e.target.name === 'service_name') saveNewServiceIfNeeded(e.target);
+}, true);
+
+/* ── Totals calculation ── */
+function calculate() {
+  // Use integer cents arithmetic to avoid floating point rounding issues
+  var subCents = 0;
+  document.querySelectorAll('#tableBody tr').forEach(function (row) {
+    var priceEl = row.querySelector('[name="price"]');
+    var qtyEl   = row.querySelector('[name="quantity"]');
+    var p = parseFloat((priceEl ? priceEl.value : '0').replace(',', '.')) || 0;
+    var q = parseFloat((qtyEl   ? qtyEl.value   : '0').replace(',', '.')) || 0;
+    var tCents = Math.round((p * q) * 100);
+    var t = (tCents / 100);
+    var cell = row.querySelector('.rowTotal');
+    if (cell) cell.textContent = '\u20B9 ' + t.toFixed(2);
+    subCents += tCents;
+  });
+  var sub = subCents / 100;
+  var taxType = (document.querySelector('input[name="tax_type"]:checked') || {}).value || 'none';
+  var cg = 0, sg = 0, ig = 0;
+  if (taxType === 'gst') {
+    cg = Math.round((sub * 0.09) * 100) / 100;
+    sg = Math.round((sub * 0.09) * 100) / 100;
+    document.getElementById('cgstRow').style.display = '';
+    document.getElementById('sgstRow').style.display = '';
+    document.getElementById('igstRow').style.display = 'none';
+  } else if (taxType === 'igst') {
+    ig = Math.round((sub * 0.18) * 100) / 100;
+    document.getElementById('cgstRow').style.display = 'none';
+    document.getElementById('sgstRow').style.display = 'none';
+    document.getElementById('igstRow').style.display = '';
+  } else {
+    document.getElementById('cgstRow').style.display = 'none';
+    document.getElementById('sgstRow').style.display = 'none';
+    document.getElementById('igstRow').style.display = 'none';
+  }
+  var discEl = document.getElementById('discount');
+  var disc = Math.max(0, parseFloat((discEl ? discEl.value : '0').replace(',', '.')) || 0);
+  document.getElementById('discountDisplay').textContent = disc.toFixed(2);
+  var grand = Math.max(0, Number((sub + cg + sg + ig - disc).toFixed(2)));
+  document.getElementById('subtotal').textContent   = sub.toFixed(2);
+  document.getElementById('cgst').textContent       = cg.toFixed(2);
+  document.getElementById('sgst').textContent       = sg.toFixed(2);
+  document.getElementById('igst').textContent       = ig.toFixed(2);
+  document.getElementById('grandTotal').textContent = grand.toFixed(2);
+}
+
+/* ── Insert measurement row ── */
+function insertMeasRow(desc, imgUrl, qty, unit, price, serviceId, rawQty) {
+  var tbody = document.getElementById('tableBody');
+  var n = tbody.querySelectorAll('tr').length + 1;
+  desc = decodeServiceDescription(desc || '');
+  var imgBlock = imgUrl
+    ? '<img src="' + imgUrl + '" alt="" class="loaded" style="display:block;">'
+    : '<img src="" alt="">';
+  var phStyle = imgUrl ? ' style="display:none;"' : '';
+
+  tbody.insertAdjacentHTML('beforeend',
+    '<tr>' +
+    '  <td class="td-sl">' + n + '</td>' +
+    '  <td class="td-img">' +
+    '    <div class="img-thumb-wrap" title="Click to upload image">' +
+         imgBlock +
+    '      <div class="img-placeholder"' + phStyle + '>' + IMG_PLACEHOLDER_SVG +
+    '        <span>Auto/<br>Upload</span>' +
+    '      </div>' +
+    '      <input type="file" name="row_image_' + (n-1) + '" class="row-file" accept="image/*" onchange="handleImgUpload(this)" title="">' +
+    '      <input type="hidden" name="service_image_url" value="' + escapeAttr(imgUrl || '') + '">' +
+    '    </div>' +
+    '  </td>' +
+    '  <td class="td-service">' +
+         buildServiceDropdownHtml(serviceId) +
+    '    <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">' +
+    '      <button type="button" class="btn btn-ghost btn-sm" onclick="toggleServiceInput(this)">Add / Type</button>' +
+    '      <small style="color:var(--text-3);">or select from list</small>' +
+    '    </div>' +
+    '    <div class="service-type-wrapper" style="display:none; margin-top:6px; width:100%;">' +
+    '      <input type="text" name="service_name" list="services-list" class="service-input" placeholder="Type new service" style="width:100%;">' +
+    '    </div>' +
+    '    <textarea name="description" class="desc-box description-input" rows="1"' +
+    '      style="margin-top:5px;" oninput="autoResize(this)">' + escapeHtml(desc || '') + '</textarea>' +
+    '    <input type="hidden" name="raw_quantity" value="' + escapeAttr(String(rawQty || qty)) + '">' +
+    '    <input type="hidden" name="manual_quantity" value="0">' +
+    '  </td>' +
+    '  <td class="td-qty">' +
+    '    <input type="number" name="quantity" class="inp-table inp-qty"' +
+    '      step="any" min="0" value="' + escapeAttr(String(qty)) + '" oninput="calculate()">' +
+    '  </td>' +
+    '  <td class="td-unit">' +
+    '    <select name="unit" class="sel-unit">' + unitOptions(unit) + '</select>' +
+    '  </td>' +
+    '  <td>' +
+    '    <input type="number" name="price" class="inp-table inp-price"' +
+    '      step="0.01" min="0" value="' + escapeAttr(String(price)) + '" oninput="calculate()">' +
+    '  </td>' +
+    '  <td class="rowTotal row-total">&#x20B9; 0.00</td>' +
+    '  <td class="td-del">' +
+    '    <button type="button" class="del-btn" onclick="removeRow(this)" title="Remove row">' +
+    DEL_BTN_SVG +
+    '    </button>' +
+    '  </td>' +
+    '</tr>'
+  );
+
+  // Wire up new dropdown
+  var rows = tbody.querySelectorAll('tr');
+  var lastRow = rows[rows.length - 1];
+  var newWrap = lastRow.querySelector('.svc-dd-wrap');
+  if (newWrap) initDropdown(newWrap);
+
+  // If there's a serviceId, sync the trigger label
+  if (serviceId && newWrap) {
+    var found = window.SERVICES_DATA.find(function (s) { return String(s.id) === String(serviceId); });
+    if (found) {
+      var lbl = newWrap.querySelector('.trigger-label');
+      if (lbl) { lbl.textContent = found.service_name || found.name; lbl.classList.add('has-value'); }
+    }
+  }
+}
+
+/* ── Load Measurements ── */
+function loadMeasurements() {
+  var sel = document.querySelector('select[name="customer"]');
+  var id  = sel ? sel.value : '';
+  if (!id) { toast('error', 'Select a customer first'); return; }
+
+  fetch('/customer/' + id + '/measurements/json/', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.items || !data.items.length) { toast('info', 'No measurements found'); return; }
+      document.getElementById('tableBody').innerHTML = '';
+
+      var flat = [];
+      data.items.forEach(function (it) {
+        var img = it.image_url || '';
+        var baseDesc = it.description || it.service_name || it.custom_item_name || 'Item';
+        var price = parseFloat(it.price_per_unit || 0) || 0;
+        var unit  = it.unit || 'Sq Ft';
+        var serviceId = it.service_id || '';
+
+        if (it.subs && it.subs.length) {
+          it.subs.forEach(function (s) {
+            var w = s.width || ''; var h = s.height || '';
+            var l = s.length || ''; var q = parseFloat(s.quantity || '1') || 1;
+            var area = (w && h) ? parseFloat(w) * parseFloat(h) * q : (l ? parseFloat(l) * q : q);
+            flat.push({ service_id: serviceId, service_name: it.service_name || '', description: baseDesc, image_url: img, unit: unit, price: price, area: area });
+          });
+        } else {
+          flat.push({ service_id: serviceId, service_name: it.service_name || '', description: baseDesc, image_url: img, unit: unit, price: price, area: parseFloat(it.quantity || 0) || 0 });
+        }
+      });
+
+      // Group measurement subitems by service (or by description+unit) and sum areas
+      var groups = {};
+      flat.forEach(function(it){
+        var key = it.service_id ? ('svc_' + String(it.service_id)) : ('desc_' + (it.description||'').trim() + '::' + (it.unit||''));
+        if (!groups[key]) {
+          groups[key] = {
+            service_id: it.service_id || '',
+            description: it.description || it.service_name || 'Item',
+            image_url: it.image_url || '',
+            unit: it.unit || 'Sq Ft',
+            price: it.price || 0,
+            area: 0
+          };
+        }
+        groups[key].area += Number(it.area || 0);
+      });
+
+      var count = 0;
+      Object.keys(groups).forEach(function(k){
+        var g = groups[k];
+        insertMeasRow(g.description, g.image_url, (Number(g.area||0)).toFixed(3), g.unit, g.price, g.service_id || '', (Number(g.area||0)).toFixed(3));
+        count++;
+      });
+      calculate(); updateRowCount(); reIndex();
+      toast('success', count + ' grouped measurement rows loaded');
+    })
+    .catch(function () { toast('error', 'Could not load measurements'); });
+}
+
+/* ── Mapping Preview Modal ── */
+function previewMeasurements() {
+  var sel = document.querySelector('select[name="customer"]');
+  var id  = sel ? sel.value : '';
+  if (!id) { toast('error', 'Select a customer first'); return; }
+
+  fetch('/customer/' + id + '/measurements/json/', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data.items || !data.items.length) { toast('info', 'No measurements found'); return; }
+      var container = document.getElementById('mappingPreviewBody');
+      container.innerHTML = '';
+      data.items.forEach(function (it) {
+        var header = document.createElement('div');
+        header.style.cssText = 'display:flex; gap:10px; align-items:center; margin-bottom:6px;';
+        header.innerHTML =
+          '<img src="' + (it.image_url || '') + '" style="width:48px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;">' +
+          '<div><b style="font-size:13px;">' + escapeHtml(it.service_name || it.custom_item_name || it.description) + '</b>' +
+          '<br><small style="color:#6b7280;">' + escapeHtml(it.service_code || '') + '</small></div>';
+        container.appendChild(header);
+
+        if (it.subs && it.subs.length) {
+          var list = document.createElement('div');
+          list.style.cssText = 'margin:4px 0 14px 56px; display:flex; flex-direction:column; gap:6px;';
+          it.subs.forEach(function (s) {
+            var w = s.width || ''; var h = s.height || ''; var l = s.length || ''; var q = s.quantity || '1';
+            var dims = (w && h) ? (w + ' \xD7 ' + h) : (l || '');
+            var row = document.createElement('div');
+            row.innerHTML =
+              '<label style="display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer;">' +
+              '<input type="checkbox"' +
+              ' data-parent="' + escapeAttr(it.measurement_item_id) + '"' +
+              ' data-w="' + w + '" data-h="' + h + '" data-l="' + l + '" data-q="' + q + '"' +
+              ' data-service="' + escapeAttr(String(it.service_id || '')) + '"' +
+              ' data-img="' + escapeAttr(it.image_url || '') + '"' +
+              ' data-price="' + (it.price_per_unit || 0) + '"' +
+              ' data-unit="' + escapeAttr(it.unit || 'Sq Ft') + '"' +
+              ' data-desc="' + escapeAttr(it.description || it.service_name || '') + '"' +
+              ' checked style="accent-color:var(--gold);">' +
+              ' <span>' + escapeHtml(dims || 'Qty ' + q) + ' \u2014 ' + escapeHtml(it.service_name || it.description) + '</span></label>';
+            list.appendChild(row);
+          });
+          container.appendChild(list);
+        }
+      });
+      document.getElementById('mappingModal').classList.add('show');
+    })
+    .catch(function () { toast('error', 'Could not load measurements'); });
+}
+
+function applyMapping(mergeSubitems) {
+  var modal  = document.getElementById('mappingModal');
+  var checks = modal.querySelectorAll('input[type=checkbox]');
+  var groups = {};
+  checks.forEach(function (ch) {
+    if (!ch.checked) return;
+    var parent = ch.dataset.parent || 'p';
+    if (!groups[parent]) groups[parent] = [];
+    groups[parent].push(ch);
+  });
+  document.getElementById('tableBody').innerHTML = '';
+  Object.keys(groups).forEach(function (parent) {
+    var arr = groups[parent];
+    if (mergeSubitems) {
+      var totalArea = 0, serviceId = '', imgUrl = '', price = 0, unit = 'Sq Ft', desc = '';
+      arr.forEach(function (ch) {
+        var w = parseFloat(ch.dataset.w || '0') || 0;
+        var h = parseFloat(ch.dataset.h || '0') || 0;
+        var l = parseFloat(ch.dataset.l || '0') || 0;
+        var q = parseFloat(ch.dataset.q || '1') || 1;
+        serviceId = ch.dataset.service || serviceId; imgUrl = ch.dataset.img || imgUrl;
+        price = parseFloat(ch.dataset.price || '0') || price; unit = ch.dataset.unit || unit;
+        desc  = ch.dataset.desc || desc;
+        if (w && h) totalArea += w * h * q; else if (l) totalArea += l * q; else totalArea += q;
+      });
+      insertMeasRow(desc || 'Merged items', imgUrl, totalArea.toFixed(3), unit, price, serviceId, '1');
+    } else {
+      arr.forEach(function (ch) {
+        var w = ch.dataset.w || ''; var h = ch.dataset.h || '';
+        var l = ch.dataset.l || ''; var q = ch.dataset.q || '1';
+        var area = (w && h)
+          ? (parseFloat(w) * parseFloat(h) * parseFloat(q)).toFixed(3)
+          : (l ? (parseFloat(l) * parseFloat(q)).toFixed(3) : parseFloat(q).toFixed(3));
+        insertMeasRow(ch.dataset.desc || 'Item', ch.dataset.img || '', area, ch.dataset.unit || 'Sq Ft', parseFloat(ch.dataset.price || '0') || 0, ch.dataset.service || '', q);
+      });
+    }
+  });
+  calculate(); updateRowCount(); reIndex();
+  document.getElementById('mappingModal').classList.remove('show');
+}
+
+/* ── Term Modal ── */
+function openTermModal() {
+  var m = document.getElementById('termModal');
+  delete m.dataset.editId;
+  document.getElementById('termModalTitle').textContent = 'Add New Term';
+  document.getElementById('termSaveBtn').textContent   = 'Save Term';
+  document.getElementById('newTermText').value = '';
+  m.classList.add('show');
+  setTimeout(function () { document.getElementById('newTermText').focus(); }, 120);
+}
+function openEditTerm(id, text) {
+  var m = document.getElementById('termModal');
+  m.dataset.editId = id;
+  document.getElementById('termModalTitle').textContent = 'Edit Term';
+  document.getElementById('termSaveBtn').textContent   = 'Update Term';
+  document.getElementById('newTermText').value = text || '';
+  m.classList.add('show');
+  setTimeout(function () { document.getElementById('newTermText').focus(); }, 120);
+}
+function closeTermModal() {
+  document.getElementById('termModal').classList.remove('show');
+  document.getElementById('newTermText').value = '';
+}
+
+document.addEventListener('click', function (e) {
+  var m  = document.getElementById('termModal');
+  if (m && m.classList.contains('show') && e.target === m) closeTermModal();
+  var mm = document.getElementById('mappingModal');
+  if (mm && mm.classList.contains('show') && e.target === mm) mm.classList.remove('show');
+});
+
+function submitTerm() {
+  var text   = document.getElementById('newTermText').value.trim();
+  if (!text) { toast('error', 'Enter term text'); return; }
+  var modal  = document.getElementById('termModal');
+  var editId = modal.dataset.editId || null;
+  var fd     = new FormData();
+  fd.append('text', text);
+  var endpoint = editId
+    ? (modal.dataset.editTermUrl || '#').replace('/0/', '/' + editId + '/')
+    : (modal.dataset.addTermUrl  || '#');
+
+  fetch(endpoint, {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: fd
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    if (data.error) { toast('error', data.error); return; }
+    if (editId) {
+      var span = document.querySelector('.term-text[data-term-id="' + editId + '"]');
+      if (span) span.textContent = data.text;
+      toast('success', 'Term updated');
+    } else {
+      var list  = document.getElementById('termsList');
+      var empty = list.querySelector('.empty-state');
+      if (empty) empty.remove();
+      list.insertAdjacentHTML('afterbegin',
+        '<div class="term-row">' +
+        '  <label>' +
+        '    <input type="checkbox" name="terms" value="' + data.id + '" checked' +
+        '      onchange="onTermCheck(this)"' +
+        '      style="width:15px; height:15px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;">' +
+        '    <span class="term-text" data-term-id="' + data.id + '">' + escapeHtml(data.text) + '</span>' +
+        '  </label>' +
+        '  <div style="display:flex; gap:8px; align-items:center;">' +
+        '    <input type="number" min="0" name="term_order_' + data.id + '" placeholder="Order"' +
+        '      style="width:80px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); font-size:13px;">' +
+        '    <button type="button" class="btn btn-ghost btn-sm"' +
+        '      onclick="openEditTerm(\'' + data.id + '\', this.closest(\'.term-row\').querySelector(\'.term-text\').textContent.trim())">' +
+        '      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' +
+        '        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>' +
+        '        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>' +
+        '      </svg>Edit' +
+        '    </button>' +
+        '  </div>' +
+        '</div>'
+      );
+      toast('success', 'Term added');
+    }
+    closeTermModal();
+  })
+  .catch(function () { toast('error', editId ? 'Could not update term' : 'Could not save term'); });
+}
+
+function onTermCheck(cb) {
+  var row = cb.closest('.term-row');
+  var oi  = row ? row.querySelector('input[type="number"]') : null;
+  if (cb.checked) {
+    if (oi && !oi.value) {
+      var vals = Array.from(document.querySelectorAll('.term-row input[type="number"]'))
+        .map(function (i) { return parseInt(i.value); })
+        .filter(function (v) { return !isNaN(v); });
+      oi.value = vals.length ? Math.max.apply(null, vals) + 1 : 1;
+    }
+  } else { if (oi) oi.value = ''; }
+}
+
+/* ── Toggle service text input ── */
+function toggleServiceInput(btn) {
+  try {
+    var tr = btn.closest('tr');
+    var wrapper = tr.querySelector('.service-type-wrapper');
+    if (!wrapper) return;
+    wrapper.style.display = (wrapper.style.display === 'none' || wrapper.style.display === '') ? 'block' : 'none';
+    if (wrapper.style.display === 'block') {
+      var inp = wrapper.querySelector('input[name="service_name"]');
+      if (inp) inp.focus();
+    }
+  } catch (e) { console.error(e); }
+}
+
+/* ── Payment ── */
+function togglePaymentCard(show) {
+  document.getElementById('paymentCard').style.display = show ? '' : 'none';
+}
+function showPaymentMode(mode) {
+  var existing = document.getElementById('existingArea');
+  var nw = document.getElementById('newArea');
+  var me = document.getElementById('modeExistingBtn');
+  var mn = document.getElementById('modeNewBtn');
+  if (mode === 'new') {
+    if (existing) existing.style.display = 'none';
+    if (nw) nw.style.display = '';
+    if (me) { me.classList.remove('btn-gold'); me.classList.add('btn-ghost'); }
+    if (mn) { mn.classList.remove('btn-ghost'); mn.classList.add('btn-gold'); }
+  } else {
+    if (existing) existing.style.display = '';
+    if (nw) nw.style.display = 'none';
+    if (me) { me.classList.remove('btn-ghost'); me.classList.add('btn-gold'); }
+    if (mn) { mn.classList.remove('btn-gold'); mn.classList.add('btn-ghost'); }
+  }
+}
+function onSelectExisting(sel) {
+  var opt = sel.options[sel.selectedIndex];
+  var summary = document.getElementById('accountSummary');
+  if (!opt || !opt.value) { if (summary) summary.style.display = 'none'; return; }
+  var ds = opt.dataset || {};
+  document.getElementById('summaryAccountName').textContent   = ds.accountName || '';
+  document.getElementById('summaryBank').textContent          = ds.bankName || '';
+  document.getElementById('summaryAccountNumber').textContent = ds.accountNumber || '';
+  document.getElementById('summaryIfsc').textContent          = ds.ifsc || '';
+  document.getElementById('summaryPhone').textContent         = ds.upi || ds.phone || '';
+  if (summary) summary.style.display = '';
+  var nw = document.getElementById('newArea'); if (nw) nw.style.display = 'none';
+}
+function choosePaymentType(type) {
+  var acctType = document.getElementById('paymentAccountType');
+  var t = String(type || '').toLowerCase();
+  if (acctType) acctType.value = t;
+  var bank = document.getElementById('bankFields');
+  var upi  = document.getElementById('upiFields');
+  if (t === 'upi') { if (bank) bank.style.display = 'none'; if (upi) upi.style.display = ''; }
+  else             { if (bank) bank.style.display = '';     if (upi) upi.style.display = 'none'; }
+}
+function togglePaymentFields() {
+  var typeEl = document.getElementById('paymentAccountType');
+  var t = typeEl && typeEl.value ? String(typeEl.value).toLowerCase() : 'business';
+  var bank = document.getElementById('bankFields');
+  var upi  = document.getElementById('upiFields');
+  if (t === 'upi') { if (bank) bank.style.display = 'none'; if (upi) upi.style.display = ''; }
+  else             { if (bank) bank.style.display = '';     if (upi) upi.style.display = 'none'; }
+}
+function editSelectedPayment() {
+  var sel = document.getElementById('savedPaymentSelect'); if (!sel) return;
+  var opt = sel.options[sel.selectedIndex]; if (!opt || !opt.value) return;
+  var ds = opt.dataset || {};
+  document.getElementById('paymentId').value = opt.value;
+  var acctType = (ds.accountType || 'business');
+  choosePaymentType(acctType);
+  if (document.getElementById('paymentAccountName')) document.getElementById('paymentAccountName').value = ds.accountName || '';
+  if (document.getElementById('paymentHolderName'))  document.getElementById('paymentHolderName').value  = ds.holderName  || '';
+  if (String(acctType).toLowerCase() === 'upi') {
+    if (document.getElementById('paymentUpi'))       document.getElementById('paymentUpi').value       = ds.upi || ds.phone || '';
+    if (document.getElementById('paymentUpiHolder')) document.getElementById('paymentUpiHolder').value = ds.holderName || '';
+  } else {
+    if (document.getElementById('paymentBankName'))      document.getElementById('paymentBankName').value      = ds.bankName      || '';
+    if (document.getElementById('paymentAccountNumber')) document.getElementById('paymentAccountNumber').value = ds.accountNumber || '';
+    if (document.getElementById('paymentIfsc'))          document.getElementById('paymentIfsc').value          = ds.ifsc          || '';
+    if (document.getElementById('paymentBranch'))        document.getElementById('paymentBranch').value        = ds.branch        || '';
+    if (document.getElementById('paymentPhone'))         document.getElementById('paymentPhone').value         = ds.phone         || '';
+  }
+  showPaymentMode('new');
+}
+function cancelNewPayment() {
+  document.getElementById('paymentId').value = '';
+  document.getElementById('paymentAction').value = '';
+  var nw = document.getElementById('newArea'); if (nw) nw.style.display = 'none';
+  var ex = document.getElementById('existingArea'); if (ex) ex.style.display = '';
+}
+function clearFieldErrors() {
+  document.querySelectorAll('.field-error').forEach(function (e) { e.style.display = 'none'; e.textContent = ''; });
+}
+function submitPaymentForm() {
+  clearFieldErrors();
+  var paymentId = document.getElementById('paymentId').value || '';
+  var acctType  = (document.getElementById('paymentAccountType').value || 'business').toLowerCase();
+  var payload   = new FormData();
+  payload.append('payment_id', paymentId);
+  payload.append('payment_account_type', acctType);
+  if (acctType === 'upi') {
+    var holder = (document.getElementById('paymentUpiHolder') || { value: '' }).value || '';
+    payload.append('payment_upi_id',      (document.getElementById('paymentUpi')       || { value: '' }).value || '');
+    payload.append('payment_holder_name', holder);
+    payload.append('payment_account_name', holder);
+  } else {
+    payload.append('payment_account_name',   (document.getElementById('paymentAccountName')   || { value: '' }).value || '');
+    payload.append('payment_holder_name',    (document.getElementById('paymentHolderName')    || { value: '' }).value || '');
+    payload.append('payment_bank_name',      (document.getElementById('paymentBankName')      || { value: '' }).value || '');
+    payload.append('payment_account_number',(document.getElementById('paymentAccountNumber') || { value: '' }).value || '');
+    payload.append('payment_ifsc_code',      (document.getElementById('paymentIfsc')          || { value: '' }).value || '');
+    payload.append('payment_branch',         (document.getElementById('paymentBranch')        || { value: '' }).value || '');
+    payload.append('payment_phone_number',   (document.getElementById('paymentPhone')         || { value: '' }).value || '');
+  }
+  payload.append('payment_action', paymentId ? 'update' : 'save');
+
+  fetch('/api/payment/save/', {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: payload
+  })
+  .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, json: j }; }); })
+  .then(function (res) {
+    if (!res.ok) {
+      if (res.json && res.json.errors) {
+        var errs = res.json.errors;
+        Object.keys(errs).forEach(function (k) {
+          var el = document.getElementById('err_' + k);
+          if (el) { el.style.display = ''; el.textContent = Array.isArray(errs[k]) ? errs[k].join(', ') : errs[k]; }
+        });
+      }
+      if (res.json && res.json.non_field_errors && res.json.non_field_errors.length) toast('error', res.json.non_field_errors.join(' '));
+      else if (!(res.json && res.json.errors)) toast('error', (res.json && res.json.message) ? res.json.message : 'Could not save account');
+      return;
+    }
+    var data = res.json;
+    var savedSel = document.getElementById('savedPaymentSelect');
+    if (savedSel) {
+      var existingOpt = savedSel.querySelector('option[value="' + data.id + '"]');
+      if (!existingOpt) {
+        var opt = document.createElement('option');
+        opt.value = data.id; opt.text = data.account_name || (data.account_type || 'Account');
+        opt.dataset.accountType = (data.account_type || '').toLowerCase();
+        opt.dataset.accountName = data.account_name || '';
+        opt.dataset.holderName  = data.holder_name  || '';
+        opt.dataset.bankName    = data.bank_name     || '';
+        opt.dataset.accountNumber = data.account_number || '';
+        opt.dataset.ifsc  = data.ifsc_code    || '';
+        opt.dataset.branch= data.branch       || '';
+        opt.dataset.upi   = data.upi_id       || '';
+        opt.dataset.phone = data.phone_number || '';
+        savedSel.appendChild(opt);
+        savedSel.value = data.id;
+      } else {
+        existingOpt.dataset.accountType   = (data.account_type || '').toLowerCase();
+        existingOpt.dataset.accountName   = data.account_name  || '';
+        existingOpt.dataset.holderName    = data.holder_name   || '';
+        existingOpt.dataset.bankName      = data.bank_name     || '';
+        existingOpt.dataset.accountNumber = data.account_number|| '';
+        existingOpt.dataset.ifsc  = data.ifsc_code    || '';
+        existingOpt.dataset.upi   = data.upi_id       || '';
+        existingOpt.dataset.phone = data.phone_number || '';
+        savedSel.value = data.id;
+      }
+      onSelectExisting(savedSel);
+    }
+    toast('success', 'Account saved');
+    cancelNewPayment();
+  })
+  .catch(function (e) { console.error(e); toast('error', 'Server error'); });
+}
+function deleteSelectedAccount() {
+  var select = document.getElementById('savedPaymentSelect');
+  if (!select || !select.value) { try { toast('warning', 'Please select an account first'); } catch (e) {} return; }
+  var accountName = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
+  var doDelete = function () {
+    fetch('/api/payment/delete/' + select.value + '/', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data && data.success) {
+        try { select.remove(select.selectedIndex); } catch (e) {}
+        try { toast('success', 'Account deleted successfully'); } catch (e) {}
+        var summary = document.getElementById('accountSummary'); if (summary) summary.style.display = 'none';
+      } else {
+        try { toast('error', data && data.message ? data.message : 'Unable to delete account'); } catch (e) {}
+      }
+    })
+    .catch(function () { try { toast('error', 'Server error'); } catch (e) {} });
+  };
+  if (typeof Swal !== 'undefined' && Swal.fire) {
+    Swal.fire({ title: 'Delete Account?', text: 'Delete "' + accountName + '" ?', icon: 'warning',
+      showCancelButton: true, confirmButtonText: 'Delete', cancelButtonText: 'Cancel', confirmButtonColor: '#d33'
+    }).then(function (result) { if (result.isConfirmed) doDelete(); });
+  } else { if (confirm('Delete "' + accountName + '" ?')) doDelete(); }
+}
+
+/* ── Auto-save for existing items (edit mode) ── */
+var tableBody = document.getElementById('tableBody');
+if (tableBody) {
+  tableBody.addEventListener('change', function (e) {
+    var row = e.target.closest('tr'); if (!row) return;
+    var itemIdEl = row.querySelector('[name="item_id"]'); if (!itemIdEl) return;
+    var itemId = itemIdEl.value;
+    var wrap   = row.querySelector('.svc-dd-wrap');
+    var hidden = wrap ? wrap.querySelector('.svc-hidden-select') : null;
+    var payload = {
+      item_id:      itemId,
+      quantity:     (row.querySelector('[name="quantity"]')    || { value: '' }).value || '',
+      // raw_quantity should reflect the actual quantity input (keep them in sync)
+      raw_quantity: (row.querySelector('[name="quantity"]')    || { value: '1' }).value || '1',
+      manual_quantity: (row.dataset && row.dataset.manual === '1') ? '1' : (row.querySelector('[name="manual_quantity"]') ? row.querySelector('[name="manual_quantity"]').value : '0'),
+      price:        (row.querySelector('[name="price"]')        || { value: '' }).value || '',
+      description:  (row.querySelector('[name="description"]')  || { value: '' }).value || '',
+      unit:         (row.querySelector('[name="unit"]')          || { value: '' }).value || '',
+      service_id:   (hidden ? hidden.value : '') || ''
+    };
+    fetch('/api/quotation-item/update/', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(payload)
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data && data.error) { toast('error', data.error); return; }
+      var rtCell = row.querySelector('.rowTotal');
+      if (data.item_total && rtCell) rtCell.textContent = '\u20B9 ' + parseFloat(data.item_total).toFixed(2);
+      if (data.quotation_subtotal) document.getElementById('subtotal').textContent   = parseFloat(data.quotation_subtotal).toFixed(2);
+      if (data.quotation_cgst)     document.getElementById('cgst').textContent       = parseFloat(data.quotation_cgst).toFixed(2);
+      if (data.quotation_sgst)     document.getElementById('sgst').textContent       = parseFloat(data.quotation_sgst).toFixed(2);
+      if (data.quotation_total)    document.getElementById('grandTotal').textContent = parseFloat(data.quotation_total).toFixed(2);
+      toast('success', 'Item saved');
+    })
+    .catch(function () { toast('error', 'Could not save item'); });
+  });
+}
+
+/* ── Init ── */
+(function init() {
+  var config    = window.PAGE_CONFIG || {};
+  var prefillId = config.prefillPaymentId || '';
+
+  if (prefillId) {
+    var inc = document.getElementById('includePaymentCheckbox');
+    if (inc) inc.checked = true;
+    togglePaymentCard(true);
+    var savedSel = document.getElementById('savedPaymentSelect');
+    if (savedSel) { savedSel.value = prefillId; savedSel.dispatchEvent(new Event('change')); }
+  }
+
+  calculate();
+  updateRowCount();
+  togglePaymentFields();
+  document.querySelectorAll('.desc-box').forEach(function (el) { autoResize(el); });
+
+  // Wire up all existing service dropdowns on page load
+  initAllDropdowns();
+
+  // Auto-grow description boxes
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains('desc-box')) {
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    }
+    // Keep raw_quantity in sync with visible quantity input
+    try {
+      if (e.target && e.target.name === 'quantity') {
+        var row = e.target.closest('tr');
+        if (row) {
+          var raw = row.querySelector('[name="raw_quantity"]');
+          if (raw) raw.value = e.target.value;
+          // Mark this row as manually-edited so future measurement imports
+          // or autosave updates do not overwrite user-entered quantity.
+          try { row.dataset.manual = '1'; } catch (ex) {}
+          var mf = row.querySelector('[name="manual_quantity"]');
+          if (mf) mf.value = '1';
+        }
+      }
+    } catch (err) { /* ignore */ }
+  });
+})();
+</script>
+
+<script>
+  // Initialize Select2 for customer search (AJAX)
+  (function () {
+    // small spinner styling for Select2 searching state
+    var css = '\n@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }\n.select2-searching-spinner { display:inline-block; width:14px; height:14px; border:2px solid #e5e7eb; border-top-color:#9a7a2a; border-radius:50%; margin-right:8px; animation: spin .8s linear infinite; }\n';
+    var s = document.createElement('style'); s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
+
+    function initCustomerSelect() {
+      if (!window.jQuery || !jQuery().select2) return;
+      $('#customer-select').select2({
+        placeholder: 'Search customer...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+          url: "{% url 'search_customers' %}",
+          dataType: 'json',
+          delay: 250,
+          data: function (params) { return { q: params.term }; },
+          processResults: function (data) { return { results: data.results || [] }; },
+          cache: true
+        },
+        language: {
+          searching: function () { return '<span class="select2-searching-spinner"></span>Searching...'; },
+          inputTooShort: function () { return 'Type at least 2 characters'; }
+        },
+        escapeMarkup: function (m) { return m; }
+      });
+      // Company select2 (AJAX)
+      $('#company-select').select2({
+        placeholder: 'Search firm...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+          url: "{% url 'search_companies' %}",
+          dataType: 'json',
+          delay: 250,
+          data: function (params) { return { q: params.term }; },
+          processResults: function (data) { return { results: data.results || [] }; },
+          cache: true
+        },
+        language: { searching: function () { return '<span class="select2-searching-spinner"></span>Searching...'; } },
+        escapeMarkup: function (m) { return m; }
+      });
+
+      // Saved payment accounts select2 (AJAX, per-user)
+      $('#savedPaymentSelect').select2({
+        placeholder: 'Search saved account...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+          url: "{% url 'search_payment_accounts' %}",
+          dataType: 'json',
+          delay: 250,
+          data: function (params) { return { q: params.term }; },
+          processResults: function (data) { return { results: data.results || [] }; },
+          cache: true
+        },
+        language: { searching: function () { return '<span class="select2-searching-spinner"></span>Searching...'; } },
+        escapeMarkup: function (m) { return m; }
+      });
+    }
+
+    // Initialize when DOM ready; try again if Select2 not yet loaded
+    if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(initCustomerSelect, 0);
+    else document.addEventListener('DOMContentLoaded', initCustomerSelect);
+  })();
+</script>
+
+</body>
+</html>

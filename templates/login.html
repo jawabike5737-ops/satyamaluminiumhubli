@@ -1,0 +1,509 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | S P J Associates</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ivory:#F9F6F0;
+  --white:#FFFFFF;
+  --stone:#EDE9E1;
+  --gold:#A67C52;
+  --gold-light:#C9A96E;
+  --gold-pale:#F5EDD8;
+  --ink:#1C1917;
+  --ink-mid:#44403C;
+  --muted:#A8A29E;
+  --line:#E7E2D9;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--ivory);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+}
+
+/* ── Ambient background ── */
+.scene{
+  position:fixed;inset:0;z-index:0;
+  background:var(--ivory);
+  overflow:hidden;
+}
+.scene-circle{
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+}
+.sc1{
+  width:780px;height:780px;
+  background:radial-gradient(circle,rgba(201,169,110,0.13) 0%,transparent 68%);
+  top:-220px;right:-180px;
+  animation:breathe 16s ease-in-out infinite;
+}
+.sc2{
+  width:560px;height:560px;
+  background:radial-gradient(circle,rgba(166,124,82,0.08) 0%,transparent 70%);
+  bottom:-160px;left:-100px;
+  animation:breathe 20s ease-in-out infinite reverse;
+}
+.sc3{
+  width:340px;height:340px;
+  background:radial-gradient(circle,rgba(201,169,110,0.10) 0%,transparent 70%);
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  animation:breathe 12s ease-in-out infinite 3s;
+}
+@keyframes breathe{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+}
+.sc2{animation-name:breathe2}
+@keyframes breathe2{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.06) translate(12px,-8px)}
+}
+
+/* fine dot grid */
+.scene::after{
+  content:'';
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(166,124,82,0.18) 1px,transparent 1px);
+  background-size:32px 32px;
+  opacity:0.35;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%);
+}
+
+/* ── Layout ── */
+.wrapper{
+  position:relative;z-index:10;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  width:min(960px,94vw);
+  min-height:580px;
+  border-radius:32px;
+  background:var(--white);
+  box-shadow:
+    0 0 0 1px rgba(166,124,82,0.14),
+    0 24px 64px rgba(28,25,23,0.10),
+    0 4px 16px rgba(28,25,23,0.05);
+  overflow:hidden;
+  animation:rise 0.9s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes rise{
+  from{opacity:0;transform:translateY(28px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── Left panel ── */
+.left{
+  padding:52px 52px 48px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  border-right:1px solid var(--line);
+  background:var(--ivory);
+  position:relative;
+  overflow:hidden;
+}
+.left::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(160deg,rgba(201,169,110,0.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* geometric ornament */
+.ornament{
+  position:absolute;
+  bottom:-60px;right:-60px;
+  width:280px;height:280px;
+  opacity:0.08;
+}
+
+.brand{
+  position:relative;z-index:1;
+  animation:fadeSlide 0.7s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+}
+.brand-mark{
+  width:48px;height:48px;
+  margin-bottom:20px;
+}
+.brand-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;
+  font-weight:600;
+  color:var(--ink);
+  line-height:1.2;
+  letter-spacing:-0.01em;
+}
+.brand-sub{
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-top:5px;
+}
+
+.left-mid{
+  position:relative;z-index:1;
+  animation:fadeSlide 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+}
+.headline{
+  font-family:'Cormorant Garamond',serif;
+  font-size:48px;
+  font-weight:300;
+  line-height:1.12;
+  color:var(--ink);
+  letter-spacing:-0.02em;
+  margin-bottom:16px;
+}
+.headline em{
+  font-style:italic;
+  color:var(--gold-light);
+}
+.divider-gold{
+  width:36px;height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  border-radius:1px;
+  margin-bottom:16px;
+}
+.desc{
+  font-size:14px;
+  font-weight:300;
+  color:var(--muted);
+  line-height:1.7;
+  max-width:280px;
+}
+
+.pills{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  position:relative;z-index:1;
+  animation:fadeSlide 0.7s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  width:fit-content;
+  padding:7px 14px 7px 10px;
+  border-radius:100px;
+  background:var(--white);
+  border:1px solid var(--line);
+  font-size:12px;
+  font-weight:400;
+  color:var(--ink-mid);
+  letter-spacing:0.02em;
+}
+.pill-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--gold-light);
+  flex-shrink:0;
+}
+
+@keyframes fadeSlide{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── Right panel ── */
+.right{
+  padding:56px 56px 52px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:var(--white);
+}
+
+.login-head{
+  margin-bottom:36px;
+  animation:fadeSlide 0.7s cubic-bezier(0.22,1,0.36,1) 0.15s both;
+}
+.eyebrow{
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:10px;
+  display:flex;align-items:center;gap:9px;
+}
+.eyebrow::before{
+  content:'';
+  width:18px;height:1.5px;
+  background:var(--gold);
+}
+.login-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:42px;
+  font-weight:300;
+  color:var(--ink);
+  line-height:1.05;
+  letter-spacing:-0.02em;
+}
+
+/* error */
+.error-box{
+  display:flex;align-items:center;gap:10px;
+  background:#FEF2F1;border:1px solid #FCCFCC;
+  border-radius:12px;padding:11px 15px;
+  margin-bottom:22px;
+  font-size:13px;color:#C0392B;
+  animation:shake 0.4s cubic-bezier(.36,.07,.19,.97);
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%,60%{transform:translateX(-5px)}
+  40%,80%{transform:translateX(5px)}
+}
+.error-dot{width:5px;height:5px;border-radius:50%;background:#E74C3C;flex-shrink:0}
+
+/* form */
+.login-form{animation:fadeSlide 0.7s cubic-bezier(0.22,1,0.36,1) 0.25s both}
+
+.field{margin-bottom:20px}
+.field-label{
+  display:block;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+  transition:color 0.2s;
+}
+.field:focus-within .field-label{color:var(--gold)}
+
+.input-shell{
+  position:relative;
+  border-radius:14px;
+  border:1.5px solid var(--line);
+  background:var(--ivory);
+  transition:border-color 0.22s,box-shadow 0.22s,background 0.22s;
+  overflow:hidden;
+}
+.input-shell:hover{border-color:#D4CBBC}
+.input-shell:focus-within{
+  border-color:var(--gold-light);
+  box-shadow:0 0 0 3.5px rgba(201,169,110,0.12);
+  background:var(--white);
+}
+.input-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--gold-light));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+}
+.input-shell:focus-within .input-bar{transform:scaleX(1)}
+.field-icon{
+  position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  color:#C4BDB3;transition:color 0.22s;pointer-events:none;
+}
+.input-shell:focus-within .field-icon{color:var(--gold)}
+.field-input{
+  width:100%;height:52px;
+  background:transparent;border:none;outline:none;
+  padding:0 48px;
+  font-family:'DM Sans',sans-serif;
+  font-size:15px;color:var(--ink);
+}
+.field-input::placeholder{color:var(--muted);font-weight:300}
+.pw-toggle{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  padding:6px;border-radius:8px;
+  color:#C4BDB3;transition:color 0.2s,background 0.2s;
+}
+.pw-toggle:hover{color:var(--gold);background:rgba(201,169,110,0.1)}
+
+.btn-submit{
+  width:100%;height:54px;margin-top:6px;
+  border:none;border-radius:14px;
+  background:var(--ink);
+  font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:500;
+  letter-spacing:0.03em;
+  color:#F5EDD8;
+  cursor:pointer;
+  position:relative;overflow:hidden;
+  transition:transform 0.2s,box-shadow 0.2s,background 0.22s;
+  box-shadow:0 4px 18px rgba(28,25,23,0.18);
+}
+.btn-shimmer{
+  position:absolute;top:0;left:-120%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(201,169,110,0.2),transparent);
+  transition:left 0.55s;
+}
+.btn-submit:hover .btn-shimmer{left:120%}
+.btn-submit:hover{
+  background:#2C2825;
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(28,25,23,0.22);
+}
+.btn-submit:active{transform:translateY(0);box-shadow:0 2px 8px rgba(28,25,23,0.12)}
+.btn-inner{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-arrow{transition:transform 0.28s}
+.btn-submit:hover .btn-arrow{transform:translateX(5px)}
+
+.gold-rule{
+  height:1.5px;margin-top:10px;
+  background:linear-gradient(90deg,transparent,var(--gold-light),transparent);
+  border-radius:1px;
+  animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:0.9}}
+
+/* ── Responsive ── */
+@media(max-width:700px){
+  .wrapper{grid-template-columns:1fr;min-height:auto}
+  .left{display:none}
+  .right{padding:44px 32px 40px}
+  .login-title{font-size:34px}
+}
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="scene-circle sc1"></div>
+  <div class="scene-circle sc2"></div>
+  <div class="scene-circle sc3"></div>
+</div>
+
+<div class="wrapper">
+
+  <!-- LEFT PANEL -->
+  <div class="left">
+
+    <!-- geometric ornament SVG -->
+    <svg class="ornament" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="140" cy="140" r="130" stroke="#A67C52" stroke-width="1"/>
+      <circle cx="140" cy="140" r="100" stroke="#A67C52" stroke-width="1"/>
+      <circle cx="140" cy="140" r="70" stroke="#A67C52" stroke-width="1"/>
+      <polygon points="140,10 264,75 264,205 140,270 16,205 16,75" stroke="#A67C52" stroke-width="1"/>
+      <polygon points="140,40 234,90 234,190 140,240 46,190 46,90" stroke="#A67C52" stroke-width="0.6"/>
+      <line x1="140" y1="10" x2="140" y2="270" stroke="#A67C52" stroke-width="0.5"/>
+      <line x1="16" y1="75" x2="264" y2="205" stroke="#A67C52" stroke-width="0.5"/>
+      <line x1="264" y1="75" x2="16" y2="205" stroke="#A67C52" stroke-width="0.5"/>
+    </svg>
+
+    <!-- Brand -->
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="24,3 43,13.5 43,34.5 24,45 5,34.5 5,13.5" fill="rgba(166,124,82,0.1)" stroke="rgba(166,124,82,0.7)" stroke-width="1.4"/>
+        <polygon points="24,10 37,17.5 37,32.5 24,40 11,32.5 11,17.5" fill="none" stroke="rgba(166,124,82,0.35)" stroke-width="0.8"/>
+        <line x1="24" y1="3" x2="24" y2="45" stroke="rgba(166,124,82,0.3)" stroke-width="0.7"/>
+        <line x1="5" y1="13.5" x2="43" y2="34.5" stroke="rgba(166,124,82,0.3)" stroke-width="0.7"/>
+        <line x1="43" y1="13.5" x2="5" y2="34.5" stroke="rgba(166,124,82,0.3)" stroke-width="0.7"/>
+        <circle cx="24" cy="24" r="4.5" fill="rgba(166,124,82,0.6)"/>
+        <circle cx="24" cy="24" r="2" fill="#A67C52"/>
+      </svg>
+      <div class="brand-name">Satyam Paras Jayshree<br>Associates</div>
+      <div class="brand-sub">Enterprise Portal</div>
+    </div>
+
+    <!-- Headline -->
+    <div class="left-mid">
+      <div class="headline">Precision<br>in every<br><em>profile.</em></div>
+      <div class="divider-gold"></div>
+      <div class="desc">Real-time inventory, order management and production — all in one place.</div>
+    </div>
+
+    <!-- Pills -->
+    <div class="pills">
+      <div class="pill"><span class="pill-dot"></span>Premium Aluminium Works</div>
+      <div class="pill"><span class="pill-dot"></span>Modern Glass Solutions</div>
+      <div class="pill"><span class="pill-dot"></span>Advanced UPVC Systems</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+
+    <div class="login-head">
+      <div class="eyebrow">Secure Access</div>
+      <h1 class="login-title">Welcome<br>back.</h1>
+    </div>
+
+    {% if error %}
+    <div class="error-box">
+      <div class="error-dot"></div>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" class="login-form">
+      {% csrf_token %}
+
+      <div class="field">
+        <label class="field-label" for="username">Username</label>
+        <div class="input-shell">
+          <svg class="field-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input class="field-input" type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required>
+          <div class="input-bar"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">Password</label>
+        <div class="input-shell">
+          <svg class="field-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input class="field-input" type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+          <div class="input-bar"></div>
+          <button type="button" class="pw-toggle" onclick="togglePw()" aria-label="Toggle password visibility">
+            <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        <div class="btn-shimmer"></div>
+        <div class="btn-inner">
+          Sign in to your account
+          <svg class="btn-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+      </button>
+      <div class="gold-rule"></div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+function togglePw(){
+  const inp = document.getElementById('password');
+  const icon = document.getElementById('eye-icon');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+}
+</script>
+</body>
+</html>

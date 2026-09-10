@@ -1,0 +1,1719 @@
+﻿[
+{
+  "model": "core.service",
+  "pk": 27,
+  "fields": {
+    "service_code": null,
+    "name": "Loft",
+    "category": "",
+    "description": "Providing and fixing customized loft storage doors using powder-coated aluminium framework and ACP/PVC panels, complete with SS soft-close hinges and required accessories for overhead storage units.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nFinish: Powder Coated\r\nHinges: SS Soft-Close Hinges\r\nHardware: Handles & Magnetic Catchers\r\nOperation: Openable Shutters\r\nDesign: Customized as per Site Requirement\r\nApplication: Bedroom, Kitchen, Utility & Living Area Lofts",
+    "default_rate": "550.00",
+    "service_name": "Loft",
+    "unit": "Sq Ft",
+    "image": "media/services/LOFT_dojukm_at0egv",
+    "status": "active",
+    "created_at": "2026-06-03T06:52:43.990Z",
+    "updated_at": "2026-06-14T08:50:30.728Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 28,
+  "fields": {
+    "service_code": null,
+    "name": "Wardrobe",
+    "category": "",
+    "description": "Providing and fixing customized wardrobes using powder-coated aluminium framework and ACP/PVC shutter panels, complete with SS soft-close hinges, premium hardware, and storage accessories. Available with openable or sliding shutters as per approved design and client requirements.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nShutter Type: Openable / Sliding\r\nHinges: SS Soft-Close Hinges\r\nSliding Hardware: Aluminium Track & Rollers (for Sliding Model)\r\nAccessories: Handles, Locks, Magnetic Catchers & Hardware\r\nFinish: Powder Coated / Wood Finish\r\nInternal Storage: Shelves, Hanging Space & Drawers\r\nDesign: Customized as per Client Requirement\r\nApplication: Bedroom & Dressing Area",
+    "default_rate": "1150.00",
+    "service_name": "Wardrobe",
+    "unit": "Sq Ft",
+    "image": "media/services/LOFT_cIykpZi_bZBx1eC_ij5qAlO_lw8zgw_ve7w10",
+    "status": "active",
+    "created_at": "2026-06-03T06:54:34.295Z",
+    "updated_at": "2026-06-14T08:53:00.066Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 29,
+  "fields": {
+    "service_code": null,
+    "name": "Dressing Unit",
+    "category": "",
+    "description": "Providing and fixing a customized dressing unit using powder-coated aluminium framework, ACP/PVC decorative panels, mirror provision, storage drawers, shelves, and premium hardware fittings as per approved design and client requirements.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nMirror: Dressing Mirror Provision\r\nStorage: Drawers, Shelves & Cabinets\r\nHardware: Premium Handles, Hinges & Drawer Channels\r\nFinish: Powder Coated / Wood Finish\r\nDesign: Customized as per Client Requirement\r\nApplication: Bedroom & Dressing Area",
+    "default_rate": "1150.00",
+    "service_name": "Dressing Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/DRESSING_UNIT_McRgnlP_wi2glt_qaznos",
+    "status": "active",
+    "created_at": "2026-06-03T06:57:44.440Z",
+    "updated_at": "2026-06-14T08:49:54.743Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 30,
+  "fields": {
+    "service_code": null,
+    "name": "Under-Stair Storage Unit",
+    "category": "",
+    "description": "Providing and fixing a customized under staircase storage unit using powder-coated aluminium framework and ACP/PVC panel shutters, complete with storage compartments, drawers, and SS soft-close hinges as per approved design and client requirements.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nShutter Type: Openable Doors\r\nHinges: SS Soft-Close Hinges\r\nStorage: Shelves, Drawers & Cabinets\r\nHardware: Handles, Hinges & Drawer Channels\r\nFinish: Powder Coated / Wood Finish\r\nDesign: Customized as per Staircase Layout\r\nApplication: Under Staircase Storage",
+    "default_rate": "550.00",
+    "service_name": "Under-Stair Storage Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Under-Stair_Storage_Unit_Qns8WlW_pauisd_mzz3is",
+    "status": "active",
+    "created_at": "2026-06-03T07:01:02.275Z",
+    "updated_at": "2026-06-14T08:52:53.670Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 31,
+  "fields": {
+    "service_code": null,
+    "name": "Foldable Utility Stand",
+    "category": "",
+    "description": "Providing and fixing a heavy-duty foldable utility stand using MS frame structure and ACP top panel, complete with foldable support arms, locking mechanism, and anti-rust finish for multipurpose household applications.\r\n\r\nSpecifications:\r\nFrame Material: Mild Steel (MS)\r\nTop Panel: ACP Sheet\r\nSupport System: Foldable MS Support Arms\r\nLocking Mechanism: Manual Locking Support\r\nFinish: Anti-Rust Primer & Powder Coating\r\nMounting Type: Wall Mounted\r\nOperation: Foldable / Space Saving\r\nApplication: Laundry Area, Utility Room, Ironing Station & Multipurpose Use",
+    "default_rate": "600.00",
+    "service_name": "Foldable Utility Stand",
+    "unit": "Sq Ft",
+    "image": "media/services/Foldable_Utility_Stand_OpuyFoo_dybwou_q1lu3e",
+    "status": "active",
+    "created_at": "2026-06-03T07:14:22.727Z",
+    "updated_at": "2026-06-14T08:50:00.999Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 32,
+  "fields": {
+    "service_code": null,
+    "name": "TV Unit",
+    "category": "",
+    "description": "Providing and fixing a customized TV unit using powder-coated aluminium framework and ACP/PVC decorative panels, complete with TV mounting provision, storage cabinets, shelves, and premium hardware accessories as per approved design and client requirements.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nTV Provision: Wall-Mounted TV Space\r\nStorage: Cabinets, Drawers & Display Shelves\r\nShutter Type: Openable Doors\r\nHinges: SS Soft-Close Hinges\r\nHardware: Premium Handles & Accessories\r\nFinish: Powder Coated / Wood Finish / Decorative ACP Finish\r\nDesign: Customized as per Client Requirement\r\nApplication: Living Room & Entertainment Area",
+    "default_rate": "600.00",
+    "service_name": "TV Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/TV_Unit_ockpkaO_bldiw2_djq2cr",
+    "status": "active",
+    "created_at": "2026-06-03T07:19:10.944Z",
+    "updated_at": "2026-06-14T08:52:07.648Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 33,
+  "fields": {
+    "service_code": null,
+    "name": "Decorative Wall Panelling",
+    "category": "",
+    "description": "Providing and fixing premium PVC decorative wall panels with matching trims and finishing accessories to create an elegant feature wall for TV units, living rooms, bedrooms, and interior spaces.\r\n\r\nSpecifications:\r\nMaterial: Premium PVC Decorative Panels\r\nPanel Thickness: As per Approved Design\r\nFinish: Wooden / Marble / Fluted / Textured Finish\r\nTrims: Matching PVC / Aluminium Edge Trims\r\nAccessories: Corner Profiles & Finishing Components\r\nInstallation: Wall Mounted\r\nMaintenance: Water Resistant & Low Maintenance\r\nDesign: Customized as per Client Requirement\r\nApplication: TV Background Wall, Living Room & Bedroom",
+    "default_rate": "250.00",
+    "service_name": "Decorative Wall Panelling",
+    "unit": "Sq Ft",
+    "image": "media/services/Wall_Panelling_FyAvRM5_o6ekkf_urfdgk",
+    "status": "active",
+    "created_at": "2026-06-03T07:26:13.909Z",
+    "updated_at": "2026-06-14T08:49:17.138Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 34,
+  "fields": {
+    "service_code": null,
+    "name": "Stairs Showcase Unit",
+    "category": "",
+    "description": "Providing and fixing a customized showcase/display unit beside and below the staircase using wooden-finish aluminium framework and ACP/PVC panel cladding, complete with display shelves and storage cabinets for decorative items, trophies, photographs, books, and collectibles.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nFinish: Wooden Finish Powder Coating\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nStorage Type: Open Display Shelves & Closed Storage Cabinets\r\nShutter Type: Openable Doors\r\nHinges: SS Soft-Close Hinges\r\nHardware: Premium Handles & Accessories\r\nDesign: Customized as per Staircase Layout\r\nApplication: Living Room & Staircase Area",
+    "default_rate": "700.00",
+    "service_name": "Stairs Showcase Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Stairs_Showcase_Unit_Xj2C9pH_bjrlqw_bg9n4a",
+    "status": "active",
+    "created_at": "2026-06-03T07:46:44.088Z",
+    "updated_at": "2026-06-14T08:52:01.279Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 35,
+  "fields": {
+    "service_code": null,
+    "name": "Kitchen above Storage Unit ",
+    "category": "",
+    "description": "Providing and fixing customized overhead kitchen storage cabinets using powder-coated aluminium framework and ACP panel cladding on outer surfaces, complete with internal shelves, profile shutters, and premium hardware fittings for organized kitchen storage.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet (Outside)\r\nShutter Type: Aluminium Profile Shutters\r\nHinges: SS Soft-Close Hinges\r\nStorage: Internal Shelves\r\nHardware: Premium Handles & Accessories\r\nFinish: Powder Coated / ACP Finish\r\nDesign: Customized as per Kitchen Layout\r\nApplication: Modular Kitchen Overhead Storage",
+    "default_rate": "1150.00",
+    "service_name": "Kitchen above Storage Unit ",
+    "unit": "Sq Ft",
+    "image": "media/services/kitchen_top_oua5g2",
+    "status": "active",
+    "created_at": "2026-06-03T07:59:07.405Z",
+    "updated_at": "2026-06-14T09:27:00.387Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 36,
+  "fields": {
+    "service_code": null,
+    "name": "Kitchen Base Cabinet",
+    "category": "",
+    "description": "Providing and fixing customized kitchen base storage units below the kitchen counter using powder-coated aluminium framework and ACP/PVC shutter panels, complete with provisions for tandem drawers, pull-out accessories, storage baskets, and premium hardware fittings.\r\n\r\nSpecifications:\r\nFrame Material: Aluminium Sections\r\nAluminium Thickness: 1.2mm Jindal Make\r\nPanel Material: 3mm ACP Sheet / PVC Panel\r\nShutter Type: Openable Shutters / Drawer Fronts\r\nHinges: SS Soft-Close Hinges\r\nDrawer System: Tandem Drawer Provision\r\nStorage: Cabinets, Drawers & Pull-Out Units\r\nHardware: Premium Handles & Accessories\r\nFinish: ACP Finish / PVC Finish\r\nDesign: Customized as per Kitchen Layout\r\nApplication: Modular Kitchen Base Cabinets",
+    "default_rate": "550.00",
+    "service_name": "Kitchen Base Cabinet",
+    "unit": "Sq Ft",
+    "image": "media/services/kitchen_bottom_skfmb0",
+    "status": "active",
+    "created_at": "2026-06-03T08:03:27.721Z",
+    "updated_at": "2026-06-14T09:26:39.935Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 37,
+  "fields": {
+    "service_code": null,
+    "name": "Tandem Drawers",
+    "category": "",
+    "description": "Supply and installation of premium-grade soft-close tandem channels, corrosion-resistant steel components, and heavy-duty drawer mechanisms for smooth and silent operation. \r\n\r\n2 Nos. û 4-inch depth tandem drawers (Brand: Jmaxx )\r\n2 Nos. û 6-inch depth tandem drawers (Brand: Jmaxx )\r\n2 Nos. û 8-inch depth tandem drawers (Brand: Jmaxx )",
+    "default_rate": "2800.00",
+    "service_name": "Tandem Drawers",
+    "unit": "Sq Ft",
+    "image": "media/services/Tandem_Drawers_grS1K4Y_lfgpwt_z3lhql",
+    "status": "active",
+    "created_at": "2026-06-03T08:12:21.896Z",
+    "updated_at": "2026-06-14T08:52:10.499Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 38,
+  "fields": {
+    "service_code": null,
+    "name": "Basket Pull-Outs",
+    "category": "",
+    "description": "Providing and fixing a pull-out basket system for organized storage of vegetables and groceries, complete with smooth sliding mechanism and required accessories.\r\n\r\nSpecifications:\r\nMaterial: SS304 Stainless Steel / Powder Coated Steel\r\nOperation: Pull-Out Basket with Heavy-Duty Telescopic Channels (Brand: JMAXX)\r\nStorage: Vegetables, Groceries & Kitchen Essentials\r\nFinish: Stainless Steel / Powder Coated",
+    "default_rate": "3500.00",
+    "service_name": "Basket Pull-Outs",
+    "unit": "Sq Ft",
+    "image": "media/services/Basket_Pullout_MoDeRjz_mdtrit_gmk5le",
+    "status": "active",
+    "created_at": "2026-06-03T08:18:00.030Z",
+    "updated_at": "2026-06-14T08:49:00.856Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 39,
+  "fields": {
+    "service_code": null,
+    "name": "Ironing Area Storage Unit",
+    "category": "",
+    "description": "Providing and fixing a customized wall-mounted storage cabinet with aluminium framework and ACP/PVC panel shutters, complete with internal shelves and premium hardware fittings.\r\n\r\nSpecifications:\r\nStructure: Jindal Aluminium Sections / 1.2mm Thickness with 3mm ACP Sheet / PVC Panels\r\nShutter Type: Openable Doors with Internal Storage Shelves\r\nHardware: SS Soft-Close Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nFinish: Powder Coated / ACP Finish / PVC Finish\r\nDesign: Customized as per Site Requirement",
+    "default_rate": "1150.00",
+    "service_name": "Ironing Area Storage Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Ironing_Area_Storage_Unit_KiyqRN0_7bqabV7_ipkbbz_ccwjh4",
+    "status": "active",
+    "created_at": "2026-06-03T08:27:59.290Z",
+    "updated_at": "2026-06-14T08:50:18.901Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 40,
+  "fields": {
+    "service_code": null,
+    "name": "Wash Basin Cabinet",
+    "category": "",
+    "description": "Providing and fixing a customized wash basin storage cabinet with aluminium framework and ACP/PVC panel shutters, complete with internal storage and premium hardware fittings.\r\n\r\nSpecifications:\r\nStructure: Jindal Aluminium Sections / 1.2mm Thickness with 3mm ACP Sheet / PVC Panels\r\nShutter Type: Openable Doors with Internal Storage Shelves\r\nHardware: SS Soft-Close Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nFinish: ACP Finish / PVC Finish\r\nMoisture Resistance: Suitable for Wet Areas\r\nDesign: Customized as per Wash Basin Layout",
+    "default_rate": "550.00",
+    "service_name": "Wash Basin Cabinet",
+    "unit": "Sq Ft",
+    "image": "media/services/Wash_Basin_Cabinet_lHOOu69_aKRONyf_grievi_efcc1h",
+    "status": "active",
+    "created_at": "2026-06-03T08:32:48.255Z",
+    "updated_at": "2026-06-14T08:53:03.054Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 41,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC 2-Track Window",
+    "category": "",
+    "description": "Providing and fixing UPVC 2-track sliding window with glass panels, complete with locking system, hardware, and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) with GI Reinforcement (Where Required)\r\nSystem: 2-Track Sliding\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Rollers, Trackwool for Sound Proof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "350.00",
+    "service_name": "UPVC 2-Track Window",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_2_TRACK_o1KZY2s_jiFF0Mr_ekpzOZv_qapjca_cz67gy",
+    "status": "active",
+    "created_at": "2026-06-05T16:49:20.705Z",
+    "updated_at": "2026-06-14T08:52:19.744Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 42,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC 2.5 Track Window (Mosquito Mesh)",
+    "category": "",
+    "description": "Providing and fixing UPVC 2.5 track sliding window with two glazed sliding shutters and one sliding mosquito mesh shutter, complete with locking system, hardware, and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) with GI Reinforcement (Where Required)\r\nSystem: 2.5 Track Sliding with 2 Glass Shutters & 1 Mosquito Mesh Shutter\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nMesh: Sliding Mosquito Mesh\r\nHardware: Rollers, Trackwool for Sound Proof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "450.00",
+    "service_name": "UPVC 2.5 Track Window (Mosquito Mesh)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_2_Y1AsRRI_ru7XvAz_JPy3ZYy_FolSIEs_c09swy",
+    "status": "active",
+    "created_at": "2026-06-05T17:58:42.456Z",
+    "updated_at": "2026-06-14T08:52:29.787Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 43,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC 3 Track Window (Mosquito Mesh)",
+    "category": "",
+    "description": "Providing and fixing UPVC 3-track sliding window with glass shutters and sliding mosquito mesh shutter, complete with locking system, hardware, and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) with GI Reinforcement (Where Required)\r\nSystem: 3-Track Sliding\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nMesh: Sliding Mosquito Mesh Shutter (Fiberglass / SS Mesh)\r\nHardware: Rollers, Trackwool for Sound Proof (Brand: Saint-Gobain), Lock for Glass & Mesh Shutters & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "450.00",
+    "service_name": "UPVC 3 Track Window (Mosquito Mesh)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_3_TRACK_PXvT90n_sKebZgC_ubaaH9L_tIBIrey_sdVTZk8_iTlz0px_uillwm_rvhb1c",
+    "status": "active",
+    "created_at": "2026-06-05T18:10:09.391Z",
+    "updated_at": "2026-06-14T08:52:32.773Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 44,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC VENTILATOR",
+    "category": "",
+    "description": "Providing and fixing white UPVC bathroom ventilator with design glass, complete with hardware and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nGlass: 5mm Design Glass\r\nVentilator Type: Openable Ventilator\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets\r\nExhaust Fan: Not Included",
+    "default_rate": "300.00",
+    "service_name": "UPVC VENTILATOR",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_VENTILATOR_uiFuN6E_u8R1hLU_z49q1k_baqfz1",
+    "status": "active",
+    "created_at": "2026-06-05T18:11:39.507Z",
+    "updated_at": "2026-06-14T08:52:47.649Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 45,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC VENTILATOR + FAN",
+    "category": "",
+    "description": "Providing and fixing white UPVC bathroom ventilator with design glass and exhaust fan provision, complete with hardware and installation. Electrical wiring and fan connection shall be under client scope.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nGlass: 5mm Design Glass\r\nVentilator Type: Openable Ventilator with Exhaust Fan Provision\r\nGaskets: EPDM / Rubber Gaskets\r\nElectrical Connection: Under Client Scope",
+    "default_rate": "3000.00",
+    "service_name": "UPVC VENTILATOR + FAN",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_VENTILATOR_FAN_mnxhbMg_oZkL2Yh_p1aiws_fyybrj",
+    "status": "active",
+    "created_at": "2026-06-05T18:12:30.127Z",
+    "updated_at": "2026-06-14T08:52:50.367Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 46,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC OPENABLE DOOR (1 Shutter)",
+    "category": "",
+    "description": "Providing and fixing UPVC cabin and terrace door with glass panels, complete with locking system, hardware, and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nDoor Type: Single Shutter / Double Shutter\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Multi-Point Lock / Door Lock, Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "620.00",
+    "service_name": "UPVC OPENABLE DOOR (1 Shutter)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_DOOR_a5rmdyU_mZHWHC5_E47dmQH_qnncuf_giabsf",
+    "status": "active",
+    "created_at": "2026-06-05T18:20:34.475Z",
+    "updated_at": "2026-06-14T08:52:41.904Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 47,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC Fixed Partition",
+    "category": "",
+    "description": "Providing and fixing UPVC fixed cabin partition with glass panels, complete with glazing accessories and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nPartition Type: Fixed Partition\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nGlazing System: Beading, Glazing Accessories, EPDM / Rubber Gaskets & Weatherproof Silicone Sealant",
+    "default_rate": "620.00",
+    "service_name": "UPVC Fixed Partition",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_PARTITION_3Gdzfdv_EOITLzy_bw6klm_xjbqab",
+    "status": "active",
+    "created_at": "2026-06-05T18:25:47.119Z",
+    "updated_at": "2026-06-14T08:52:38.669Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 48,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC OPENABLE DOOR (2 Shutters)",
+    "category": "",
+    "description": "Providing and fixing UPVC main entrance double door with glass panels and multipoint locking system, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nDoor Type: Double Shutter (2 Doors)\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Multipoint Locking System, Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "650.00",
+    "service_name": "UPVC OPENABLE DOOR (2 Shutters)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_OPENABLE_DOOR_gtJnEvz_nrfuqBd_s7elzg_jmxcxe",
+    "status": "active",
+    "created_at": "2026-06-05T18:31:32.025Z",
+    "updated_at": "2026-06-14T08:52:44.787Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 49,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC 2-Track Window(Top Fixed)",
+    "category": "",
+    "description": "Providing and fixing UPVC 2-track sliding window with top fixed glass panel, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nSystem: 2-Track Sliding with Top Fixed Glass Panel\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Rollers, Trackwool for Sound Proof (Brand: Saint-Gobain), Window Lock & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "550.00",
+    "service_name": "UPVC 2-Track Window(Top Fixed)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_2-Track_Top_Fixed_jNYtImy_TURQZDP_iR65ums_s8k3oh_k0l5pa",
+    "status": "active",
+    "created_at": "2026-06-05T18:42:08.731Z",
+    "updated_at": "2026-06-14T08:52:25.532Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 50,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC 2-Track Window (Bottom Fixed)",
+    "category": "",
+    "description": "Providing and fixing UPVC 2-track sliding window with bottom fixed glass panel, complete with locking system, hardware, and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) / White Colour with GI Reinforcement (Where Required)\r\nSystem: 2-Track Sliding with Bottom Fixed Glass Panel\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Rollers, Trackwool for Sound Proof (Brand: Saint-Gobain), Window Lock & Required Accessories",
+    "default_rate": "550.00",
+    "service_name": "UPVC 2-Track Window (Bottom Fixed)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_2-Track_Bottom_Fixed_H6m2Cq9_LmlgVdm_vWIRlHr_PduQ3vo_egmf6xF_utuesc_gesxi7",
+    "status": "active",
+    "created_at": "2026-06-05T18:45:45.104Z",
+    "updated_at": "2026-06-14T08:52:22.613Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 51,
+  "fields": {
+    "service_code": null,
+    "name": "Staircase Steps (Toughened Glass)",
+    "category": "",
+    "description": "Providing and fixing 12 mm Saint-Gobain toughened glass for the top portion of staircase steps, using double-sided 3M tape and 789 grade clear silicone sealant for secure and durable fixing.\r\n\r\nSpecifications:\r\nGlass: 12mm Saint-Gobain Toughened Glass\r\nFixing: Double-Sided 3M Tape\r\nSealant: 789 Grade Clear Silicone",
+    "default_rate": "225.00",
+    "service_name": "Staircase Steps (Toughened Glass)",
+    "unit": "Sq Ft",
+    "image": "media/services/Staircase_Steps_Toughened_Glass_AsnZqu0_yGj7t1E_no9ony_dcim4m",
+    "status": "active",
+    "created_at": "2026-06-06T04:21:04.122Z",
+    "updated_at": "2026-06-14T08:51:58.382Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 52,
+  "fields": {
+    "service_code": null,
+    "name": "SS top rail with staircase glass railing",
+    "category": "",
+    "description": "Providing and fixing SS304 glass railing for duplex staircases with 12mm Saint-Gobain toughened glass, top rail, and wall-mounted support system, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nGlass: 12mm Saint-Gobain Toughened Glass (Height: 4 Feet)\r\nSteel Grade: SS304\r\nTop Rail: 2\" Round Pipe\r\nSupport: J-Type Brackets\r\nFixing: Wall-to-Glass Studs\r\n",
+    "default_rate": "445.00",
+    "service_name": "SS top rail with staircase glass railing",
+    "unit": "Sq Ft",
+    "image": "media/services/Duplex_staircase_glass_railing_with_SS_top_rail_nDVOhMe_1eHVdPH_ocej1i_m82awt",
+    "status": "active",
+    "created_at": "2026-06-06T04:28:16.512Z",
+    "updated_at": "2026-06-14T08:51:49.701Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 53,
+  "fields": {
+    "service_code": null,
+    "name": "SS Stairs railing",
+    "category": "",
+    "description": "Providing and fixing SS304 stainless steel railing with handrail, horizontal members, and support pillars, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: SS304 Stainless Steel / 16 Gauge\r\nHeight: 3 Feet         Top Rail: 2\" Pipe       Horizontal Members: 1/4\"\r\nPillars: 1.5\"                Pillar Spacing: 3 Feet\r\nFinish: Glossy",
+    "default_rate": "740.00",
+    "service_name": "SS Stairs railing",
+    "unit": "Sq Ft",
+    "image": "media/services/SS_Stairs_Railing_3DgyWGe_B2e0YEP_pb54sy_spmetw",
+    "status": "active",
+    "created_at": "2026-06-06T04:36:00.170Z",
+    "updated_at": "2026-06-14T08:51:46.852Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 54,
+  "fields": {
+    "service_code": null,
+    "name": "Frameless balcony glass railing",
+    "category": "",
+    "description": "Providing and fixing 12mm Saint-Gobain toughened glass partition with aluminium fish-mouth channels, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nGlass: 12mm Saint-Gobain Toughened Glass\r\nChannel Type: Aluminium Fish-Mouth Channel\r\nChannel Thickness: 1.5mm\r\nFixing: Top, Bottom & Side",
+    "default_rate": "295.00",
+    "service_name": "Frameless balcony glass railing",
+    "unit": "Sq Ft",
+    "image": "media/services/Frameless_balcony_glass_railing_zPNbVSc_qDe57Jq_pjevo1_mbafwx",
+    "status": "active",
+    "created_at": "2026-06-06T04:37:58.271Z",
+    "updated_at": "2026-06-14T08:50:04.339Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 55,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone Glass-to-Glass Door Lock",
+    "category": "",
+    "description": "Providing and fixing Ozone stainless steel glass-to-glass lock for frameless glass doors.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nMaterial: Stainless Steel\r\nOperation: Double Side\r\nApplication: Glass-to-Glass Door",
+    "default_rate": "2119.00",
+    "service_name": "Ozone Glass-to-Glass Door Lock",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_Glass-to-Glass_Door_Lock_06aJXDs_L4uvZlI_c4s8za_rzwbts",
+    "status": "active",
+    "created_at": "2026-06-06T04:42:14.878Z",
+    "updated_at": "2026-06-14T08:51:07.249Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 56,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone Small L Patch Fitting",
+    "category": "",
+    "description": "Providing and fixing Ozone small L patch fitting for glass door over-panel connection.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nMaterial: Stainless Steel\r\nApplication: Over Panel Connection",
+    "default_rate": "1930.00",
+    "service_name": "Ozone Small L Patch Fitting",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_Small_L_Patch_Fitting_cxG2M3t_o0cmjo_xlsltr",
+    "status": "active",
+    "created_at": "2026-06-06T04:51:02.350Z",
+    "updated_at": "2026-06-14T08:51:14.047Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 57,
+  "fields": {
+    "service_code": null,
+    "name": "Big L patch fitting",
+    "category": "",
+    "description": "Providing and fixing Ozone big L patch fitting for frameless glass doors.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nMaterial: Stainless Steel\r\nApplication: Glass Door Connection",
+    "default_rate": "2100.00",
+    "service_name": "Big L patch fitting",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_Big_L_Patch_Fitting_VGkCUQb_V15iTV6_il4w3b_pwbcpb",
+    "status": "active",
+    "created_at": "2026-06-06T04:54:13.304Z",
+    "updated_at": "2026-06-14T08:49:06.783Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 58,
+  "fields": {
+    "service_code": null,
+    "name": "Wall-to-glass patch fitting",
+    "category": "",
+    "description": "Providing and fixing Ozone wall-to-glass patch fitting for over-panel glass support.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nMaterial: Stainless Steel\r\nApplication: Wall-to-Glass Connection",
+    "default_rate": "3029.00",
+    "service_name": "Wall-to-glass patch fitting",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_Wall-to-glass_patch_fitting_nYoQhGD_atB4eNc_c6amwu_kie6mb",
+    "status": "active",
+    "created_at": "2026-06-06T05:25:17.689Z",
+    "updated_at": "2026-06-14T08:52:56.693Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 59,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone top & bottom patch set",
+    "category": "",
+    "description": "Providing and fixing Ozone top and bottom patch fittings for frameless glass doors, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nMaterial: Stainless Steel\r\nPosition: Top & Bottom\r\nApplication: Frameless Glass Door",
+    "default_rate": "1355.00",
+    "service_name": "Ozone top & bottom patch set",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_top_and_bottom_patch_yzJusvJ_1cMaUBc_capych_osppcw",
+    "status": "active",
+    "created_at": "2026-06-06T05:31:27.906Z",
+    "updated_at": "2026-06-14T08:51:23.881Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 60,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone Hydraulic Floor Spring",
+    "category": "",
+    "description": "Providing and fixing Ozone hydraulic floor spring machine for frameless glass doors, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nType: Hydraulic Floor Spring\r\nCapacity: Up to 150 Kg",
+    "default_rate": "9840.00",
+    "service_name": "Ozone Hydraulic Floor Spring",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_Hydraulic_Floor_Spring_OVdGA6M_FgaMDi6_avuvjn_kenptg",
+    "status": "active",
+    "created_at": "2026-06-06T05:34:34.734Z",
+    "updated_at": "2026-06-14T08:51:10.588Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 61,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone seal strips",
+    "category": "",
+    "description": "Providing and fixing seal strips for 12mm glass doors.\r\n\r\nSpecifications:\r\nGlass Thickness: 12mm\r\nMaterial: PVC / Polycarbonate",
+    "default_rate": "430.00",
+    "service_name": "Ozone seal strips",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_seal_strips_idMYXme_kZjI7B2_jql7qk_anyfnz",
+    "status": "active",
+    "created_at": "2026-06-06T05:41:58.886Z",
+    "updated_at": "2026-06-14T08:51:20.279Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 62,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone Glass Door Handle",
+    "category": "",
+    "description": "Providing and fixing Ozone SS304 stainless steel handle for frameless glass doors, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nMaterial: SS304 Stainless Steel\r\nFinish: Satin / Glossy\r\nApplication: Frameless Glass Door",
+    "default_rate": "1376.00",
+    "service_name": "Ozone Glass Door Handle",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_SS_handles_for_glass_doors_kN9uPOc_3mcWpN7_id4wlk_ryvfnm",
+    "status": "active",
+    "created_at": "2026-06-06T05:46:09.000Z",
+    "updated_at": "2026-06-14T08:51:04.473Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 63,
+  "fields": {
+    "service_code": null,
+    "name": "MDF Sheets",
+    "category": "",
+    "description": "Providing MDF templates cut to glass shape for staircase railing, landing area, and custom glass fabrication.\r\n\r\nSpecifications:\r\nMaterial: MDF Sheet\r\nPurpose: Measurement & Fabrication Template\r\nApplication: Staircase & Custom Glass",
+    "default_rate": "16950.00",
+    "service_name": "MDF Sheets",
+    "unit": "Sq Ft",
+    "image": "media/services/MDF_SHEETS_nDl9iy5_Hioml1u_ukvjd5_f1xxp1",
+    "status": "active",
+    "created_at": "2026-06-06T05:51:07.003Z",
+    "updated_at": "2026-06-14T08:50:33.890Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 64,
+  "fields": {
+    "service_code": null,
+    "name": "SS Balcony Glass Railing",
+    "category": "",
+    "description": "Providing and fixing SS304 glass railing with 12mm toughened glass, top rail, and base support system, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nGlass: 12mm Toughened Glass\r\nSteel Grade: SS304\r\nTop Rail: 40mm ╫ 40mm Square Pipe\r\nBase Support: SS Brackets / Aluminium Fish-Mouth Channel\r\nFinish: Glossy",
+    "default_rate": "375.00",
+    "service_name": "SS Balcony Glass Railing",
+    "unit": "Sq Ft",
+    "image": "media/services/SS_Balcony_Glass_Railing_c0yFrBE_iIyOvSs_o0cbkn_qbgbkz",
+    "status": "active",
+    "created_at": "2026-06-06T06:04:47.342Z",
+    "updated_at": "2026-06-14T08:51:40.853Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 65,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium 2 Track Sliding Window",
+    "category": "",
+    "description": "Providing and fixing 2 track aluminium sliding window with float glass / design glass / one way tinted glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nSystem: 2 Track Sliding\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Rollers, Trackwool for Sound Proof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "300.00",
+    "service_name": "Aluminium 2 Track Sliding Window",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_2_Track_Sliding_Window_WY5NE3S_hmfeyy_gzzzel",
+    "status": "active",
+    "created_at": "2026-06-06T07:02:35.308Z",
+    "updated_at": "2026-06-14T08:48:02.712Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 66,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium 3 Track Sliding Window",
+    "category": "",
+    "description": "Providing and fixing 3 track aluminium sliding window with float glass / design glass / one way tinted glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nSystem: 3 Track Sliding\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Rollers, Track wool for Soundproof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "400.00",
+    "service_name": "Aluminium 3 Track Sliding Window",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminiu_3_track_sliding_sqfNkv8_r4ugcd_al0d0b",
+    "status": "active",
+    "created_at": "2026-06-06T07:19:08.481Z",
+    "updated_at": "2026-06-14T08:48:07.316Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 67,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium 3 Track Sliding Window with Mosquito Mesh",
+    "category": "",
+    "description": "Providing and fixing 3 track aluminium sliding window with glass shutters and sliding mosquito mesh shutter, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nSystem: 3 Track Sliding\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nMesh: Sliding Mosquito Mesh (PVC Mesh / Aluminium Mesh)\r\nHardware: Rollers, Trackwool for Soundproof (Brand: Saint-Gobain), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "450.00",
+    "service_name": "Aluminium 3 Track Sliding Window with Mosquito Mesh",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_3_track_with_mesh_9H6oKYo_QYyAgyn_muxy3e_xazfle",
+    "status": "active",
+    "created_at": "2026-06-06T07:20:22.008Z",
+    "updated_at": "2026-06-14T08:48:11.555Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 68,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Openable Window (Casement Window)",
+    "category": "",
+    "description": "Providing and fixing aluminium openable window with float glass / design glass / one way tinted glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nSystem: Side Openable\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Friction Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "400.00",
+    "service_name": "Aluminium Openable Window (Casement Window)",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Openable_Window_t5yLFi9_hkxWdp1_jjxarm_tjp7b9",
+    "status": "active",
+    "created_at": "2026-06-06T07:37:26.030Z",
+    "updated_at": "2026-06-14T08:48:32.598Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 69,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Fixed Window",
+    "category": "",
+    "description": "Providing and fixing fixed aluminium frame with float glass / design glass / one way tinted glass, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nSystem: Fixed",
+    "default_rate": "350.00",
+    "service_name": "Aluminium Fixed Window",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Fixed_Window_AuXiwaE_dd2qql_gdc1f5",
+    "status": "active",
+    "created_at": "2026-06-06T07:38:41.140Z",
+    "updated_at": "2026-06-14T08:48:18.894Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 70,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Ventilator (Top Hung)",
+    "category": "",
+    "description": "Providing and fixing aluminium ventilator with design glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Design Glass\r\nSystem: Openable Ventilator\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories",
+    "default_rate": "550.00",
+    "service_name": "Aluminium Ventilator (Top Hung)",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Ventilator_Top_Hung_MYSgcSM_hb6rt5_vo25gx",
+    "status": "active",
+    "created_at": "2026-06-06T07:45:33.049Z",
+    "updated_at": "2026-06-14T08:48:49.553Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 71,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Ventilator without Exhaust Fan",
+    "category": "",
+    "description": "Providing and fixing aluminium ventilator without exhaust fan provision, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Design Glass\r\nExhaust Fan: Not Included\r\nSystem: Openable Ventilator",
+    "default_rate": "550.00",
+    "service_name": "Aluminium Ventilator without Exhaust Fan",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Ventilator_without_Exhaust_Fan_tJfXlO4_qzi5wi_nffqpa",
+    "status": "active",
+    "created_at": "2026-06-06T07:49:09.163Z",
+    "updated_at": "2026-06-14T08:48:56.958Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 72,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Ventilator with Exhaust Fan",
+    "category": "",
+    "description": "Providing and fixing aluminium ventilator with integrated exhaust fan provision, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Design Glass\r\nExhaust Fan: Included\r\nSystem: Openable Ventilator",
+    "default_rate": "2500.00",
+    "service_name": "Aluminium Ventilator with Exhaust Fan",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Ventilator_with_Exhaust_Fan_GSH1zJC_v2ohx7_wbpazw",
+    "status": "active",
+    "created_at": "2026-06-06T07:51:31.691Z",
+    "updated_at": "2026-06-14T08:48:52.613Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 73,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Double Door",
+    "category": "",
+    "description": "Providing and fixing double shutter aluminium door with float glass / design glass / one-way tinted glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "700.00",
+    "service_name": "Aluminium Double Door",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Double_Door_EIgLM7M_zcfxtd_eofblm",
+    "status": "active",
+    "created_at": "2026-06-06T08:00:41.352Z",
+    "updated_at": "2026-06-14T08:48:15.243Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 74,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Sliding Door",
+    "category": "",
+    "description": "Providing and fixing aluminium sliding door with float glass / design glass / one way tinted glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Rollers, Track wool for Sound Proof (Brand: Saint-Gobain), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "500.00",
+    "service_name": "Aluminium Sliding Door",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Sliding_Door_O5ZrIm8_p7ddxb_ey6xtm",
+    "status": "active",
+    "created_at": "2026-06-06T08:07:12.449Z",
+    "updated_at": "2026-06-14T08:48:42.610Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 75,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Single Door",
+    "category": "",
+    "description": "Providing and fixing aluminium door with float glass / design glass / one way tinted glass, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Hinges (JMAXX), Handle & Metal Body Lock (STARLOCK)",
+    "default_rate": "500.00",
+    "service_name": "Aluminium Single Door",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Single_Door_XAxrzkd_w1nyvy_vpjeti",
+    "status": "active",
+    "created_at": "2026-06-06T08:08:22.216Z",
+    "updated_at": "2026-06-14T08:48:39.313Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 76,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Glass Partition",
+    "category": "",
+    "description": "Providing and fixing aluminium partition with float glass / design glass / one way tinted glass, complete with necessary fittings.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nSystem: Fixed Partition\r\nComplete with Required Accessories and Installation",
+    "default_rate": "500.00",
+    "service_name": "Aluminium Glass Partition",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Glass_Partition_wORFUTi_jFi0Upk_g0fbit_apwuco",
+    "status": "active",
+    "created_at": "2026-06-06T08:13:48.688Z",
+    "updated_at": "2026-06-14T08:48:21.784Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 77,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Shop Front Glazing",
+    "category": "",
+    "description": "Providing and fixing aluminium shop front glazing with float glass / design glass / one way tinted glass, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Jindal Make / 1.2mm Thickness\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nSystem: Fixed / Door Combination",
+    "default_rate": "725.00",
+    "service_name": "Aluminium Shop Front Glazing",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Shop_Front_Glazing_EFncjjE_k8o6kd_pbhxos",
+    "status": "active",
+    "created_at": "2026-06-06T08:21:33.112Z",
+    "updated_at": "2026-06-14T08:48:35.795Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 78,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Glass Railing",
+    "category": "",
+    "description": "Providing and fixing aluminium railing with toughened glass panels and aluminium handrail.\r\n\r\nSpecifications:\r\nAluminium: Jindal Make / 1.2 mm Thickness\r\nGlass: 12mm Toughened Glass\r\nHandrail: Aluminium Top Rail\r\nFinish: Powder Coated",
+    "default_rate": "725.00",
+    "service_name": "Aluminium Glass Railing",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Glass_Railing_YB8Kfba_jegjfu_htcpy2",
+    "status": "active",
+    "created_at": "2026-06-06T08:24:53.137Z",
+    "updated_at": "2026-06-14T08:48:26.108Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 79,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Glass Railing with Fish-Mouth Base Channel",
+    "category": "",
+    "description": "Providing and fixing 12mm toughened glass railing with aluminium fish-mouth base channel and aluminium top rail.\r\n\r\nSpecifications:\r\nAluminium: Jindal Make / 1.2mm Thickness\r\nGlass: 12mm Saint-Gobain Toughened Glass\r\nBase Channel: Aluminium Fish-Mouth Channel\r\nTop Rail: Aluminium Handrail\r\nFinish: Powder Coated",
+    "default_rate": "725.00",
+    "service_name": "Aluminium Glass Railing with Fish-Mouth Base Channel",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Glass_Railing_with_Fish-Mouth_Base_Channel_ePNQXDt_qsesy0_drhf3f",
+    "status": "active",
+    "created_at": "2026-06-06T08:29:14.857Z",
+    "updated_at": "2026-06-14T08:48:29.872Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 80,
+  "fields": {
+    "service_code": null,
+    "name": "ACP Front Elevation Cladding",
+    "category": "",
+    "description": "Providing and fixing ACP sheets on building front elevation using aluminium/GI framework, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nACP Thickness: 3mm\r\nBrand: Aludecor / Alstone / Eurobond / Viva / Praso\r\nFramework: Aluminium / GI\r\nFixing: 3M Tape & Silicone\r\nFinish: Matte / Glossy / Wooden\r\nComplete with Required Accessories and Installation",
+    "default_rate": "250.00",
+    "service_name": "ACP Front Elevation Cladding",
+    "unit": "Sq Ft",
+    "image": "media/services/ACP_Front_Elevation_Cladding_swIuWgL_k7n3tk_trukor",
+    "status": "active",
+    "created_at": "2026-06-06T08:42:46.865Z",
+    "updated_at": "2026-06-14T08:48:00.053Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 81,
+  "fields": {
+    "service_code": null,
+    "name": "MS Main Gate",
+    "category": "",
+    "description": "Providing and fixing MS entrance gate as per client-approved design, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nMaterial: Mild Steel (MS)\r\nType: Swing / Sliding\r\nDesign: As per Client Requirement\r\nHardware: Handle & Required Accessories",
+    "default_rate": "1000.00",
+    "service_name": "MS Main Gate",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Main_Gate_BzLB9fP_mgkxk5_zilmid",
+    "status": "active",
+    "created_at": "2026-06-06T09:23:37.855Z",
+    "updated_at": "2026-06-14T08:50:45.131Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 82,
+  "fields": {
+    "service_code": null,
+    "name": "MS Car Parking Shed",
+    "category": "",
+    "description": "Providing and fixing MS structure for car parking shed.\r\n\r\nSpecifications:\r\nMaterial: MS Square Pipe\r\nRoofing: Polycarbonate / Sheet Roofing",
+    "default_rate": "1000.00",
+    "service_name": "MS Car Parking Shed",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Car_Parking_Shed_YUP5JtA_zj4lxl_r6fxl0",
+    "status": "active",
+    "created_at": "2026-06-06T09:26:29.330Z",
+    "updated_at": "2026-06-14T08:50:39.615Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 83,
+  "fields": {
+    "service_code": null,
+    "name": "MS Entrance canopy",
+    "category": "",
+    "description": "Providing and fixing MS canopy support structure.\r\n\r\nSpecifications:\r\nMaterial: MS Sections\r\nRoofing: Polycarbonate / Glass",
+    "default_rate": "1000.00",
+    "service_name": "MS Entrance canopy",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Entrance_canopy_Gk88vgo_vydge3_jlj9yq",
+    "status": "active",
+    "created_at": "2026-06-06T09:29:30.221Z",
+    "updated_at": "2026-06-14T08:50:42.378Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 84,
+  "fields": {
+    "service_code": null,
+    "name": "MS Slant Car Parking Canopy Structure",
+    "category": "",
+    "description": "Providing and fixing MS slant canopy structure for car parking with roofing sheet and support framework, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nStructure: Mild Steel (MS) Sections with MS Square Pipe / Rectangular Tube Supports\r\nDesign: Slant Roof Canopy\r\nRoofing: Polycarbonate Sheet / Toughened Glass / Colour Coated Roofing Sheet\r\nApplication: Residential & Commercial Car Parking",
+    "default_rate": "1000.00",
+    "service_name": "MS Slant Car Parking Canopy Structure",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Slant_Car_Parking_Canopy_Structure_stsIcbk_vvxxcn_ntrhfj",
+    "status": "active",
+    "created_at": "2026-06-06T09:33:16.699Z",
+    "updated_at": "2026-06-14T08:50:51.586Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 85,
+  "fields": {
+    "service_code": null,
+    "name": "MS Safety Grill Door",
+    "category": "",
+    "description": "Providing and fixing MS safety grill door for the main entrance with locking arrangement and grill design, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: Mild Steel (MS)\r\nFrame: MS Square Pipe / Rectangular Tube with MS Grill Members\r\nShutter Type: Single Leaf / Double Leaf\r\nLocking System: Tower Bolt / Mortise Lock / Godrej Lock Provision\r\nFinish: Primer Coated & Painted / Powder Coated",
+    "default_rate": "1000.00",
+    "service_name": "MS Safety Grill Door",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Safety_Grill_Door_oUvcA4P_zh9qsb_m9ul03",
+    "status": "active",
+    "created_at": "2026-06-06T09:38:48.585Z",
+    "updated_at": "2026-06-14T08:50:48.686Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 86,
+  "fields": {
+    "service_code": null,
+    "name": "SS Safety Grill Door",
+    "category": "",
+    "description": "Providing and fixing SS304 safety grill door for the main entrance with locking arrangement and grill design, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: SS304 Stainless Steel\r\nFrame: SS Square Pipe / Rectangular Tube with SS Grill Members\r\nShutter Type: Single Leaf / Double Leaf\r\nLocking System: Tower Bolt / Mortise Lock / Godrej Lock Provision\r\nFinish: Glossy",
+    "default_rate": "1000.00",
+    "service_name": "SS Safety Grill Door",
+    "unit": "Sq Ft",
+    "image": "media/services/SS_Safety_Grill_Door_ot7voww_smkltv_udktb3",
+    "status": "active",
+    "created_at": "2026-06-06T09:41:02.535Z",
+    "updated_at": "2026-06-14T08:51:43.650Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 87,
+  "fields": {
+    "service_code": null,
+    "name": "MS Staircase for Overhead Water Tank",
+    "category": "",
+    "description": "Providing and fixing MS staircase for safe access to the overhead water tank, complete with support structure and handrail.\r\n\r\nSpecifications:\r\nMaterial: Mild Steel (MS)\r\nStructure: MS Square Pipe / Channel Sections\r\nSteps: MS Chequered Plate / MS Flat Steps\r\nHandrail: MS Pipe Railing\r\nFinish: Primer Coated & Painted / Powder Coated\r\nHeight: As per Site Requirement",
+    "default_rate": "1000.00",
+    "service_name": "MS Staircase for Overhead Water Tank",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Access_Staircase_for_Overhead_Water_Tank_A5tN36c_rqlvo4_zrj2de",
+    "status": "active",
+    "created_at": "2026-06-06T09:43:30.063Z",
+    "updated_at": "2026-06-14T08:50:54.505Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 88,
+  "fields": {
+    "service_code": null,
+    "name": "MS Terrace Roofing Shed",
+    "category": "",
+    "description": "Providing and fixing MS pillar-supported roofing structure for full terrace coverage, complete with roofing sheets and rainwater drainage system.\r\n\r\nSpecifications:\r\nStructure: Mild Steel (MS) Columns, Rafters & Purlins\r\nColumns: MS Square Pipe / Rectangular Tube\r\nRoofing: Colour Coated Sheet / Galvalume Sheet / Polycarbonate Sheet\r\nDrainage: GI / Colour Coated Gutter Channel with PVC / GI Down-Take Pipe\r\nFinish: Primer Coated & Painted / Powder Coated\r\nApplication: Full Terrace Roofing",
+    "default_rate": "1000.00",
+    "service_name": "MS Terrace Roofing Shed",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Terrace_Roofing_Shed_PkWoCWH_u58gzv_ienio3",
+    "status": "active",
+    "created_at": "2026-06-06T09:49:03.366Z",
+    "updated_at": "2026-06-14T08:50:57.170Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 89,
+  "fields": {
+    "service_code": null,
+    "name": "Aluminium Sliding Mosquito Mesh Door",
+    "category": "",
+    "description": "Providing and fixing aluminium-framed sliding mosquito mesh door with pleated insect screen mesh and smooth sliding mechanism, complete with required hardware and installation.\r\n\r\nSpecifications:\r\nFrame: Jindal Aluminium / 1.2mm Thickness\r\nMesh Type: Pleated Mosquito Mesh\r\nOperation: Sliding\r\nHardware: Rollers, Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories\r\nFinish: Powder Coated / Anodized\r\nApplication: Main Entrance Door",
+    "default_rate": "1000.00",
+    "service_name": "Aluminium Sliding Mosquito Mesh Door",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Sliding_Mosquito_Mesh_Door_p3teJho_a64pjs_zox75q",
+    "status": "active",
+    "created_at": "2026-06-06T09:56:14.907Z",
+    "updated_at": "2026-06-14T08:48:45.974Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 90,
+  "fields": {
+    "service_code": null,
+    "name": "Pooja Room with CNC Cut Doors",
+    "category": "",
+    "description": "Providing and fixing a custom-designed pooja room with aluminium framework and ACP panelling, complete with decorative doors, storage units, and accessories.\r\n\r\nSpecifications:\r\nStructure: Jindal Aluminium Sections / 1.2mm Thickness with 3mm / 4mm ACP Panelling\r\nDoor Type: CNC Cut Decorative Doors with Custom CNC Design Pattern\r\nStorage: Base Cabinets & Drawers\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nAccessories: Decorative Bells & Temple Crown\r\nFinish: Matte / Glossy ACP Finish",
+    "default_rate": "1000.00",
+    "service_name": "Pooja Room with CNC Cut Doors",
+    "unit": "Sq Ft",
+    "image": "media/services/Pooja_Room_with_CNC_Cut_Doors_2lfM4pb_fDXazik_kudq28_bbdwub",
+    "status": "active",
+    "created_at": "2026-06-06T11:32:29.919Z",
+    "updated_at": "2026-06-14T08:51:34.973Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 91,
+  "fields": {
+    "service_code": null,
+    "name": "Study Table with Storage Unit",
+    "category": "",
+    "description": "Providing and fixing a customized study table with aluminium framework and ACP panelling, complete with storage units as per client requirements.\r\n\r\nSpecifications:\r\nStructure: Jindal Aluminium Sections / 1.2mm Thickness with 3mm ACP Panelling\r\nStorage: Drawers, Cabinets & Open Shelves\r\nShutter Type: Openable Doors\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Drawer Channels (Brand: JMAXX) & Required Accessories\r\nDesign: Customized as per Client Requirement",
+    "default_rate": "1275.00",
+    "service_name": "Study Table with Storage Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Study_table_unit_with_storage_Ydyhfni_jtdkik_hhopv1",
+    "status": "active",
+    "created_at": "2026-06-06T14:36:03.158Z",
+    "updated_at": "2026-06-14T08:52:04.239Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 92,
+  "fields": {
+    "service_code": null,
+    "name": "Shoe Rack with Shelves",
+    "category": "",
+    "description": "Providing and fixing a customized shoe rack with aluminium framework and ACP panelling, complete with shelves, drawers, and openable doors as per client requirements.\r\n\r\nSpecifications:\r\nStructure: Jindal Aluminium Sections / 1.2mm Thickness with 3mm ACP Panelling\r\nStorage: Shoe Shelves, Drawers & Cabinets\r\nShutter Type: Openable Doors\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Drawer Channels (Brand: JMAXX) & Required Accessories\r\nDesign: Customized as per Client Requirement",
+    "default_rate": "1250.00",
+    "service_name": "Shoe Rack with Shelves",
+    "unit": "Sq Ft",
+    "image": "media/services/Shoe_rack_with_door_ZTXab3M_dfes3j_k0jvht",
+    "status": "active",
+    "created_at": "2026-06-06T14:41:39.258Z",
+    "updated_at": "2026-06-14T08:51:52.581Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 93,
+  "fields": {
+    "service_code": null,
+    "name": "Partition for Hall & Dining Area",
+    "category": "",
+    "description": "Providing and fixing decorative aluminium partition between hall and dining area as per approved customized design, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: Aluminium Sections (1/4 Section)\r\nFinish: White Powder Coating / Wooden Finish Coating\r\nDesign: Custom Decorative Pattern\r\nFixing: Aluminium Rivets\r\nInstallation: Floor-to-Lintel / Floor-to-Ceiling as Required\r\nApplication: Hall & Dining Area Partition",
+    "default_rate": "810.00",
+    "service_name": "Partition for Hall & Dining Area",
+    "unit": "Sq Ft",
+    "image": "media/services/Partition_for_Hall__Dining_Area_WeCbuXe_n5wfiz_yshn6o",
+    "status": "active",
+    "created_at": "2026-06-07T05:40:38.446Z",
+    "updated_at": "2026-06-14T08:51:29.371Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 94,
+  "fields": {
+    "service_code": null,
+    "name": "Bottle Pull-Out Unit",
+    "category": "",
+    "description": "Providing and fixing a bottle pull-out storage unit with multi-tier baskets and telescopic pull-out mechanism for organized storage of kitchen essentials, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: SS304 Stainless Steel / Powder Coated Steel Frame with Multi-Tier Storage Baskets\r\nOperation: Pull-Out Mechanism with Heavy-Duty Telescopic Channels (Brand: JMAXX)\r\nStorage: Bottles, Jars, Spices\r\nWidth: As per Cabinet Size\r\nFinish: SS / Powder Coated\r\nApplication: Modular Kitchen Base Unit",
+    "default_rate": "4000.00",
+    "service_name": "Bottle Pull-Out Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Bottle_pull_out_1z8oZGe_vdsftm_hmn2d8",
+    "status": "active",
+    "created_at": "2026-06-07T08:45:53.663Z",
+    "updated_at": "2026-06-14T08:49:10.098Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 95,
+  "fields": {
+    "service_code": null,
+    "name": "Cutlery Organizer Tray",
+    "category": "",
+    "description": "Providing and fixing a cutlery organizer tray for organized storage of spoons, forks, knives, ladles, and kitchen accessories, complete with installation.\r\n\r\nSpecifications:\r\nMaterial: PVC / ABS Plastic (Brand: JMAXX)\r\nType: Drawer Mounted with Modular Multi-Compartment Layout\r\nFinish: Matte Grey\r\nInstallation: Inside Kitchen Drawer\r\nApplication: Modular Kitchen",
+    "default_rate": "1200.00",
+    "service_name": "Cutlery Organizer Tray",
+    "unit": "Sq Ft",
+    "image": "media/services/Cutlery_tray_unit_arQ9zIb_uifii1_npdtys",
+    "status": "active",
+    "created_at": "2026-06-07T08:54:51.199Z",
+    "updated_at": "2026-06-14T08:49:14.138Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 96,
+  "fields": {
+    "service_code": null,
+    "name": "Thali & Plate Basket",
+    "category": "",
+    "description": "Providing and fixing a stainless-steel thali and plate basket for organized storage of plates, bowls, and serving dishes, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: SS304 Stainless Steel\r\nType: Pull-Out Plate & Thali Storage Basket\r\nHardware: Heavy-Duty Telescopic Channels (Brand: JMAXX)\r\nStorage: Thalis, Plates, Bowls & Serving Dishes\r\nFinish: Stainless Steel\r\nInstallation: Base Cabinet Mounted\r\nApplication: Modular Kitchen",
+    "default_rate": "2100.00",
+    "service_name": "Thali & Plate Basket",
+    "unit": "Sq Ft",
+    "image": "media/services/Thali__Plate_Basket_ar4o1Ku_xytdwd_okzxvl",
+    "status": "active",
+    "created_at": "2026-06-07T09:05:55.651Z",
+    "updated_at": "2026-06-14T08:52:13.582Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 97,
+  "fields": {
+    "service_code": null,
+    "name": "Pull-Out Dustbin Unit",
+    "category": "",
+    "description": "Providing and fixing a pull-out dustbin unit with waste segregation bins and telescopic pull-out mechanism, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nBin Material: High-Quality Plastic / Powder Coated Steel Frame\r\nOperation: Pull-Out System with Heavy-Duty Telescopic Channels (Brand: JMAXX)\r\nCompartments: Dual / Triple Bin Arrangement for Wet & Dry Waste Segregation\r\nFinish: Grey / Anthracite\r\nInstallation: Base Cabinet Mounted\r\nApplication: Modular Kitchen",
+    "default_rate": "4800.00",
+    "service_name": "Pull-Out Dustbin Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Pull-Out_Dustbin_Unit_z8ocKLE_turzhw_qrxpcx",
+    "status": "active",
+    "created_at": "2026-06-07T09:21:41.791Z",
+    "updated_at": "2026-06-14T08:51:37.917Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 98,
+  "fields": {
+    "service_code": null,
+    "name": "Gas Cylinder Pull-Out Trolley",
+    "category": "",
+    "description": "Providing and fixing a pull-out gas cylinder trolley with smooth sliding mechanism for easy access and handling of LPG cylinders, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: Powder Coated Steel\r\nPlatform: Pull-Out Base Platform (Brand: JMAXX)\r\nOperation: Sliding Pull-Out System\r\nHardware: Heavy-Duty Telescopic Channels (Brand: JMAXX)\r\nCapacity: Suitable for Standard LPG Cylinder\r\nFinish: Powder Coated\r\nInstallation: Base Cabinet Mounted\r\nApplication: Modular Kitchen",
+    "default_rate": "4980.00",
+    "service_name": "Gas Cylinder Pull-Out Trolley",
+    "unit": "Sq Ft",
+    "image": "media/services/Gas_Cylinder_Pull-Out_Trolley_abnAQ2n_ba7cbq_bvnnaw",
+    "status": "active",
+    "created_at": "2026-06-07T09:39:58.852Z",
+    "updated_at": "2026-06-14T08:50:06.970Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 99,
+  "fields": {
+    "service_code": null,
+    "name": "Soap & Scrubber Holder Unit",
+    "category": "",
+    "description": "Providing and fixing a stainless-steel detergent and scrubber holder near the kitchen sink, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: SS304 Stainless Steel\r\nType: Sink Mounted Holder\r\nStorage: Detergent Tray & Scrubber Rack\r\nFinish: Mirror Finish\r\nInstallation: Sink / Counter Mounted",
+    "default_rate": "680.00",
+    "service_name": "Soap & Scrubber Holder Unit",
+    "unit": "Sq Ft",
+    "image": "media/services/Soap__Scrubber_Holder_Unit_4MXFH9U_gpid8z_qaptam",
+    "status": "active",
+    "created_at": "2026-06-07T09:48:23.078Z",
+    "updated_at": "2026-06-14T08:51:55.503Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 103,
+  "fields": {
+    "service_code": null,
+    "name": "Pan Hanger Pull-Out Rack",
+    "category": "",
+    "description": "Providing and fixing a pan hanger pull-out rack with telescopic pull-out mechanism for organized storage of cookware and kitchen accessories, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: Powder Coated Steel / SS304 Stainless Steel\r\nType: Pull-Out Pan Hanger\r\nOperation: Telescopic Pull-Out System\r\nHardware: Heavy-Duty Hanging Hooks (Brand: JMAXX), Heavy-Duty Telescopic Channels (Brand: JMAXX)\r\nFinish: Powder Coated / Stainless Steel Finish\r\nInstallation: Base Cabinet Mounted\r\nApplication: Modular Kitchen",
+    "default_rate": "2800.00",
+    "service_name": "Pan Hanger Pull-Out Rack",
+    "unit": "Sq Ft",
+    "image": "media/services/Pan_Hanger_PullOut_Rack_WDeBcyy_x7apq3_pgff0c",
+    "status": "active",
+    "created_at": "2026-06-07T18:08:34.611Z",
+    "updated_at": "2026-06-14T08:51:26.443Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 104,
+  "fields": {
+    "service_code": null,
+    "name": "Ozone Smart Door Lock",
+    "category": "",
+    "description": "Providing and fixing Ozone smart glass door lock with fingerprint, PIN, RFID, and key access, complete with accessories and installation.\r\n\r\nSpecifications:\r\nBrand: Ozone\r\nType: Glass-to-Glass Smart Lock\r\nAccess: Fingerprint, PIN, RFID Card & Mechanical Key\r\nGlass Compatibility: 10mm / 12mm Toughened Glass\r\nPower: Battery Operated with Low Battery Alert\r\nFinish: Black\r\nComplete with Locking Mechanism, Batteries & Required Accessories",
+    "default_rate": "21000.00",
+    "service_name": "Ozone Smart Door Lock",
+    "unit": "Sq Ft",
+    "image": "media/services/Ozone_Glass-to-Glass_Smart_Door_Lock_pvlx8k_t4sp2m",
+    "status": "active",
+    "created_at": "2026-06-09T08:29:39.332Z",
+    "updated_at": "2026-06-14T08:51:17.524Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 105,
+  "fields": {
+    "service_code": null,
+    "name": "Transportation Charges",
+    "category": "",
+    "description": "Transportation Charges of materials",
+    "default_rate": "500.00",
+    "service_name": "Transportation Charges",
+    "unit": "Sq Ft",
+    "image": "",
+    "status": "active",
+    "created_at": "2026-06-09T10:36:14.607Z",
+    "updated_at": "2026-06-10T07:51:55.606Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 106,
+  "fields": {
+    "service_code": null,
+    "name": "MS Back Door Safety Grill",
+    "category": "",
+    "description": "Providing and fixing MS fixed safety grill enclosure for home back door/verandah area, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nMaterial: Mild Steel (MS) Frame with Vertical Grill Members\r\nType: Fixed Safety Grill Enclosure\r\nDesign: As per Approved Design",
+    "default_rate": "1000.00",
+    "service_name": "MS Back Door Safety Grill",
+    "unit": "Sq Ft",
+    "image": "media/services/MS_Back_Door_Safety_Grill_k76huu_shpdow",
+    "status": "active",
+    "created_at": "2026-06-10T07:58:12.537Z",
+    "updated_at": "2026-06-14T08:50:36.831Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 107,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Sliding Window (2 Track)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium sliding window with glass panels, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: 2 Track Sliding (Mesh Not Included)\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Rollers, Trackwool for Soundproof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "600.00",
+    "service_name": "Domal Sliding Window (2 Track)",
+    "unit": "Sq Ft",
+    "image": "media/services/Domal_Sliding_Window_2_Track_yvfopz_bszc0t",
+    "status": "active",
+    "created_at": "2026-06-10T08:20:02.408Z",
+    "updated_at": "2026-06-14T08:49:37.257Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 108,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Sliding Window (2 Track) with Mesh",
+    "category": "",
+    "description": "Providing and fixing 3 Track Domal 27mm series aluminium sliding window with glass shutters and sliding mosquito mesh shutter, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: 3 Track Sliding with Sliding Mosquito Mesh Shutter\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nMesh: Sliding Mosquito Mesh (PVC Mesh / Aluminium Mesh)\r\nHardware: Rollers, Trackwool for Soundproof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "850.00",
+    "service_name": "Domal Sliding Window (2 Track) with Mesh",
+    "unit": "Sq Ft",
+    "image": "media/services/Domal_Sliding_Window_2_Track_with_Mesh_judv99_a2tx5c",
+    "status": "active",
+    "created_at": "2026-06-10T10:05:29.153Z",
+    "updated_at": "2026-06-14T08:49:40.759Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 109,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Sliding Window (3 Track)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium sliding window with 3 glass shutters, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: 3 Track Sliding with 3 Glass Shutters (Mesh Not Included)\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Rollers, Trackwool for Soundproof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "1110.00",
+    "service_name": "Domal Sliding Window (3 Track)",
+    "unit": "Sq Ft",
+    "image": "media/services/Domal_Sliding_Window_3_Track_r0ekts_bd0ksa",
+    "status": "active",
+    "created_at": "2026-06-10T10:16:11.927Z",
+    "updated_at": "2026-06-14T08:49:42.943Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 110,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Openable Window (2 Shutters)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium openable window with 2 glass shutters, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: 2 Shutter Side Openable\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "1110.00",
+    "service_name": "Domal Openable Window (2 Shutters)",
+    "unit": "Sq Ft",
+    "image": "media/services/Domal_Openable_Window_2_Shutters_pzr8os_rugqul",
+    "status": "active",
+    "created_at": "2026-06-10T10:24:18.670Z",
+    "updated_at": "2026-06-14T08:49:32.350Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 111,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Openable Window (1 Shutter)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium openable window with 1 glass shutter, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Single Shutter Side Openable\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "1110.00",
+    "service_name": "Domal Openable Window (1 Shutter)",
+    "unit": "Sq Ft",
+    "image": "media/services/Domal_Openable_Window_1_Shutter_p0hh85_mp1u9h",
+    "status": "active",
+    "created_at": "2026-06-10T10:27:12.319Z",
+    "updated_at": "2026-06-14T08:49:29.886Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 112,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Fixed Window",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium fixed window with glass panels, complete with required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Fixed\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass",
+    "default_rate": "550.00",
+    "service_name": "Domal Fixed Window",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Fixed_Window_nbiri0_g57hbw",
+    "status": "active",
+    "created_at": "2026-06-10T10:29:17.534Z",
+    "updated_at": "2026-06-14T08:49:20.051Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 113,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Sliding Door",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium sliding door with glass panels, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Sliding Door\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Rollers, Trackwool for Soundproof (Brand: Saint-Gobain), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "600.00",
+    "service_name": "Domal Sliding Door",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Sliding_Door_c2kno6_vuxgkp",
+    "status": "active",
+    "created_at": "2026-06-10T10:33:01.777Z",
+    "updated_at": "2026-06-14T08:49:34.876Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 114,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Ventilator (Top Hung)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium top hung ventilator with 5mm Design Glass, complete with required hardware and accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Top Hung Ventilator\r\nGlass:  5mm Design Glass\r\nHardware: Friction Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories",
+    "default_rate": "400.00",
+    "service_name": "Domal Ventilator (Top Hung)",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Ventilator_Top_Hung_wujaxq_vpvwt9",
+    "status": "active",
+    "created_at": "2026-06-10T10:36:02.200Z",
+    "updated_at": "2026-06-14T08:49:48.141Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 115,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Ventilator ",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium ventilator with 5mm Design Glass, complete with required hardware and accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Openable Ventilator\r\nGlass: 5mm Design Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nExhaust Fan: Not Included",
+    "default_rate": "400.00",
+    "service_name": "Domal Ventilator ",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Ventilator_without_Exhaust_Fan_e4dz8g_ieaodt",
+    "status": "active",
+    "created_at": "2026-06-10T10:37:48.437Z",
+    "updated_at": "2026-06-14T08:49:45.657Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 116,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Ventilator + Exhaust Fan",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium ventilator with 5mm Design Glass and exhaust fan provision, complete with required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Openable Ventilator with Exhaust Fan Provision\r\nGlass: 5mm Design Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX) & Required Accessories\r\nElectrical Connection & Fan Installation: Under Client Scope",
+    "default_rate": "400.00",
+    "service_name": "Domal Ventilator + Exhaust Fan",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Ventilator_with_Exhaust_Fan_wkksfu_bxostb",
+    "status": "active",
+    "created_at": "2026-06-10T10:39:19.660Z",
+    "updated_at": "2026-06-14T08:49:51.969Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 117,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Openable Door (2 Shutters)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium openable door with 2 glass shutters, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Double Shutter Openable Door\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "725.00",
+    "service_name": "Domal Openable Door (2 Shutters)",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Double_Door_rmzvyy_sw7bgk",
+    "status": "active",
+    "created_at": "2026-06-10T10:42:52.857Z",
+    "updated_at": "2026-06-14T08:49:27.352Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 118,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Openable Door (1 Shutter)",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium openable door with glass panel, complete with locking system and required accessories.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Single Shutter Openable Door\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nHardware: Hinges (Brand: JMAXX), Handle (Brand: JMAXX), Lock (Brand: STARLOCK) & Required Accessories",
+    "default_rate": "725.00",
+    "service_name": "Domal Openable Door (1 Shutter)",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Single_Door_usoyrj_atycoy",
+    "status": "active",
+    "created_at": "2026-06-10T10:43:58.111Z",
+    "updated_at": "2026-06-14T08:49:25.077Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 119,
+  "fields": {
+    "service_code": null,
+    "name": "Domal Glass Partition",
+    "category": "",
+    "description": "Providing and fixing Domal 27mm series aluminium glass partition, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nAluminium Profile: Domal 27mm Series / Jindal Make\r\nSystem: Fixed Partition\r\nGlass: 5mm Float Glass / Design Glass / One Way Tinted Glass\r\nComplete with Required Accessories and Installation",
+    "default_rate": "600.00",
+    "service_name": "Domal Glass Partition",
+    "unit": "Sq Ft",
+    "image": "media/services/Aluminium_Glass_Partition_imlbj1_lwvayy",
+    "status": "active",
+    "created_at": "2026-06-10T10:45:52.972Z",
+    "updated_at": "2026-06-14T08:49:22.624Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 120,
+  "fields": {
+    "service_code": null,
+    "name": "UPVC 3-Track Sliding Window (3 Shutters)",
+    "category": "",
+    "description": "Providing and fixing UPVC 3-track sliding window with 3 glass shutters, complete with locking system, hardware, and installation.\r\n\r\nSpecifications:\r\nProfile: UPVC (Brand: Green Fortune) with GI Reinforcement (Where Required)\r\nSystem: 3-Track Sliding with 3 Glass Shutters (Mesh Not Included)\r\nGlass: 5mm Float Glass / Design Glass / One-Way Tinted Glass\r\nHardware: Rollers, Trackwool for Soundproof (Brand: Saint-Gobain), Lock (Brand: STARLOCK) & Required Accessories\r\nGaskets: EPDM / Rubber Gaskets",
+    "default_rate": "725.00",
+    "service_name": "UPVC 3-Track Sliding Window (3 Shutters)",
+    "unit": "Sq Ft",
+    "image": "media/services/UPVC_3-Track_Sliding_Window_3_Shutters_cxdbku_ofnbtu",
+    "status": "active",
+    "created_at": "2026-06-10T18:40:49.897Z",
+    "updated_at": "2026-06-14T08:52:35.696Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 121,
+  "fields": {
+    "service_code": null,
+    "name": "Figure Glass",
+    "category": "",
+    "description": "5mm figured glass translucent texture\r\nFigure Glass Options:\r\n\r\nArial\r\nCrown\r\nCrystal\r\nD-D\r\nDiamond Square\r\nGinza\r\nGrille\r\nKarishma\r\nKasumi\r\nMasterlite\r\nMislite\r\nMorning Glory\r\nPinhead\r\nPrime\r\nRubik\r\nSigma\r\nSwastik\r\nVictory\r\nWired Glass\r\nYozora",
+    "default_rate": "30.00",
+    "service_name": "Figure Glass",
+    "unit": "Sq Ft",
+    "image": "media/services/Figure_Glass_juyB2Af_zjffxy_j8fejd",
+    "status": "active",
+    "created_at": "2026-06-10T18:56:48.237Z",
+    "updated_at": "2026-06-14T08:49:57.937Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 122,
+  "fields": {
+    "service_code": null,
+    "name": "Plain Glass",
+    "category": "",
+    "description": "Plain Glass: 5mm Clear Float Glass (Transparent)",
+    "default_rate": "55.00",
+    "service_name": "Plain Glass",
+    "unit": "Sq Ft",
+    "image": "media/services/Plain_Glass_dcnl77_hfsd7d",
+    "status": "active",
+    "created_at": "2026-06-10T19:01:23.383Z",
+    "updated_at": "2026-06-14T08:51:32.312Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 123,
+  "fields": {
+    "service_code": null,
+    "name": "Tinted Glass",
+    "category": "",
+    "description": "5mm One-Way Tinted Glass (Reflective Privacy Glass)",
+    "default_rate": "55.00",
+    "service_name": "Tinted Glass",
+    "unit": "Sq Ft",
+    "image": "media/services/Tinted_Glass_ap1tvw_sbf4nm",
+    "status": "active",
+    "created_at": "2026-06-10T19:04:20.010Z",
+    "updated_at": "2026-06-14T08:52:17.051Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 124,
+  "fields": {
+    "service_code": null,
+    "name": "One-Way Tinted Glass",
+    "category": "",
+    "description": "5mm One-Way Tinted Glass (Mirror Finish Privacy Glass)",
+    "default_rate": "80.00",
+    "service_name": "One-Way Tinted Glass",
+    "unit": "Sq Ft",
+    "image": "media/services/One-Way_Tinted_Glass_bslgxg_sne9hv",
+    "status": "active",
+    "created_at": "2026-06-10T19:09:53.910Z",
+    "updated_at": "2026-06-14T08:51:02.335Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 125,
+  "fields": {
+    "service_code": null,
+    "name": "Mirror",
+    "category": "",
+    "description": "Mirror: 5mm Mirror Glass (Reflective Mirror Finish)",
+    "default_rate": "200.00",
+    "service_name": "Mirror",
+    "unit": "Sq Ft",
+    "image": "media/services/Mirror_gypnnc_s373da",
+    "status": "active",
+    "created_at": "2026-06-10T19:11:46.790Z",
+    "updated_at": "2026-06-14T08:51:00.089Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 126,
+  "fields": {
+    "service_code": null,
+    "name": "LED Mirror",
+    "category": "",
+    "description": "Providing and fixing LED mirror with customized design, complete with LED lighting and required accessories.\r\n\r\nSpecifications:\r\nMirror: 5mm Mirror Glass\r\nLighting: Integrated LED Lighting\r\nDesign: As per Customer Requirement\r\nFinish: Mirror Finish",
+    "default_rate": "3000.00",
+    "service_name": "LED Mirror",
+    "unit": "Sq Ft",
+    "image": "media/services/LED_Mirror_uxsxje_sly5t3",
+    "status": "active",
+    "created_at": "2026-06-10T19:14:19.573Z",
+    "updated_at": "2026-06-14T08:50:28.276Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 127,
+  "fields": {
+    "service_code": null,
+    "name": "Glass Etching",
+    "category": "",
+    "description": "Providing and fixing customized glass etching design on glass surface as per customer-approved pattern, complete with required finishing.\r\n\r\nSpecifications:\r\nGlass Design: Customized Etching Design\r\nPattern: As per Customer Requirement",
+    "default_rate": "200.00",
+    "service_name": "Glass Etching",
+    "unit": "Sq Ft",
+    "image": "media/services/Glass_Etching_ytjinm_ox7vn3",
+    "status": "active",
+    "created_at": "2026-06-10T19:24:36.552Z",
+    "updated_at": "2026-06-14T08:50:13.490Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 128,
+  "fields": {
+    "service_code": null,
+    "name": "Glass Hardwares",
+    "category": "",
+    "description": "Glass Hardwares",
+    "default_rate": "200.00",
+    "service_name": "Glass Hardwares",
+    "unit": "Sq Ft",
+    "image": "media/services/Glass_Hardwares_xqojic_hlma14",
+    "status": "active",
+    "created_at": "2026-06-10T19:28:52.907Z",
+    "updated_at": "2026-06-14T08:50:16.539Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 129,
+  "fields": {
+    "service_code": null,
+    "name": "Bathroom Glass Partition",
+    "category": "",
+    "description": "Providing and fixing bathroom glass partition with toughened glass and SS304 support brackets, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nGlass: 12mm Toughened Glass (Clear / Frosted)\r\nSupport: SS304 Glass Brackets",
+    "default_rate": "275.00",
+    "service_name": "Bathroom Glass Partition",
+    "unit": "Sq Ft",
+    "image": "media/services/Bathroom_Glass_Partition_with_SS_Brackets_wgwhn3_xoypub",
+    "status": "active",
+    "created_at": "2026-06-10T19:34:55.762Z",
+    "updated_at": "2026-06-14T08:49:03.900Z"
+  }
+},
+{
+  "model": "core.service",
+  "pk": 130,
+  "fields": {
+    "service_code": null,
+    "name": "Glass Corner Shelf",
+    "category": "",
+    "description": "Providing and fixing glass corner shelf with SS304 brackets, complete with required accessories and installation.\r\n\r\nSpecifications:\r\nGlass: 8mm / 10mm Toughened Glass\r\nSupport: SS304 Corner Shelf Brackets\r\nShape: Corner Shelf\r\nFinish: Clear Glass / Frosted Glass",
+    "default_rate": "275.00",
+    "service_name": "Glass Corner Shelf",
+    "unit": "Sq Ft",
+    "image": "media/services/Glass_Corner_Shelf_vtzkcf_lprgm9",
+    "status": "active",
+    "created_at": "2026-06-10T19:37:37.764Z",
+    "updated_at": "2026-06-14T08:50:09.676Z"
+  }
+}
+]

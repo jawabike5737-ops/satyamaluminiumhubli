@@ -1,0 +1,373 @@
+/*
+ * style.css — S P J Associates
+ * ─────────────────────────────────────────────────────────────────
+ * THIS FILE contains ONLY page-level styles:
+ *   cards, tables, forms, buttons, grids, badges, animations.
+ *
+ * It does NOT touch: .sidebar, .main, .layout, .topbar, .logo,
+ * .overlay, nav links, .content padding/overflow, or any media
+ * queries that affect sidebar/layout behaviour.
+ * All of that lives exclusively in base.html's <style> block.
+ * ─────────────────────────────────────────────────────────────────
+ */
+
+/* ══════════════════════════════════════
+   DESIGN TOKENS  (aluminium palette)
+══════════════════════════════════════ */
+:root {
+    --al-base:       #e6edf3;
+    --al-mid:        #b8c3cb;
+    --al-dark:       #6b7480;
+    --accent:        #6cc0e5;
+    --glass:         rgba(255,255,255,0.06);
+    --card-border:   rgba(255,255,255,0.14);
+}
+
+/* ══════════════════════════════════════
+   BODY  — background only, no layout
+══════════════════════════════════════ */
+body {
+    overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════
+   GRID
+══════════════════════════════════════ */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 560px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ══════════════════════════════════════
+   CARDS
+══════════════════════════════════════ */
+.card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(240,244,247,0.5));
+    padding: 28px;
+    border-radius: 14px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 8px 30px rgba(24,39,59,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+    transition: transform 280ms cubic-bezier(.2,.9,.2,1), box-shadow 280ms;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(6px) saturate(140%);
+}
+
+.card:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 18px 50px rgba(24,39,59,0.12);
+}
+
+.card h4 {
+    color: var(--al-dark);
+    opacity: 0.85;
+    margin-bottom: 10px;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+}
+
+.card h1 {
+    font-size: 36px;
+    color: #0b1320;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.card span {
+    color: var(--al-mid);
+    font-size: 13px;
+}
+
+/* Metallic sheen on cards */
+.card::after {
+    content: '';
+    position: absolute;
+    top: -40%; left: -40%;
+    width: 120%; height: 200%;
+    background: linear-gradient(
+        120deg,
+        rgba(255,255,255,0.02) 0%,
+        rgba(255,255,255,0.15) 50%,
+        rgba(255,255,255,0.02) 100%
+    );
+    transform: rotate(-20deg) translateX(-30%);
+    transition: transform 600ms ease;
+    pointer-events: none;
+}
+
+.card:hover::after {
+    transform: rotate(-20deg) translateX(10%);
+}
+
+@media (max-width: 560px) {
+    .card h1 { font-size: 28px; }
+}
+
+/* ══════════════════════════════════════
+   PAGE HEADER
+══════════════════════════════════════ */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ══════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    background: #3b82f6;
+    color: white;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.btn-danger, .btn.delete { background: #ef4444; }
+.btn-success             { background: #10b981; }
+.btn-warning             { background: #f59e0b; }
+.btn-purple              { background: #6366f1; }
+
+/* Legacy action link colours */
+.actions a {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    font-size: 12px;
+    transition: opacity 0.2s;
+}
+.actions a:hover { opacity: 0.82; }
+
+.edit       { background: #f59e0b; }
+.delete     { background: #ef4444; }
+.attendance { background: #10b981; }
+.salary     { background: #6366f1; }
+.view       { background: #0ea5e9; }
+
+/* ══════════════════════════════════════
+   TABLE
+══════════════════════════════════════ */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    min-width: 500px; /* prevents squashing; wrapper scrolls on mobile */
+}
+
+.table th,
+.table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13.5px;
+    text-align: left;
+}
+
+.table th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.table tr:last-child td { border-bottom: none; }
+
+.table tr:hover td {
+    background: #f9fafb;
+}
+
+/* ══════════════════════════════════════
+   FORMS
+══════════════════════════════════════ */
+.form,
+.form-card {
+    background: white;
+    padding: 28px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.07);
+    box-sizing: border-box;
+    margin: 20px auto;
+}
+
+.form input,
+.form select,
+.form textarea,
+.form-card input,
+.form-card select,
+.form-card textarea,
+.input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+.form input:focus,
+.form select:focus,
+.form textarea:focus,
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus,
+.input:focus {
+    border-color: #b5722a;
+    box-shadow: 0 0 0 3px rgba(181,114,42,0.12);
+}
+
+.form button,
+.form-card button {
+    width: 100%;
+    padding: 11px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+}
+
+.form button:hover,
+.form-card button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-family: inherit;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+/* ══════════════════════════════════════
+   CARD CONTAINER
+══════════════════════════════════════ */
+.card-container {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+}
+
+/* ══════════════════════════════════════
+   SERVICES BOX
+══════════════════════════════════════ */
+.services-box {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.service-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/* ══════════════════════════════════════
+   ALUMINIUM WINDOW / PANEL STYLE
+══════════════════════════════════════ */
+.al-window {
+    border-radius: 12px;
+    border: 1px solid rgba(120,130,140,0.12);
+    background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(245,250,253,0.35));
+    box-shadow: 0 10px 30px rgba(34,49,63,0.06), inset 0 1px 0 rgba(255,255,255,0.5);
+    padding: 18px;
+}
+
+/* ══════════════════════════════════════
+   BADGES
+══════════════════════════════════════ */
+.metal-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--al-mid), var(--al-dark));
+    color: white;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.12);
+}
+
+/* ══════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════ */
+@keyframes floaty {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-6px); }
+}
+
+.card.float {
+    animation: floaty 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+
+.shimmer {
+    background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0.06) 0%,
+        rgba(255,255,255,0.35) 50%,
+        rgba(255,255,255,0.06) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}

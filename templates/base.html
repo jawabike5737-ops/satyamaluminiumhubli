@@ -1,0 +1,1488 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S P J Associates</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+    /* ══════════════════════════════════════
+       RESET & ROOT
+    ══════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --sidebar-w:             260px;
+        --sidebar-collapsed-w:   68px;
+        --topbar-h:              64px;
+
+        /* Light Palette */
+        --bg:           #f4f2ed;
+        --surface:      #ffffff;
+        --surface-2:    #faf9f6;
+        --surface-3:    #f0ede6;
+        --border:       rgba(0,0,0,0.07);
+        --border-md:    rgba(0,0,0,0.12);
+
+        /* Brand — warm copper/bronze */
+        --brand:        #b5722a;
+        --brand-dark:   #8f5820;
+        --brand-light:  #fdf3e7;
+        --brand-mid:    rgba(181,114,42,0.15);
+        --brand-line:   rgba(181,114,42,0.35);
+        --brand-glow:   rgba(181,114,42,0.15);
+
+        /* Text */
+        --text-1:       #18140d;
+        --text-2:       #56493a;
+        --text-3:       #9a8f82;
+        --text-inv:     #ffffff;
+
+        /* Semantic */
+        --success:      #2d7a4f;
+        --success-bg:   #edf7f1;
+        --danger:       #c13a3a;
+        --danger-bg:    #fdf0f0;
+        --warning:      #b45309;
+        --warning-bg:   #fffbeb;
+
+        /* Typography */
+        --font-display: 'Playfair Display', Georgia, serif;
+        --font-body:    'DM Sans', system-ui, sans-serif;
+        --font-mono:    'DM Mono', 'Courier New', monospace;
+
+        /* Radii */
+        --r-sm:   8px;
+        --r-md:   12px;
+        --r-lg:   16px;
+        --r-xl:   20px;
+        --r-pill: 99px;
+
+        /* Shadows */
+        --shadow-xs:    0 1px 3px rgba(0,0,0,0.05);
+        --shadow-sm:    0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03);
+        --shadow-md:    0 4px 18px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+        --shadow-lg:    0 8px 36px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+        --shadow-brand: 0 4px 18px rgba(181,114,42,0.25);
+    }
+
+    html, body {
+        height: 100%;
+        font-family: var(--font-body);
+        background: var(--bg);
+        color: var(--text-1);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ══════════════════════════════════════
+       KEYFRAMES
+    ══════════════════════════════════════ */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes slideRight {
+        from { opacity: 0; transform: translateX(-20px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes shimmerLine {
+        0%   { transform: translateY(-100%); opacity: 0; }
+        20%  { opacity: 1; }
+        80%  { opacity: 1; }
+        100% { transform: translateY(100%); opacity: 0; }
+    }
+    @keyframes breathe {
+        0%, 100% { opacity: 0.4; transform: scaleX(0.85); }
+        50%       { opacity: 1;   transform: scaleX(1); }
+    }
+    @keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(45,122,79,0.5); }
+        50%       { box-shadow: 0 0 0 5px rgba(45,122,79,0); }
+    }
+    @keyframes navIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ══════════════════════════════════════
+       LAYOUT SHELL
+    ══════════════════════════════════════ */
+    .layout {
+        display: flex;
+        width: 100%;
+        min-height: 100vh;
+    }
+
+    /* ══════════════════════════════════════
+       OVERLAY
+    ══════════════════════════════════════ */
+    .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(24,20,13,0.45);
+        z-index: 99998;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        animation: fadeIn 0.25s ease;
+    }
+    .overlay.show {
+        display: block;
+    }
+
+    /* ══════════════════════════════════════
+       SIDEBAR
+    ══════════════════════════════════════ */
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: var(--sidebar-w);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        z-index: 99999;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        animation: slideRight 0.55s cubic-bezier(0.16,1,0.3,1) both;
+
+        /* Smooth transition for both collapse (desktop) and drawer (mobile) */
+        transition: width 0.3s cubic-bezier(0.16,1,0.3,1),
+                    left  0.3s cubic-bezier(0.16,1,0.3,1),
+                    transform 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    /* Decorative ambient gradient */
+    .sidebar::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(ellipse 200px 200px at 30% 15%, rgba(181,114,42,0.05) 0%, transparent 70%),
+            radial-gradient(ellipse 160px 160px at 80% 85%, rgba(181,114,42,0.04) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Animated shimmer line on right edge */
+    .sidebar-shimmer {
+        position: absolute;
+        right: 0; top: 0; bottom: 0;
+        width: 1px;
+        background: var(--border);
+        overflow: hidden;
+        z-index: 1;
+    }
+    .sidebar-shimmer::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        width: 1px;
+        height: 35%;
+        background: linear-gradient(180deg, transparent, var(--brand), transparent);
+        animation: shimmerLine 5s ease-in-out infinite;
+        animation-delay: 1.5s;
+    }
+
+    /* ── Toggle row ── */
+    .sidebar-toggle-row {
+        display: flex;
+        justify-content: flex-end;
+        padding: 12px 14px 0;
+        position: relative;
+        z-index: 2;
+        flex-shrink: 0;
+    }
+
+    .sidebar.collapsed .sidebar-toggle-row {
+        justify-content: center;
+        padding: 12px 0 0;
+    }
+
+    #sidebar-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: var(--surface-3);
+        border: 1px solid var(--border-md);
+        border-radius: var(--r-sm);
+        cursor: pointer;
+        color: var(--text-2);
+        font-size: 14px;
+        font-weight: 700;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+        flex-shrink: 0;
+        font-family: var(--font-body);
+        line-height: 1;
+    }
+    #sidebar-toggle-btn:hover {
+        background: var(--brand-light);
+        border-color: var(--brand-line);
+        color: var(--brand);
+        transform: scale(1.06);
+    }
+
+    /* ── Logo ── */
+    .logo {
+        padding: 18px 22px 18px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+        z-index: 2;
+        flex-shrink: 0;
+        animation: fadeUp 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both;
+        overflow: hidden;
+    }
+
+    .sidebar.collapsed .logo {
+        padding: 18px 14px;
+    }
+
+    .logo-mark {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+    }
+
+    .sidebar.collapsed .logo-mark {
+        justify-content: center;
+        gap: 0;
+    }
+
+    .logo-icon {
+        width: 38px;
+        height: 38px;
+        background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-brand);
+        position: relative;
+        overflow: hidden;
+    }
+    .logo-icon::after {
+        content: '';
+        position: absolute;
+        top: -40%;
+        left: -40%;
+        width: 180%;
+        height: 80%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 60%);
+        border-radius: 50%;
+    }
+    .logo-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke: rgba(255,255,255,0.95);
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        position: relative;
+        z-index: 1;
+    }
+
+    .logo-text-group {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        white-space: normal;
+        align-items: flex-start;
+        transition: opacity 0.2s, width 0.3s;
+        width: auto;
+    }
+
+    .logo-top {
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        color: var(--text-1);
+        line-height: 1.15;
+    }
+
+    .logo-sub {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--brand);
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        margin-top: 1px;
+        opacity: 0.85;
+    }
+
+    .logo-rule {
+        display: block;
+        height: 1px;
+        background: linear-gradient(90deg, var(--brand) 0%, rgba(181,114,42,0.1) 70%, transparent 100%);
+        margin-top: 14px;
+        animation: breathe 3.5s ease-in-out infinite;
+        transform-origin: left;
+    }
+
+    /* ── Navigation ── */
+    .sidebar nav {
+        flex: 1;
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 2;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: var(--surface-3) transparent;
+    }
+
+    .nav-section-label {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 2.8px;
+        text-transform: uppercase;
+        color: var(--text-3);
+        padding: 6px 10px 8px;
+        display: block;
+        white-space: nowrap;
+        transition: opacity 0.2s, height 0.2s;
+        flex-shrink: 0;
+    }
+
+    .sidebar nav a {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 10px 12px;
+        border-radius: var(--r-md);
+        font-size: 13.5px;
+        font-weight: 500;
+        letter-spacing: 0.15px;
+        color: var(--text-2);
+        text-decoration: none;
+        position: relative;
+        transition: color 0.18s, background 0.18s, transform 0.15s;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        flex-shrink: 0;
+        animation: navIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .sidebar nav a:hover {
+        color: var(--text-1);
+        background: var(--surface-3);
+        transform: translateX(3px);
+    }
+
+    .sidebar nav a.active {
+        color: var(--brand);
+        background: var(--brand-light);
+        font-weight: 600;
+    }
+
+    .sidebar nav a.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 20%; bottom: 20%;
+        width: 3px;
+        background: var(--brand);
+        border-radius: 0 3px 3px 0;
+        box-shadow: 0 0 10px rgba(181,114,42,0.5);
+    }
+
+    .sidebar nav a .nav-label {
+        transition: opacity 0.2s;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nav-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: transform 0.2s;
+    }
+
+    .sidebar nav a:hover .nav-icon {
+        transform: scale(1.12);
+    }
+
+    /* ── RAM Widget ── */
+    .server-ram-widget {
+        margin: 0 12px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 14px 15px;
+        box-shadow: var(--shadow-xs);
+        position: relative;
+        z-index: 2;
+        flex-shrink: 0;
+        overflow: hidden;
+        transition: opacity 0.2s, height 0.3s, padding 0.3s, margin 0.3s;
+    }
+
+    .server-ram-widget::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--brand), transparent);
+        opacity: 0.5;
+        border-radius: var(--r-lg) var(--r-lg) 0 0;
+    }
+
+    .srw-header {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--text-2);
+        margin-bottom: 10px;
+        letter-spacing: 0.3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .srw-values {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        margin-bottom: 10px;
+        font-size: 12.5px;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .srw-used  { color: var(--brand); }
+    .srw-sep   { color: var(--text-3); font-weight: 400; }
+    .srw-total { color: var(--text-2); font-weight: 400; font-size: 11px; }
+
+    .srw-track {
+        width: 100%;
+        height: 6px;
+        background: var(--surface-3);
+        border-radius: var(--r-pill);
+        overflow: hidden;
+    }
+
+    .srw-bar {
+        height: 100%;
+        border-radius: var(--r-pill);
+        background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+        transition: width 0.6s cubic-bezier(0.34,1,0.64,1);
+    }
+
+    .srw-bar.warn { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .srw-bar.crit { background: linear-gradient(90deg, #f87171, #dc2626); }
+
+    .srw-warning {
+        margin-top: 8px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* ── Bottom (logout) ── */
+    .bottom-links {
+        padding: 12px;
+        border-top: 1px solid var(--border);
+        position: relative;
+        z-index: 2;
+        flex-shrink: 0;
+    }
+
+    .bottom-links form { width: 100%; }
+
+    .logout-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 13px;
+        background: transparent;
+        border: 1px solid rgba(193,58,58,0.18);
+        border-radius: var(--r-md);
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.15px;
+        color: rgba(193,58,58,0.6);
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .logout-btn:hover {
+        background: var(--danger-bg);
+        border-color: rgba(193,58,58,0.35);
+        color: var(--danger);
+        transform: translateX(2px);
+    }
+
+    .logout-btn svg {
+        width: 14px; height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+
+    .logout-text { transition: opacity 0.2s; }
+
+    /* ══════════════════════════════════════
+       COLLAPSED STATE  (desktop only)
+    ══════════════════════════════════════ */
+    .sidebar.collapsed {
+        width: var(--sidebar-collapsed-w);
+    }
+
+    .sidebar.collapsed .logo-text-group,
+    .sidebar.collapsed .logo-rule,
+    .sidebar.collapsed .nav-section-label,
+    .sidebar.collapsed .nav-label,
+    .sidebar.collapsed .logout-text {
+        opacity: 0;
+        pointer-events: none;
+        overflow: hidden;
+        width: 0;
+    }
+
+    .sidebar.collapsed nav a {
+        justify-content: center;
+        padding: 10px 0;
+        gap: 0;
+    }
+
+    .sidebar.collapsed nav a:hover {
+        transform: scale(1.1);
+    }
+
+    .sidebar.collapsed nav a.active::before {
+        display: none;
+    }
+
+    .sidebar.collapsed .logout-btn {
+        justify-content: center;
+        padding: 10px 0;
+        gap: 0;
+    }
+
+    .sidebar.collapsed .server-ram-widget {
+        opacity: 0;
+        pointer-events: none;
+        height: 0;
+        padding: 0;
+        margin: 0 12px;
+        border: none;
+    }
+
+    /* ══════════════════════════════════════
+       MAIN AREA
+    ══════════════════════════════════════ */
+    .main {
+        margin-left: var(--sidebar-w);
+        width: calc(100% - var(--sidebar-w));
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        transition: margin-left 0.3s cubic-bezier(0.16,1,0.3,1),
+                    width      0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+        width: 100%;
+        height: var(--topbar-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        background: rgba(255,255,255,0.88);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        flex-shrink: 0;
+    }
+
+    .topbar::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--brand) 0%, rgba(181,114,42,0.08) 50%, transparent 100%);
+        opacity: 0.45;
+    }
+
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .topbar-breadcrumb {
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: var(--text-3);
+    }
+
+    .topbar-sep {
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: var(--text-3);
+        opacity: 0.5;
+        flex-shrink: 0;
+    }
+
+    .topbar-title {
+        font-family: var(--font-display);
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        color: var(--text-1);
+    }
+
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 11px;
+        background: var(--success-bg);
+        border: 1px solid rgba(45,122,79,0.18);
+        border-radius: var(--r-pill);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--success);
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .status-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        animation: pulseDot 2.2s ease-in-out infinite;
+        flex-shrink: 0;
+    }
+
+    .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 13px 5px 6px;
+        background: var(--surface);
+        border: 1px solid var(--border-md);
+        border-radius: var(--r-pill);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-2);
+        cursor: default;
+        box-shadow: var(--shadow-xs);
+        transition: box-shadow 0.2s, border-color 0.2s;
+        white-space: nowrap;
+    }
+
+    .user-pill:hover {
+        box-shadow: var(--shadow-sm);
+        border-color: var(--brand-line);
+    }
+
+    .user-avatar {
+        width: 27px; height: 27px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-display);
+        font-size: 10px;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(181,114,42,0.35);
+    }
+
+    /* ── Content area ── */
+    .content {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 22px 24px;
+        animation: fadeUp 0.5s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    /* ══════════════════════════════════════
+       SCROLLBAR
+    ══════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+    /* ══════════════════════════════════════
+       SWEETALERT OVERRIDES
+    ══════════════════════════════════════ */
+    .swal2-popup {
+        background: var(--surface) !important;
+        color: var(--text-1) !important;
+        font-family: var(--font-body) !important;
+        border-radius: var(--r-xl) !important;
+        box-shadow: var(--shadow-lg) !important;
+        border: 1px solid var(--border) !important;
+    }
+    .swal-toast {
+        background: var(--surface) !important;
+        border: 1px solid var(--border-md) !important;
+        color: var(--text-1) !important;
+        font-family: var(--font-body) !important;
+        font-size: 13px !important;
+        box-shadow: var(--shadow-md) !important;
+        border-radius: var(--r-md) !important;
+    }
+
+    /* ══════════════════════════════════════
+       UTILITY CARD
+    ══════════════════════════════════════ */
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* ══════════════════════════════════════
+       MOBILE MENU BUTTON
+       Hidden on desktop, shown on mobile via media query
+    ══════════════════════════════════════ */
+    .mobile-menu-btn {
+        display: none; /* shown in mobile media query */
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        background: var(--surface-3);
+        border: 1px solid var(--border-md);
+        border-radius: var(--r-sm);
+        cursor: pointer;
+        color: var(--text-2);
+        font-size: 15px;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+        flex-shrink: 0;
+        font-family: var(--font-body);
+        line-height: 1;
+        padding: 0;
+    }
+    .mobile-menu-btn:hover {
+        background: var(--brand-light);
+        border-color: var(--brand-line);
+        color: var(--brand);
+    }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE — TABLET  769px – 1100px
+       Sidebar collapses to icon-only strip;
+       no drawer, no overlay needed.
+    ══════════════════════════════════════ */
+    @media (max-width: 1100px) and (min-width: 769px) {
+        .sidebar {
+            width: var(--sidebar-collapsed-w);
+        }
+        .sidebar .logo-text-group,
+        .sidebar .logo-rule,
+        .sidebar .nav-section-label,
+        .sidebar .nav-label,
+        .sidebar .logout-text {
+            opacity: 0;
+            overflow: hidden;
+            width: 0;
+            pointer-events: none;
+        }
+        .sidebar .logo {
+            padding: 18px 14px;
+        }
+        .sidebar .logo-mark {
+            justify-content: center;
+            gap: 0;
+        }
+        .sidebar nav a {
+            justify-content: center;
+            padding: 10px 0;
+            gap: 0;
+        }
+        .sidebar .logout-btn {
+            justify-content: center;
+            padding: 10px 0;
+            gap: 0;
+        }
+        .sidebar .server-ram-widget {
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            padding: 0;
+            margin: 0 12px;
+            border: none;
+        }
+        /* Disable the desktop collapse toggle on tablet — sidebar is already minimal */
+        .sidebar-toggle-row {
+            display: none;
+        }
+        .main {
+            margin-left: var(--sidebar-collapsed-w);
+            width: calc(100% - var(--sidebar-collapsed-w));
+        }
+    }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE — MOBILE  ≤ 768px
+       Sidebar becomes a drawer that slides
+       in from the left over the content.
+    ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+        /* ── Sidebar: off-screen by default ── */
+        .sidebar {
+            left: calc(-1 * var(--sidebar-w) - 10px); /* fully hidden + shadow clearance */
+            width: var(--sidebar-w);
+            box-shadow: none;
+        }
+
+        /* ── When opened via JS: slides in ── */
+        .sidebar.open {
+            left: 0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ── On mobile, never allow desktop collapsed state ── */
+        .sidebar.collapsed {
+            width: var(--sidebar-w);
+            left: calc(-1 * var(--sidebar-w) - 10px);
+        }
+        .sidebar.collapsed.open {
+            left: 0;
+        }
+        /* Restore text in collapsed sidebar when open on mobile */
+        .sidebar.collapsed .logo-text-group,
+        .sidebar.collapsed .logo-rule,
+        .sidebar.collapsed .nav-section-label,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .logout-text {
+            opacity: 1;
+            overflow: visible;
+            width: auto;
+            pointer-events: auto;
+        }
+        .sidebar.collapsed nav a {
+            justify-content: flex-start;
+            padding: 10px 12px;
+            gap: 11px;
+        }
+        .sidebar.collapsed nav a.active::before {
+            display: block;
+        }
+        .sidebar.collapsed .logout-btn {
+            justify-content: flex-start;
+            padding: 10px 13px;
+            gap: 10px;
+        }
+        .sidebar.collapsed .server-ram-widget {
+            opacity: 1;
+            pointer-events: auto;
+            height: auto;
+            padding: 14px 15px;
+            margin: 0 12px 12px;
+            border: 1px solid var(--border);
+        }
+        /* Hide the desktop collapse toggle on mobile — use hamburger instead */
+        .sidebar-toggle-row {
+            display: none;
+        }
+
+        /* ── Main: full-width, no left offset ── */
+        .main {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+
+        /* ── Show hamburger button ── */
+        .mobile-menu-btn {
+            display: flex;
+        }
+
+        /* ── Topbar adjustments ── */
+        .topbar {
+            padding: 0 16px;
+        }
+        .topbar-breadcrumb,
+        .topbar-sep {
+            display: none;
+        }
+        .status-badge {
+            display: none; /* save space on very small screens */
+        }
+        .content {
+            padding: 16px;
+        }
+    }
+
+    /* ══════════════════════════════════════
+       EXTRA SMALL  ≤ 380px
+    ══════════════════════════════════════ */
+    @media (max-width: 380px) {
+        .user-pill span:not(.user-avatar) {
+            display: none;
+        }
+        .user-pill {
+            padding: 4px;
+            border-radius: 50%;
+        }
+    }
+    </style>
+</head>
+
+<body>
+<!-- Overlay (tap to close mobile sidebar) -->
+<div class="overlay" id="sidebar-overlay"></div>
+
+<div class="layout">
+
+    <!-- ═══════ SIDEBAR ═══════ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-shimmer"></div>
+
+        <!-- Desktop collapse toggle (hidden on mobile via CSS) -->
+        <div class="sidebar-toggle-row">
+            <button id="sidebar-toggle-btn" title="Collapse sidebar" aria-label="Toggle sidebar">&#xAB;</button>
+        </div>
+
+        <!-- Logo -->
+        <div class="logo">
+            <div class="logo-mark">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/>
+                        <path d="M12 2v20M3 7l9 5 9-5"/>
+                    </svg>
+                </div>
+                <div class="logo-text-group">
+                    <span class="logo-top">S P J Associates</span>
+                    <span class="logo-sub">Aluminium  Glass &amp; UPVC</span>
+                </div>
+            </div>
+            <span class="logo-rule"></span>
+        </div>
+
+        <!-- Navigation -->
+        <nav aria-label="Main navigation">
+            <span class="nav-section-label">Navigation</span>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16">
+                    <path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z"/>
+                    <path d="M6 15V9h4v6"/>
+                </svg>
+                <span class="nav-label">Dashboard</span>
+            </a>
+
+            <a href="/employees/" class="{% if '/employees' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16">
+                    <circle cx="8" cy="5" r="3"/>
+                    <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                </svg>
+                <span class="nav-label">Employees</span>
+            </a>
+
+            <a href="/services/" class="{% if '/services' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16">
+                    <rect x="2" y="2" width="5" height="5" rx="1"/>
+                    <rect x="9" y="2" width="5" height="5" rx="1"/>
+                    <rect x="2" y="9" width="5" height="5" rx="1"/>
+                    <rect x="9" y="9" width="5" height="5" rx="1"/>
+                </svg>
+                <span class="nav-label">Services</span>
+            </a>
+
+            <a href="/create-quotation/" class="{% if '/quotation' in request.path or '/create-quotation' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16">
+                    <path d="M10 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5l-3-3z"/>
+                    <path d="M10 2v3h3M5 7h6M5 10h4"/>
+                </svg>
+                <span class="nav-label">Quotation</span>
+            </a>
+
+            <a href="/customers/" class="{% if '/customers' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16">
+                    <circle cx="6" cy="5" r="2.5"/>
+                    <path d="M1 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/>
+                    <circle cx="12" cy="5" r="2"/>
+                    <path d="M11 13c0-2 1.3-3.7 3-4.3"/>
+                </svg>
+                <span class="nav-label">Customers</span>
+            </a>
+
+            <a href="/orders/" class="{% if '/orders' in request.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 16 16">
+                    <path d="M2 3h12l-1.5 8H3.5L2 3z"/>
+                    <circle cx="6" cy="14" r="1"/>
+                    <circle cx="11" cy="14" r="1"/>
+                    <path d="M2 3H1"/>
+                </svg>
+                <span class="nav-label">Orders</span>
+            </a>
+        </nav>
+
+        <!-- Server RAM Widget -->
+        <div id="server-ram-widget" class="server-ram-widget" aria-live="polite">
+            <div class="srw-header">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="14" height="8" rx="1"/>
+                    <path d="M4 4V2M8 4V2M12 4V2M4 12v2M8 12v2M12 12v2"/>
+                </svg>
+                Server RAM
+            </div>
+            <div class="srw-values">
+                <span class="srw-used">{{ ram.used|default:'—' }}</span>
+                <span class="srw-sep">/</span>
+                <span class="srw-total">{{ ram.total|default:'—' }} MB</span>
+            </div>
+            <div class="srw-track"
+                 role="progressbar"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 aria-valuenow="{{ ram.percent|default:0 }}"
+                 aria-label="Memory usage">
+                <div class="srw-bar {% if ram.percent > 85 %}crit{% elif ram.percent > 65 %}warn{% endif %}"
+                     id="srw-bar-fill"
+                     data-pct="{{ ram.percent|default:0 }}"></div>
+            </div>
+            {% if ram and ram.is_high %}
+                <div class="srw-warning" role="alert">
+                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 1L1 14h14L8 1z"/><path d="M8 6v4M8 12v.5"/>
+                    </svg>
+                    High Memory Usage
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Logout -->
+        <div class="bottom-links">
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <svg viewBox="0 0 16 16">
+                        <path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3"/>
+                        <path d="M7 11l3-3-3-3M10 8H2"/>
+                    </svg>
+                    <span class="logout-text">Sign Out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- ═══════ MAIN ═══════ -->
+    <main class="main" id="main-content">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <!-- Hamburger — only visible on mobile (≤768px) via CSS -->
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+                    &#x2630;
+                </button>
+                <span class="topbar-breadcrumb">Satyam Paras Jayshree Associates</span>
+                <div class="topbar-sep"></div>
+                <span class="topbar-title" id="topbar-page-title">Dashboard</span>
+            </div>
+
+            <div class="topbar-right">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    System Online
+                </div>
+                <div class="user-pill">
+                    <div class="user-avatar">
+                        {{ request.user.username|slice:":2"|upper }}
+                    </div>
+                    <span>{{ request.user.username }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <section class="content">
+            {% block content %}{% endblock %}
+        </section>
+
+    </main>
+</div>
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script>
+/* ──────────────────────────────────────────
+   RAM BAR WIDTH
+────────────────────────────────────────── */
+(function () {
+    const bar = document.getElementById('srw-bar-fill');
+    if (bar) bar.style.width = (parseFloat(bar.dataset.pct) || 0) + '%';
+})();
+
+/* ──────────────────────────────────────────
+   TOPBAR TITLE + NAV ANIMATION STAGGER
+────────────────────────────────────────── */
+(function () {
+    const titleEl = document.getElementById('topbar-page-title');
+    if (titleEl) {
+        const active = document.querySelector('.sidebar nav a.active');
+        if (active) {
+            const label = active.querySelector('.nav-label');
+            titleEl.textContent = label ? label.textContent.trim() : active.textContent.trim();
+        }
+    }
+
+    /* Stagger nav link animation delays */
+    document.querySelectorAll('.sidebar nav a').forEach(function (a, i) {
+        a.style.animationDelay = (0.08 + i * 0.05) + 's';
+    });
+})();
+
+/* ──────────────────────────────────────────
+   CSRF HELPER
+────────────────────────────────────────── */
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+/* ──────────────────────────────────────────
+   TOAST / CONFIRM
+────────────────────────────────────────── */
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3200,
+    timerProgressBar: true,
+    customClass: { popup: 'swal-toast' },
+});
+
+function showToast(type, title) {
+    Toast.fire({ icon: type, title });
+}
+
+function showConfirm(title, text) {
+    title = title || 'Are you sure?';
+    text  = text  || 'This action cannot be undone.';
+    return Swal.fire({
+        title, text, icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c13a3a',
+        cancelButtonColor: '#888',
+        confirmButtonText: 'Yes, proceed',
+    });
+}
+
+/* ──────────────────────────────────────────
+   AJAX FORMS
+────────────────────────────────────────── */
+document.addEventListener('submit', async function (e) {
+    const form = e.target;
+    if (!form.classList.contains('ajax-form')) return;
+    e.preventDefault();
+
+    const btn      = form.querySelector('button[type=submit], input[type=submit]');
+    const origText = btn ? (btn.innerText || btn.value) : '';
+    if (btn) {
+        btn.disabled = true;
+        if ('innerText' in btn) btn.innerText = 'Processing…';
+        else btn.value = 'Processing…';
+    }
+
+    const url         = form.action || window.location.href;
+    const method      = (form.method || 'POST').toUpperCase();
+    const isMultipart = form.enctype === 'multipart/form-data';
+    const body        = isMultipart ? new FormData(form) : new URLSearchParams(new FormData(form));
+    const headers     = {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': getCookie('csrftoken'),
+    };
+    if (!isMultipart) headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+
+    let fetchUrl = url;
+    const opts   = { method, headers };
+    if (method === 'GET') {
+        const qs = body.toString();
+        if (qs) fetchUrl += (url.includes('?') ? '&' : '?') + qs;
+    } else {
+        opts.body = body;
+    }
+
+    try {
+        const res = await fetch(fetchUrl, opts);
+        const ct  = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            method === 'GET' ? (window.location = fetchUrl) : window.location.reload();
+            return;
+        }
+        const data = await res.json();
+        if (data.status === 'success') {
+            showToast('success', data.message || 'Success');
+            if (data.replace_id && data.html) {
+                const el = document.getElementById(data.replace_id);
+                if (el) el.innerHTML = data.html;
+            }
+            if (form.dataset.resetOnSuccess === 'true') form.reset();
+            if (data.redirect) {
+                setTimeout(function () { window.location = data.redirect; }, 450);
+                return;
+            }
+            if (form.dataset.afterSuccess === 'reload') {
+                setTimeout(function () { location.reload(); }, 700);
+            } else if (form.dataset.afterSuccess) {
+                setTimeout(function () { window.location = form.dataset.afterSuccess; }, 700);
+            }
+        } else {
+            showToast('error', data.message || 'An error occurred.');
+        }
+    } catch (err) {
+        console.error('Ajax form error:', err);
+        showToast('error', 'Network or server error.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            if ('innerText' in btn) btn.innerText = origText;
+            else btn.value = origText;
+        }
+    }
+});
+
+/* ──────────────────────────────────────────
+   DELETE via data-delete-url
+────────────────────────────────────────── */
+document.addEventListener('click', function (e) {
+    const el = e.target.closest('[data-delete-url]');
+    if (!el) return;
+    e.preventDefault();
+    showConfirm('Delete this item?', 'This cannot be undone.').then(async function (result) {
+        if (!result.isConfirmed) return;
+        try {
+            const res  = await fetch(el.dataset.deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast('success', data.message || 'Deleted successfully.');
+                if (el.dataset.removeOnSuccess) {
+                    const rem = document.querySelector(el.dataset.removeOnSuccess);
+                    if (rem) rem.remove();
+                } else {
+                    setTimeout(function () { location.reload(); }, 600);
+                }
+            } else {
+                showToast('error', data.message || 'Delete failed.');
+            }
+        } catch (err) {
+            console.error('Delete error:', err);
+            showToast('error', 'Network or server error.');
+        }
+    });
+});
+
+/* ──────────────────────────────────────────
+   SIDEBAR TOGGLE LOGIC
+   ─────────────────────────────────────────
+   Three states:
+     Desktop (>1100px)  — full sidebar or collapsed icon strip
+                          controlled by .sidebar.collapsed
+                          main gets inline margin-left to match
+     Tablet (769-1100px)— always icon-strip (CSS handles it),
+                          JS collapse toggle hidden
+     Mobile (≤768px)    — sidebar is off-screen drawer
+                          .sidebar.open slides it in
+                          overlay dims the rest
+────────────────────────────────────────── */
+(function () {
+    var COLLAPSED_KEY  = 'satyam_sidebar_collapsed';
+    var ARROW_COLLAPSE = '\u00AB'; /* « */
+    var ARROW_EXPAND   = '\u00BB'; /* » */
+
+    var sidebar   = document.getElementById('sidebar');
+    var mainEl    = document.getElementById('main-content');
+    var toggleBtn = document.getElementById('sidebar-toggle-btn');
+    var mobileBtn = document.getElementById('mobile-menu-btn');
+    var overlay   = document.getElementById('sidebar-overlay');
+
+    /* ── Breakpoints must match CSS ── */
+    var MOBILE_BP = 768;   /* drawer mode at ≤ 768 */
+    var TABLET_BP = 1100;  /* icon-strip mode at 769–1100 */
+
+    function isMobile() { return window.innerWidth <= MOBILE_BP; }
+    function isTablet() { return window.innerWidth > MOBILE_BP && window.innerWidth <= TABLET_BP; }
+    function isDesktop(){ return window.innerWidth > TABLET_BP; }
+
+    /* ── Desktop: apply collapsed/expanded state ── */
+    function applyDesktopCollapsed(collapsed) {
+        if (collapsed) {
+            sidebar.classList.add('collapsed');
+            mainEl.style.marginLeft = '68px';
+            mainEl.style.width      = 'calc(100% - 68px)';
+            toggleBtn.textContent   = ARROW_EXPAND;
+            toggleBtn.title         = 'Expand sidebar';
+            localStorage.setItem(COLLAPSED_KEY, '1');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainEl.style.marginLeft = '';
+            mainEl.style.width      = '';
+            toggleBtn.textContent   = ARROW_COLLAPSE;
+            toggleBtn.title         = 'Collapse sidebar';
+            localStorage.removeItem(COLLAPSED_KEY);
+        }
+    }
+
+    /* ── Mobile: open drawer ── */
+    function openMobile() {
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    /* ── Mobile: close drawer ── */
+    function closeMobile() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+        if (mobileBtn) mobileBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    /* ── Reset inline styles applied by JS (used when switching breakpoints) ── */
+    function clearInlineMain() {
+        mainEl.style.marginLeft = '';
+        mainEl.style.width      = '';
+    }
+
+    /* ── On load: restore desktop collapsed state if applicable ── */
+    if (isDesktop() && localStorage.getItem(COLLAPSED_KEY) === '1') {
+        applyDesktopCollapsed(true);
+    }
+
+    /* ── Desktop collapse toggle button ── */
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (isDesktop()) {
+                applyDesktopCollapsed(!sidebar.classList.contains('collapsed'));
+            }
+            /* On mobile/tablet this button is hidden via CSS so click is irrelevant */
+        });
+    }
+
+    /* ── Mobile hamburger ── */
+    if (mobileBtn) {
+        mobileBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (isMobile()) {
+                if (sidebar.classList.contains('open')) {
+                    closeMobile();
+                } else {
+                    openMobile();
+                }
+            }
+        });
+    }
+
+    /* ── Overlay tap: close mobile drawer ── */
+    overlay.addEventListener('click', function () {
+        if (isMobile()) closeMobile();
+    });
+
+    /* ── Close mobile drawer on nav link click (good UX) ── */
+    sidebar.querySelectorAll('nav a').forEach(function (a) {
+        a.addEventListener('click', function () {
+            if (isMobile()) closeMobile();
+        });
+    });
+
+    /* ── Escape key closes mobile drawer ── */
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('open')) {
+            closeMobile();
+        }
+    });
+
+    /* ── Handle viewport resize ── */
+    var prevState = isMobile() ? 'mobile' : (isTablet() ? 'tablet' : 'desktop');
+
+    window.addEventListener('resize', function () {
+        var nowState = isMobile() ? 'mobile' : (isTablet() ? 'tablet' : 'desktop');
+        if (nowState === prevState) return;
+        prevState = nowState;
+
+        if (nowState === 'desktop') {
+            /* Coming from mobile/tablet: close drawer, restore desktop state */
+            closeMobile();
+            clearInlineMain();
+            var wasCollapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+            applyDesktopCollapsed(wasCollapsed);
+        } else if (nowState === 'tablet') {
+            /* Tablet: close drawer, clear inline styles (CSS handles icon-strip) */
+            closeMobile();
+            clearInlineMain();
+            sidebar.classList.remove('collapsed'); /* CSS handles appearance at this breakpoint */
+        } else {
+            /* Mobile: close drawer if open, clear any desktop inline styles */
+            closeMobile();
+            clearInlineMain();
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convert to Order — #{{ q.id }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --gold:      #C9A84C;
+            --gold-lt:   #E2C97E;
+            --gold-dim:  rgba(201,168,76,.22);
+            --brown:     #3d3422;
+            --brown-lt:  #5a4f3a;
+            --cream:     #f5f0e8;
+            --card:      #fffdf7;
+            --border:    #e2d9c8;
+            --border-2:  #e8e0d0;
+            --text-1:    #1e1a0f;
+            --text-2:    #5a4f3a;
+            --text-3:    #8a7d65;
+            --text-4:    #b5a68a;
+            --red:       #b91c1c;
+            --green:     #059669;
+            --r:         12px;
+            --r-lg:      16px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--cream);
+            background-image:
+                linear-gradient(90deg, rgba(180,160,120,.08) 1px, transparent 1px),
+                linear-gradient(rgba(180,160,120,.08) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: var(--text-1);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+        }
+
+        /* ── Card ── */
+        .co-card {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            box-shadow:
+                0 4px 6px -1px rgba(120,100,60,.07),
+                0 12px 32px -6px rgba(120,100,60,.12);
+        }
+
+        /* Gold accent stripe */
+        .co-accent {
+            height: 5px;
+            background: linear-gradient(90deg, var(--brown), var(--gold), var(--gold-lt));
+        }
+
+        /* ── Header ── */
+        .co-header {
+            padding: 30px 36px 24px;
+            border-bottom: 1.5px solid var(--border-2);
+            background: linear-gradient(180deg, var(--card) 0%, #faf6ee 100%);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .co-header-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--brown);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .co-header-icon svg {
+            width: 22px; height: 22px;
+            stroke: var(--cream); fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        .co-header-text h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--text-1);
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .co-header-text p {
+            font-size: 0.85rem;
+            color: var(--text-3);
+            font-weight: 400;
+        }
+
+        /* ── Body ── */
+        .co-body { padding: 28px 36px 32px; }
+
+        /* ── Error ── */
+        .co-error {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 22px;
+            font-size: 0.875rem;
+            color: var(--red);
+            font-weight: 500;
+        }
+
+        .co-error svg {
+            width: 16px; height: 16px;
+            stroke: #ef4444; fill: none;
+            stroke-width: 1.8; flex-shrink: 0;
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        /* ── Order total block ── */
+        .co-total-block {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #faf7f0, #fff8e8);
+            border: 1.5px solid var(--gold-dim);
+            border-left: 4px solid var(--gold);
+            border-radius: var(--r);
+            padding: 18px 22px;
+            margin-bottom: 26px;
+        }
+
+        .co-total-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+
+        .co-total-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--brown);
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .co-total-currency {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gold);
+            margin-right: 2px;
+        }
+
+        /* ── Field ── */
+        .co-field { margin-bottom: 6px; }
+
+        .co-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--text-2);
+            margin-bottom: 8px;
+        }
+
+        .co-input-wrap { position: relative; }
+
+        .co-prefix {
+            position: absolute;
+            left: 14px;
+            top: 50%; transform: translateY(-50%);
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-4);
+            pointer-events: none;
+            z-index: 1;
+            transition: color .2s;
+        }
+
+        .co-field:focus-within .co-prefix { color: var(--gold); }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 13px 14px 13px 34px;
+            border-radius: var(--r);
+            border: 1.5px solid var(--border);
+            background: #faf8f3;
+            color: var(--text-1);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 500;
+            outline: none;
+            transition: border-color .2s, background .2s, box-shadow .2s;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+        input[type="number"]::placeholder {
+            color: var(--text-4);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--gold);
+            background: var(--card);
+            box-shadow: 0 0 0 3px rgba(201,168,76,.14);
+        }
+
+        /* ── Balance bar ── */
+        .co-balance-bar {
+            height: 5px;
+            background: var(--border-2);
+            border-radius: 99px;
+            margin-top: 12px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .co-balance-bar.visible { opacity: 1; }
+
+        .co-balance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+            border-radius: 99px;
+            width: 0%;
+            transition: width .4s cubic-bezier(.16,1,.3,1), background .3s;
+        }
+
+        .co-balance-fill.over {
+            background: linear-gradient(90deg, var(--red), #ef4444);
+        }
+
+        .co-balance-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 7px;
+            font-size: 0.75rem;
+            color: var(--text-4);
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .co-balance-info.visible { opacity: 1; }
+
+        .co-balance-remaining { color: var(--text-3); }
+        .co-balance-remaining.over { color: var(--red); font-weight: 600; }
+
+        /* ── Divider ── */
+        .co-divider {
+            height: 1.5px;
+            background: var(--border-2);
+            margin: 26px 0;
+        }
+
+        /* ── Submit button ── */
+        .co-btn {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: var(--r);
+            border: none;
+            background: var(--brown);
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            letter-spacing: 0.02em;
+            transition: background .2s, box-shadow .2s, transform .15s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .co-btn svg {
+            width: 16px; height: 16px;
+            stroke: currentColor; fill: none;
+            stroke-width: 2;
+            stroke-linecap: round; stroke-linejoin: round;
+            transition: transform .25s;
+            flex-shrink: 0;
+        }
+
+        .co-btn:hover {
+            background: #2a2415;
+            box-shadow: 0 5px 18px rgba(61,52,34,.28);
+            transform: translateY(-1px);
+        }
+
+        .co-btn:hover svg { transform: translateX(3px); }
+        .co-btn:active { transform: translateY(0) scale(.98); }
+
+        /* Loading state */
+        .co-btn.loading .co-btn-text { opacity: 0; }
+        .co-btn.loading .co-btn-svg  { opacity: 0; }
+
+        .co-spinner {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px; height: 20px;
+            border: 2.5px solid rgba(245,240,232,.3);
+            border-top-color: var(--cream);
+            border-radius: 50%;
+            animation: co-spin .7s linear infinite;
+            display: none;
+        }
+
+        .co-btn.loading .co-spinner { display: block; }
+
+        @keyframes co-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* ── Footer note ── */
+        .co-footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-4);
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .co-footer-note svg {
+            width: 13px; height: 13px;
+            stroke: var(--text-4); fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round; stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        /* ── Card footer ── */
+        .co-footer {
+            padding: 14px 36px 16px;
+            border-top: 1.5px solid var(--border-2);
+            background: #fcf8f2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+
+        .co-footer-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+
+        .co-footer-left svg {
+            width: 13px; height: 13px;
+            stroke: var(--gold); fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        .co-footer-right {
+            color: var(--text-4);
+            font-weight: 600;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 560px) {
+            .co-header { padding: 22px 22px 18px; }
+            .co-body { padding: 22px 22px 26px; }
+            .co-footer { padding: 12px 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="co-card">
+
+    <!-- Gold accent stripe -->
+    <div class="co-accent"></div>
+
+    <!-- Header -->
+    <div class="co-header">
+        <div class="co-header-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <polyline points="9 15 12 18 15 15"/>
+                <line x1="12" y1="12" x2="12" y2="18"/>
+            </svg>
+        </div>
+        <div class="co-header-text">
+            <h2>Confirm Order</h2>
+            <p>Enter advance payment to finalise this order</p>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="co-body">
+
+        {% if error %}
+        <div class="co-error" role="alert">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Order total display -->
+        <div class="co-total-block">
+            <span class="co-total-label">Order Total</span>
+            <span class="co-total-value">
+                <span class="co-total-currency">₹</span>{{ q.total }}
+            </span>
+        </div>
+
+        <!-- Form -->
+        <form id="convertForm" method="POST">
+            {% csrf_token %}
+
+            <div class="co-field">
+                <label class="co-label" for="advanceInput">Advance Amount</label>
+                <div class="co-input-wrap">
+                    <span class="co-prefix">₹</span>
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        id="advanceInput"
+                        name="advance"
+                        placeholder="0.00"
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Balance progress bar -->
+                <div class="co-balance-bar" id="balanceBar">
+                    <div class="co-balance-fill" id="balanceFill"></div>
+                </div>
+                <div class="co-balance-info" id="balanceInfo">
+                    <span>Advance entered</span>
+                    <span class="co-balance-remaining" id="balanceRemaining">Balance due: —</span>
+                </div>
+            </div>
+
+            <div class="co-divider"></div>
+
+            <button type="submit" class="co-btn" id="submitBtn">
+                <span class="co-spinner"></span>
+                <svg class="co-btn-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="co-btn-text">Confirm &amp; Generate Order</span>
+            </button>
+
+            <p class="co-footer-note">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                A PDF receipt will be downloaded upon confirmation
+            </p>
+        </form>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="co-footer">
+        <div class="co-footer-left">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Secure &amp; encrypted
+        </div>
+        <div class="co-footer-right">Quotation #{{ q.id }}</div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    var form  = document.getElementById('convertForm');
+    var adv   = document.getElementById('advanceInput');
+    var bar   = document.getElementById('balanceBar');
+    var fill  = document.getElementById('balanceFill');
+    var info  = document.getElementById('balanceInfo');
+    var rem   = document.getElementById('balanceRemaining');
+    var btn   = document.getElementById('submitBtn');
+
+    // Parse total safely — strip commas / whitespace in case Django formats it
+    var totalRaw = '{{ q.total }}'.replace(/,/g, '').trim();
+    var total = parseFloat(totalRaw) || 0;
+
+    /* ── Balance indicator ── */
+    adv.addEventListener('input', function () {
+        var val = parseFloat(this.value || '0');
+        if (isNaN(val) || total <= 0) {
+            bar.classList.remove('visible');
+            info.classList.remove('visible');
+            return;
+        }
+        var pct  = Math.min((val / total) * 100, 100);
+        var over = val > total;
+
+        fill.style.width = pct + '%';
+        fill.classList.toggle('over', over);
+        rem.classList.toggle('over', over);
+
+        rem.textContent = over
+            ? 'Exceeds total by ₹' + (val - total).toFixed(2)
+            : 'Balance due: ₹' + (total - val).toFixed(2);
+
+        bar.classList.add('visible');
+        info.classList.add('visible');
+    });
+
+    /* ── Form submit via fetch: download PDF blob then redirect to orders list ── */
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var val = parseFloat(adv.value || '0');
+
+        // Basic validation
+        if (isNaN(val) || val < 0) {
+            adv.focus();
+            return;
+        }
+        if (val > total) {
+            adv.focus();
+            return;
+        }
+
+        btn.classList.add('loading');
+        btn.disabled = true;
+
+        // Build form data
+        var fd = new FormData(form);
+        var csrf = fd.get('csrfmiddlewaretoken');
+
+        fetch(window.location.href, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: csrf ? { 'X-CSRFToken': csrf } : {},
+            body: fd
+        }).then(function (resp) {
+            var ct = (resp.headers.get('content-type') || '').toLowerCase();
+            if (resp.ok && ct.indexOf('application/pdf') !== -1) {
+                return resp.blob().then(function (b) {
+                    // determine filename from Content-Disposition
+                    var dispo = resp.headers.get('content-disposition') || '';
+                    var filename = 'order.pdf';
+                    var m = /filename\*=UTF-8''([^;\n]+)/i.exec(dispo) || /filename="?([^;\n"]+)"?/i.exec(dispo);
+                    if (m && m[1]) filename = decodeURIComponent(m[1].replace(/"/g, ''));
+
+                    var url = window.URL.createObjectURL(b);
+                    var a = document.createElement('a');
+                    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+                    setTimeout(function () { try { a.remove(); window.URL.revokeObjectURL(url); } catch (e) {} }, 500);
+
+                    // Redirect to orders page
+                    window.location.href = '{% url "orders" %}';
+                });
+            }
+
+            // If server returned HTML (likely an error page), show it or alert
+            return resp.text().then(function (txt) {
+                try {
+                    // try to parse message from returned HTML
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(txt, 'text/html');
+                    var err = doc.querySelector('.co-error') || doc.querySelector('[role=alert]');
+                    if (err) {
+                        var msg = err.textContent.trim();
+                        alert(msg || 'Server error');
+                    } else {
+                        alert('Server error while generating PDF');
+                    }
+                } catch (e) {
+                    alert('Server error while generating PDF');
+                }
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            });
+        }).catch(function (err) {
+            console.error(err);
+            alert('Network error while generating order.');
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        });
+    });
+})();
+</script>
+
+</body>
+</html>
